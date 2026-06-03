@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
+import { memory } from "@eazo/sdk";
 
 // Turbulence frames for dormant orb
 const DORMANT_FRAMES = [
@@ -38,6 +39,12 @@ export function OpeningScreen() {
   const handleFindOut = () => {
     setHasSeenOpening(true);
     setExiting(true);
+    memory.reportAction({
+      content: "User started a body debt session from the opening screen.",
+      event_type: "start",
+      page: "opening",
+      metadata: { type: "start_session" },
+    }).catch(() => {});
     router.push("/wake-time");
   };
 

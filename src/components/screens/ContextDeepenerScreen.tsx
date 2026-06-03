@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { ChevronLeft } from "lucide-react";
+import { memory } from "@eazo/sdk";
 import type { StressorType } from "@/lib/types";
 import { MiniOrb } from "@/components/MiniOrb";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -176,7 +176,15 @@ export function ContextDeepenerScreen() {
                       <motion.button
                         key={opt.value}
                         whileTap={{ scale: 0.97 }}
-                        onClick={() => updateStressorContext(q.type, opt.value)}
+                        onClick={() => {
+                          updateStressorContext(q.type, opt.value);
+                          memory.reportAction({
+                            content: `User provided context for ${q.type}: ${opt.value}.`,
+                            event_type: "update",
+                            page: "context-deepener",
+                            metadata: { type: "provide_context", stressor: q.type, context: opt.value },
+                          }).catch(() => {});
+                        }}
                         className="flex justify-between items-center px-4 rounded-xl transition-all text-left"
                         style={{
                           minHeight: "52px",

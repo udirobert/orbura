@@ -17,9 +17,10 @@ export async function GET(request: NextRequest) {
 
   try {
     const result = await notifications.publish({
-      title: "Daily reminder",
-      body: "Don't forget to review your tasks today.",
+      title: "Daily body debt check-in",
+      body: "How are you feeling today? Your body is waiting.",
       data: { source: "cron-daily-digest" },
+      audience: "subscribers",
     });
     return NextResponse.json(result);
   } catch (err) {

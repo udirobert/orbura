@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
+import { auth, memory } from "@eazo/sdk";
+import { useEazo } from "@eazo/sdk/react";
 import { ChevronLeft } from "lucide-react";
+import { getOrbCopy } from "@/lib/orbPersonality";
 import { MiniOrb } from "@/components/MiniOrb";
 
 // ─── Config ────────────────────────────────────────────────────────────────────
@@ -54,18 +57,42 @@ async function scheduleReminders(prescription: typeof FALLBACK_PRESCRIPTION): Pr
 
 export function PrescriptionScreen() {
   const router = useRouter();
-  const { analysis, confidenceTier } = useBodyDebtStore();
+  const { analysis, confidenceTier, orbPersonality } = useBodyDebtStore();
+  const user = useEazo((s) => s.auth.user);
+  const isGuest = !user && !!analysis;
+  const personalityCopy = getOrbCopy(orbPersonality);
   const rx = analysis?.prescription ?? FALLBACK_PRESCRIPTION;
   const score = analysis?.debtScore ?? 0;
 
   const [remindersSet, setRemindersSet] = useState(false);
   const [reminderPending, setReminderPending] = useState(false);
+  const reportedView = useRef(false);
+
+  // Report prescription view once
+  useEffect(() => {
+    if (reportedView.current) return;
+    reportedView.current = true;
+    memory.reportAction({
+      content: `User viewed prescription. Score: ${score}.`,
+      event_type: "page_view",
+      page: "prescription",
+      metadata: { type: "view_prescription", debt_score: score },
+    }).catch(() => {});
+  }, [score]);
 
   const handleSetReminders = async () => {
     setReminderPending(true);
     const success = await scheduleReminders(rx);
     setReminderPending(false);
-    if (success) setRemindersSet(true);
+    if (success) {
+      setRemindersSet(true);
+      memory.reportAction({
+        content: "User set prescription reminders.",
+        event_type: "create",
+        page: "prescription",
+        metadata: { type: "set_reminders" },
+      }).catch(() => {});
+    }
   };
 
   return (
@@ -93,7 +120,7 @@ export function PrescriptionScreen() {
       >
         <h1 className="font-black uppercase tracking-widest"
           style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.1rem,5vw,1.4rem)", color: "#F5F5F4", letterSpacing: "0.08em" }}>
-          The Prescription
+          {personalityCopy.prescriptionHeader}
         </h1>
         <p className="text-xs mt-1" style={{ color: "#524F4C" }}>
           Based on your current body state. Specific. Actionable.
@@ -140,7 +167,7 @@ export function PrescriptionScreen() {
             ) : (
               <motion.div key="prompt" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <p className="text-xs font-semibold mb-1" style={{ color: "#F5F5F4" }}>
-                  Want me to remind you?
+                  {personalityCopy.reminderPrompt}
                 </p>
                 <p className="text-[10px] mb-3" style={{ color: "#524F4C" }}>
                   One tap sets timed nudges from this prescription.
@@ -181,6 +208,27 @@ export function PrescriptionScreen() {
           </motion.div>
         )}
       </div>
+
+      {/* Auth upgrade */}
+      {isGuest && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="relative z-10 mt-6 rounded-2xl p-4 text-center"
+          style={{ backgroundColor: "#141416", border: "1px solid rgba(234,88,12,0.25)" }}>
+          <p className="text-xs font-semibold mb-1" style={{ color: "#F5F5F4" }}>
+            Your data is saved on this device
+          </p>
+          <p className="text-[10px] mb-3" style={{ color: "#A8A29E" }}>
+            Sign in to keep your history across devices and unlock AI-powered insights.
+          </p>
+          <motion.button whileTap={{ scale: 0.97 }}
+            onClick={() => auth.login().catch(() => undefined)}
+            className="text-xs font-semibold px-5 py-2.5 rounded-xl"
+            style={{ backgroundColor: "#EA580C", color: "#F5F5F4" }}>
+            Sign in to save
+          </motion.button>
+        </motion.div>
+      )}
 
       {/* Bottom CTAs */}
       <div className="relative z-10 pb-10 pt-6 flex flex-col gap-2">

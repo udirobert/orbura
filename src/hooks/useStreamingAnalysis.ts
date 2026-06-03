@@ -4,6 +4,7 @@ import { useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { auth } from "@eazo/sdk";
+import { startAnalysisStream } from "@/lib/api";
 import type { DebtAnalysis, AnalyzeBodyRequest } from "@/lib/types";
 /**
  * useStreamingAnalysis
@@ -27,7 +28,6 @@ export function useStreamingAnalysis() {
     setAnalysis,
     setIsAnalyzing,
     setConfidenceTier,
-    wakeTime,
     analysis: currentAnalysis,
   } = useBodyDebtStore();
 
@@ -63,21 +63,9 @@ export function useStreamingAnalysis() {
     try {
       const sessionHeader = await auth.getSessionHeader();
 
-      const response = await fetch("/api/analyze/stream", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(sessionHeader ? { "x-eazo-session": sessionHeader } : {}),
-        },
-        body: JSON.stringify(body),
-        signal: abortRef.current.signal,
-      });
+      const stream = await startAnalysisStream(body, abortRef.current.signal, sessionHeader);
 
-      if (!response.ok || !response.body) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const reader  = response.body.getReader();
+      const reader  = stream.getReader();
       const decoder = new TextDecoder();
       let   buffer  = "";
 
@@ -169,7 +157,7 @@ export function useStreamingAnalysis() {
         router.push("/dashboard");
       }
     }
-  }, [selectedStressors, faceAnalysis, setHrvData, setHrvSkipped, setAnalysis, setIsAnalyzing, currentAnalysis, router]);
+  }, [selectedStressors, faceAnalysis, setHrvData, setHrvSkipped, setAnalysis, setIsAnalyzing, setConfidenceTier, currentAnalysis, router]);
 
   const cancel = useCallback(() => {
     abortRef.current?.abort();

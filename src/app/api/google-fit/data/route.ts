@@ -3,8 +3,7 @@ import type { HRVData } from "@/lib/types";
 
 export const maxDuration = 20;
 
-const POPULATION_BASELINE_HRV_MS = 65; // rmssd reference
-const POPULATION_BASELINE_HR     = 60; // resting HR reference
+const POPULATION_BASELINE_HR = 60; // resting HR reference
 
 /**
  * POST /api/google-fit/data

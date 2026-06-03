@@ -4,11 +4,17 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { memory } from "@eazo/sdk";
+import { auth, memory } from "@eazo/sdk";
+import { useEazo } from "@eazo/sdk/react";
 import { DebtOrb } from "./DebtOrb";
 import { AnalysisLoader } from "@/components/AnalysisLoader";
 import { SystemPanels } from "@/components/SystemPanels";
 import { SystemClearanceNotifier } from "@/components/SystemClearanceNotifier";
+import { PersonalityPicker } from "./personality-picker";
+import { DebtHistory } from "./debt-history";
+import { ScoreHeatmap } from "./score-heatmap";
+import { NotificationsToggle } from "@/components/notifications/notifications-toggle";
+import { getOrbCopy, getPersonality } from "@/lib/orbPersonality";
 import type { DebtAnalysis, ConfidenceTier, RecoverySystem } from "@/lib/types";
 
 // ─── Fallback ─────────────────────────────────────────────────────────────────
@@ -171,10 +177,14 @@ export function DashboardScreen() {
     analysis, selectedStressors, reset, isAnalyzing,
     hrvData, faceAnalysis,
     streakDays, confidenceTier,
+    orbPersonality,
   } = useBodyDebtStore();
 
+  const user = useEazo((s) => s.auth.user);
   const data: DebtAnalysis = analysis ?? FALLBACK_ANALYSIS;
   const isEmpty = !analysis && selectedStressors.length === 0;
+  const hasData = !!analysis || selectedStressors.length > 0;
+  const isGuest = !user && hasData;
 
   // Animated score count-up
   const [displayScore, setDisplayScore] = useState(0);
@@ -192,7 +202,13 @@ export function DashboardScreen() {
       if (current >= target) clearInterval(countRef.current!);
     }, duration / steps);
     return () => clearInterval(countRef.current!);
-  }, [analysis?.debtScore]);
+  }, [analysis]);
+
+  const [personalityOpen, setPersonalityOpen] = useState(false);
+  const personalityCfg = getPersonality(orbPersonality);
+  const orbCopy = getOrbCopy(orbPersonality);
+  const verdictPrefix = personalityCfg.verdictPrefix;
+  const personalityTagline = data.debtScore > 40 ? orbCopy.highDebt : orbCopy.lowDebt;
 
   // Memory report
   useEffect(() => {
@@ -220,7 +236,6 @@ export function DashboardScreen() {
   if (isAnalyzing) {
     return (
       <AnalysisLoader
-        stressorCount={selectedStressors.length}
         hasFaceScan={!!faceAnalysis}
         hasHRV={!!hrvData}
       />
@@ -265,6 +280,14 @@ export function DashboardScreen() {
             <span className="app-name text-sm font-bold tracking-widest uppercase" style={{ color: "#F5F5F4" }}>
               BODY DEBT
             </span>
+            <motion.button whileTap={{ scale: 0.9 }}
+              onClick={() => setPersonalityOpen(true)}
+              className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
+              style={{ backgroundColor: "rgba(168,162,158,0.08)" }}
+              title={`Voice: ${personalityCfg.label}`}
+            >
+              {personalityCfg.emoji}
+            </motion.button>
             <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "#EA580C" }} />
           </div>
           <div className="flex items-center gap-3">
@@ -299,10 +322,9 @@ export function DashboardScreen() {
             {displayScore}
           </div>
 
-          {/* Verdict */}
-          <h3 className="mt-2 font-normal text-center px-4"
-            style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1rem,4vw,1.25rem)", color: "#F5F5F4", lineHeight: 1.3 }}>
-            {data.verdict}
+          {/* Verdict with personality prefix */}
+          <h3 className="mt-2 font-normal text-center px-4" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1rem,4vw,1.25rem)", color: "#F5F5F4", lineHeight: 1.3 }}>
+            {verdictPrefix}{data.verdict}
           </h3>
 
           {/* Refining indicator */}
@@ -323,8 +345,13 @@ export function DashboardScreen() {
 
           <ConfidenceSignal tier={(data as DebtAnalysis & { confidenceTier?: ConfidenceTier }).confidenceTier ?? confidenceTier} />
 
+          {/* Personality tagline */}
+          <p className="mt-3 text-[10px] italic px-6" style={{ color: "#524F4C" }}>
+            {personalityTagline}
+          </p>
+
           {/* Recovery window */}
-          <p className="mt-2 text-xs font-mono" style={{ color: "#A8A29E" }}>
+          <p className="mt-1 text-xs font-mono" style={{ color: "#A8A29E" }}>
             Recovery around <span style={{ color: "#F5F5F4" }}>{data.recoveryTime}</span>
           </p>
         </motion.div>
@@ -367,6 +394,35 @@ export function DashboardScreen() {
       {/* ── Layer 4: Patterns ────────────────────────────────────────── */}
       <PatternLayer streakDays={streakDays} />
 
+      {/* ── Layer 4b: Score heatmap (collapsible, auth-only) ──────── */}
+      {user && <ScoreHeatmap />}
+
+      {/* ── Layer 5: Past history (collapsible, auth-only) ─────────── */}
+      {user && <DebtHistory />}
+
+      {/* ── Layer 6: Notifications (auth-only) ──────────────────────── */}
+      {user && <NotificationsToggle />}
+
+      {/* ── Auth upgrade ───────────────────────────────────────────── */}
+      {isGuest && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          className="relative z-10 mb-6 rounded-2xl p-4 text-center"
+          style={{ backgroundColor: "#141416", border: "1px solid rgba(234,88,12,0.25)" }}>
+          <p className="text-xs font-semibold mb-1" style={{ color: "#F5F5F4" }}>
+            Your data is saved on this device
+          </p>
+          <p className="text-[10px] mb-3" style={{ color: "#A8A29E" }}>
+            Sign in to keep your history across devices and unlock AI-powered insights.
+          </p>
+          <motion.button whileTap={{ scale: 0.97 }}
+            onClick={() => auth.login().catch(() => undefined)}
+            className="text-xs font-semibold px-5 py-2.5 rounded-xl"
+            style={{ backgroundColor: "#EA580C", color: "#F5F5F4" }}>
+            Sign in to save
+          </motion.button>
+        </motion.div>
+      )}
+
       {/* CTAs */}
       <div className="relative z-10 flex flex-col gap-3 pb-12 mt-2">
 
@@ -404,6 +460,12 @@ export function DashboardScreen() {
           </motion.div>
         )}
       </div>
+
+      {/* Personality picker */}
+      <PersonalityPicker
+        open={personalityOpen}
+        onClose={() => setPersonalityOpen(false)}
+      />
     </div>
   );
 }

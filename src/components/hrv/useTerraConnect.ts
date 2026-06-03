@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { request } from "@/lib/api/request";
+import { getTerraWidgetSession, getTerraData, analyzeDebt } from "@/lib/api";
 import { memory } from "@eazo/sdk";
 import type { HRVData } from "@/lib/types";
 
@@ -72,22 +72,20 @@ export function useTerraConnect() {
       await new Promise((r) => setTimeout(r, 2000));
 
       try {
-        const res = await request(`/api/terra/data?terraUserId=${encodeURIComponent(userId)}`);
-        const json = await res.json();
+        const result = await getTerraData(userId);
 
-        if (json.error) {
-          // No sleep data yet is non-fatal — use conservative estimate
-          if (json.error === "NO_SLEEP_DATA") {
+        if ("error" in result) {
+          if (result.error === "NO_SLEEP_DATA") {
+            // No sleep data yet is non-fatal — use conservative estimate
             const fallback: HRVData = { hrvDeltaPercent: -15, restingHrDelta: 4 };
             setHrvData(fallback);
             setTerra((s) => ({ ...s, phase: "connected", hrvData: fallback }));
           } else {
-            throw new Error(json.message ?? json.error);
+            throw new Error(result.message ?? result.error);
           }
         } else {
-          const data = json.hrvData as HRVData;
-          setHrvData(data);
-          setTerra((s) => ({ ...s, phase: "connected", hrvData: data }));
+          setHrvData(result.hrvData);
+          setTerra((s) => ({ ...s, phase: "connected", hrvData: result.hrvData }));
         }
       } catch (err) {
         setTerra((s) => ({
@@ -106,19 +104,24 @@ export function useTerraConnect() {
     setTerra((s) => ({ ...s, phase: "opening", errorMsg: null }));
 
     try {
-      const res = await request("/api/terra/widget", { method: "POST", body: "{}" });
-      const json = await res.json();
-
-      if (json.error === "TERRA_NOT_CONFIGURED") {
-        setTerra((s) => ({ ...s, phase: "not_configured" }));
-        return;
+      let widgetData;
+      try {
+        widgetData = await getTerraWidgetSession();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        if (msg === "TERRA_NOT_CONFIGURED" || msg.includes("TERRA_NOT_CONFIGURED")) {
+          setTerra((s) => ({ ...s, phase: "not_configured" }));
+          return;
+        }
+        throw err;
       }
-      if (json.error || !json.url) {
-        throw new Error(json.message ?? "Failed to start connection.");
+
+      if (!widgetData.url) {
+        throw new Error("Failed to start connection.");
       }
 
       // Open Terra widget in a popup window
-      const popup = window.open(json.url, "terra_auth", "width=500,height=700,scrollbars=yes");
+      const popup = window.open(widgetData.url, "terra_auth", "width=500,height=700,scrollbars=yes");
       popupRef.current = popup;
 
       // Detect if user closed popup without completing auth
@@ -151,21 +154,16 @@ export function useTerraConnect() {
       setIsAnalyzing(true);
 
       try {
-        const res = await request("/api/analyze", {
-          method: "POST",
-          body: JSON.stringify({
-            stressors: selectedStressors,
-            faceAnalysis: faceAnalysis ?? null,
-            hrvData: hrvData ?? null,
-            currentTime: new Date().toLocaleTimeString("en-US", {
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            }),
+        const data = await analyzeDebt({
+          stressors: selectedStressors,
+          faceAnalysis: faceAnalysis ?? null,
+          hrvData: hrvData ?? null,
+          currentTime: new Date().toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
           }),
         });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
 
         setAnalysis(data);
 

@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { auth, notifications } from "@eazo/sdk";
+import { notifications } from "@eazo/sdk";
 import { useEazo } from "@eazo/sdk/react";
 
-import { request } from "@/lib/api/request";
+import { sendTestNotification } from "@/lib/api";
 
-/** Subscribe toggle + "Send test" button shown above the todo list. */
+/** Subscribe toggle + "Send test" button. Dark-theme variant for the dashboard. */
 export function NotificationsToggle() {
   const user = useEazo((s) => s.auth.user);
   const platform = useEazo((s) => s.device.platform);
@@ -19,10 +19,7 @@ export function NotificationsToggle() {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      setSubscribed(null);
-      return;
-    }
+    if (!user) return;
     let cancelled = false;
     notifications
       .isSubscribed()
@@ -69,44 +66,10 @@ export function NotificationsToggle() {
     if (sending) return;
     setSending(true);
     try {
-      const sessionHeader = await auth.getSessionHeader();
-      if (!sessionHeader) {
-        toast.error(
-          "Session not ready yet — please sign in again and retry.",
-        );
-        console.warn(
-          "[notifications] test publish skipped: auth.getSessionHeader() returned null",
-        );
-        return;
-      }
-
-      const res = await request("/api/notifications/test", { method: "POST" });
-      const text = await res.text();
-      let body: unknown = null;
-      try {
-        body = text ? JSON.parse(text) : null;
-      } catch {
-        body = text;
-      }
-      if (!res.ok) {
-        const message =
-          body && typeof body === "object" && "error" in body
-            ? String((body as { error: unknown }).error)
-            : `HTTP ${res.status}`;
-        console.error("[notifications] test publish failed", {
-          status: res.status,
-          body,
-        });
-        toast.error(`Test failed: ${message}`);
-        return;
-      }
-
-      const data = body as { delivered: number; publishId: string };
+      const data = await sendTestNotification();
       if (data.delivered > 0) {
         toast.success(
-          `Sent! Delivered to ${data.delivered} subscriber${
-            data.delivered === 1 ? "" : "s"
-          }.`,
+          `Sent! Delivered to ${data.delivered} subscriber${data.delivered === 1 ? "" : "s"}.`,
         );
       } else {
         toast.info(
@@ -114,9 +77,9 @@ export function NotificationsToggle() {
         );
       }
     } catch (err) {
-      console.error("[notifications] test publish unexpected error", err);
+      console.error("[notifications] test publish failed", err);
       toast.error(
-        err instanceof Error ? `Test failed: ${err.message}` : "Test failed.",
+        `Test failed: ${err instanceof Error ? err.message : "Unknown error"}`,
       );
     } finally {
       setSending(false);
@@ -126,20 +89,25 @@ export function NotificationsToggle() {
   const showHint = subscribed !== null && !isMobileHost;
 
   return (
-    <div className="mb-4 flex flex-col gap-2 rounded-[14px] border border-white/70 bg-white/60 p-3 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
+    <div className="mb-4 flex flex-col gap-2 rounded-2xl border p-3"
+      style={{
+        backgroundColor: "#141416",
+        borderColor: "rgba(168,162,158,0.08)",
+      }}>
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-950/5">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
+          style={{ backgroundColor: "rgba(168,162,158,0.08)" }}>
           {subscribed ? (
-            <Bell className="h-4 w-4 text-[#EE5C2A]" />
+            <Bell className="h-4 w-4" style={{ color: "#EA580C" }} />
           ) : (
-            <BellOff className="h-4 w-4 text-slate-950/40" />
+            <BellOff className="h-4 w-4" style={{ color: "#524F4C" }} />
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-semibold text-slate-950/80">
+          <p className="text-[13px] font-semibold" style={{ color: "#F5F5F4" }}>
             Push notifications
           </p>
-          <p className="text-[12px] text-slate-950/45">
+          <p className="text-[12px]" style={{ color: "#A8A29E" }}>
             {showHint
               ? "Open this app inside Eazo Mobile to receive system pushes."
               : subscribed === null
@@ -152,11 +120,28 @@ export function NotificationsToggle() {
         <button
           onClick={handleToggle}
           disabled={toggling || subscribed === null}
-          className={`flex h-8 items-center justify-center rounded-[10px] px-3 text-[12px] font-semibold transition-all duration-200 ${
+          className="flex h-8 items-center justify-center rounded-[10px] px-3 text-[12px] font-semibold transition-all duration-200 disabled:opacity-50"
+          style={
             subscribed
-              ? "bg-[linear-gradient(180deg,#F47A42_0%,#EE5C2A_100%)] text-white shadow-[0_4px_10px_rgba(238,92,42,0.32)] hover:brightness-105"
-              : "border border-white/70 bg-white/72 text-slate-950/60 shadow-[0_2px_8px_rgba(15,23,42,0.06)] hover:bg-white/86"
-          } disabled:opacity-50`}
+              ? {
+                  backgroundColor: "#EA580C",
+                  color: "#F5F5F4",
+                  boxShadow: "0 4px 10px rgba(234,88,12,0.32)",
+                }
+              : {
+                  backgroundColor: "#141416",
+                  color: "#A8A29E",
+                  border: "1px solid rgba(168,162,158,0.15)",
+                }
+          }
+          onMouseEnter={(e) => {
+            if (subscribed) e.currentTarget.style.filter = "brightness(1.05)";
+            else e.currentTarget.style.backgroundColor = "rgba(168,162,158,0.12)";
+          }}
+          onMouseLeave={(e) => {
+            if (subscribed) e.currentTarget.style.filter = "none";
+            else e.currentTarget.style.backgroundColor = "#141416";
+          }}
         >
           {toggling ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -170,7 +155,20 @@ export function NotificationsToggle() {
       <button
         onClick={handleSendTest}
         disabled={sending}
-        className="self-end h-7 rounded-[8px] border border-white/70 bg-white/72 px-3 text-[11px] font-semibold text-slate-950/55 shadow-[0_2px_6px_rgba(15,23,42,0.05)] transition-colors hover:bg-white/86 hover:text-[#EE5C2A] disabled:opacity-50"
+        className="self-end h-7 rounded-lg px-3 text-[11px] font-semibold transition-colors disabled:opacity-50"
+        style={{
+          backgroundColor: "rgba(168,162,158,0.06)",
+          color: "#524F4C",
+          border: "1px solid rgba(168,162,158,0.08)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = "#EA580C";
+          e.currentTarget.style.backgroundColor = "rgba(234,88,12,0.08)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = "#524F4C";
+          e.currentTarget.style.backgroundColor = "rgba(168,162,158,0.06)";
+        }}
       >
         {sending ? "Sending…" : "Send test notification"}
       </button>

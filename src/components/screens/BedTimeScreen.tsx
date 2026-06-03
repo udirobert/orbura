@@ -4,53 +4,13 @@ import { useState, useRef, useCallback } from "react";
 import { motion, useMotionValue, animate, PanInfo } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-
-// ─── Bedtime slots: 6:00 PM – 4:30 AM in 30-min increments ──────────────────
-function buildBedtimeSlots(): string[] {
-  const slots: string[] = [];
-  // 6pm → 11:30pm
-  for (let h = 18; h <= 23; h++) {
-    ["00", "30"].forEach((m) => {
-      const disp = h > 12 ? `${h - 12}:${m} PM` : `${h}:${m} PM`;
-      slots.push(disp);
-    });
-  }
-  // 12:00am → 4:30am
-  for (let h = 0; h <= 4; h++) {
-    const isLast = h === 4;
-    const minutes = isLast ? ["00", "30"] : ["00", "30"];
-    minutes.forEach((m) => {
-      if (h === 4 && m === "30") return;
-      const disp = h === 0 ? `12:${m} AM` : `${h}:${m} AM`;
-      slots.push(disp);
-    });
-  }
-  return slots;
-}
+import { memory } from "@eazo/sdk";
+import { buildBedtimeSlots, getCircadianNote } from "@/lib/time-utils";
 
 const SLOTS = buildBedtimeSlots();
 const DEFAULT_IDX = SLOTS.indexOf("11:00 PM");
 const ITEM_H = 72;
 const VISIBLE = 5;
-
-// ─── Circadian alignment feedback ────────────────────────────────────────────
-function getCircadianNote(slot: string): { label: string; color: string; penalty: "none" | "mild" | "significant" } {
-  // Parse hour from slot label
-  const isPM = slot.includes("PM");
-  const isAM = slot.includes("AM");
-  const parts = slot.replace(/ AM| PM/, "").split(":");
-  let h = parseInt(parts[0], 10);
-  if (isPM && h !== 12) h += 12;
-  if (isAM && h === 12) h = 0;
-
-  if (h >= 22 || h === 21) return { label: "Aligned. Good circadian timing.", color: "#4ADE80", penalty: "none" };
-  if (h >= 20) return { label: "Slightly early — still aligned.", color: "#4ADE80", penalty: "none" };
-  if (h >= 18) return { label: "Very early. Light sleep debt possible.", color: "#F59E0B", penalty: "mild" };
-  if (h >= 0 && h <= 1) return { label: "Mildly misaligned. Brain recovery affected.", color: "#F59E0B", penalty: "mild" };
-  if (h >= 2 && h <= 4) return { label: "Significant circadian misalignment. Debt elevated.", color: "#DC2626", penalty: "significant" };
-  // h >= 22 and < 24 — ideal
-  return { label: "Aligned. Optimal recovery window.", color: "#4ADE80", penalty: "none" };
-}
 
 export function BedTimeScreen() {
   const router = useRouter();
@@ -82,6 +42,12 @@ export function BedTimeScreen() {
   const handleConfirm = () => {
     setBedTime(SLOTS[selectedIdx]);
     setSessionStartedAt(new Date().toISOString());
+    memory.reportAction({
+      content: `User set bed time to ${SLOTS[selectedIdx]} and started session.`,
+      event_type: "create",
+      page: "bed-time",
+      metadata: { type: "start_session", bed_time: SLOTS[selectedIdx] },
+    }).catch(() => {});
     router.push("/intake");
   };
 

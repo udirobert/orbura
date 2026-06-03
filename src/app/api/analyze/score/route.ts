@@ -142,7 +142,7 @@ function recoveryTimeFromArc(clearedAt: string): string {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export function computeScore(body: AnalyzeBodyRequest) {
-  const { stressors, faceAnalysis, hrvData, currentTime, wakeTime, bedTime } = body;
+  const { stressors, faceAnalysis, hrvData, wakeTime, bedTime } = body;
   const now = new Date();
 
   const breakdown: { stressor: string; points: number; insight: string; icon: string }[] = [];
@@ -227,7 +227,8 @@ export function computeScore(body: AnalyzeBodyRequest) {
 
 // ─── Rule-based fallback prescription ────────────────────────────────────────
 
-function deterministicInsight(type: StressorType, context?: string): string {
+function deterministicInsight(type: StressorType, _context?: string): string {
+    void _context;
   const insights: Partial<Record<StressorType, string>> = {
     alcohol:  "Liver processing peaks 4–6 hours after drinking. Cortisol remains elevated.",
     sleep:    "Cognitive performance at 60–70% capacity. Decision quality reduced.",

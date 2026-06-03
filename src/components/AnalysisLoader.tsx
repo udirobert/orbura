@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Science facts shown during analysis ─────────────────────────────────────
@@ -67,24 +67,23 @@ const SOCIAL_COUNTS = [
 interface AnalysisLoaderProps {
   hasFaceScan: boolean;
   hasHRV: boolean;
-  stressorCount: number;
 }
 
-export function AnalysisLoader({ hasFaceScan, hasHRV, stressorCount }: AnalysisLoaderProps) {
+export function AnalysisLoader({ hasFaceScan, hasHRV }: AnalysisLoaderProps) {
   const [elapsed, setElapsed] = useState(0);       // 0–1 simulated progress
   const [factIdx, setFactIdx] = useState(0);
   const [socialIdx] = useState(() => Math.floor(Math.random() * SOCIAL_COUNTS.length));
   const [orbScore, setOrbScore] = useState(0);     // orb heats up as signals process
-  const startRef = useRef(Date.now());
 
   // Simulate progress over ~5 seconds — feels like the AI is doing work
   useEffect(() => {
     const DURATION = 5000;
+    const start = Date.now();
     const iv = setInterval(() => {
-      const raw = (Date.now() - startRef.current) / DURATION;
+      const raw = (Date.now() - start) / DURATION;
       const eased = Math.min(0.97, raw < 0.5 ? 2 * raw * raw : 1 - Math.pow(-2 * raw + 2, 2) / 2);
       setElapsed(eased);
-      setOrbScore(Math.round(eased * 75)); // orb goes from 0 → 75 during load
+      setOrbScore(Math.round(eased * 75));
       if (raw >= 1) clearInterval(iv);
     }, 60);
     return () => clearInterval(iv);

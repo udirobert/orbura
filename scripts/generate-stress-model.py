@@ -1,47 +1,87 @@
 """
 Generate a tiny ONNX stress classifier model for EZKL ZK circuit compilation.
 
-Architecture: Single dense layer with sigmoid activation.
+Architecture: Gemm → Sigmoid (opset 10 for tract/EZKL compatibility)
   Input:  5 floats [leftEyeAspect, rightEyeAspect, browTension, mouthTension, timeNorm]
-  Output: 1 float  (stress probability, threshold at 0.5)
+  Output: 1 float  (stress probability)
 
-Requirements: pip install onnx numpy
+Uses opset 10 + Gemm to match working EZKL example patterns.
+
+Requirements: pip install torch onnx numpy
 Run: python scripts/generate-stress-model.py
 """
 
+import torch
+import torch.nn as nn
+import onnx
 import numpy as np
+import json
+import os
 
-try:
-    import onnx
-    from onnx import helper, TensorProto, numpy_helper
-except ImportError:
-    print("ERROR: onnx package required. Install: pip install onnx numpy")
-    exit(1)
 
-W = np.array([[-2.0, -2.0, 3.0, 1.5, 0.1]], dtype=np.float32)
-b = np.array([0.5], dtype=np.float32)
+class StressClassifier(nn.Module):
+    def __init__(self):
+        super().__init__()
+        # Single linear layer + sigmoid
+        self.fc = nn.Linear(5, 1)
+        self.sigmoid = nn.Sigmoid()
 
-X = helper.make_tensor_value_info("input", TensorProto.FLOAT, [1, 5])
-Y = helper.make_tensor_value_info("output", TensorProto.FLOAT, [1, 1])
+        # Weights: negative for eye openness, positive for tension
+        with torch.no_grad():
+            self.fc.weight.copy_(
+                torch.tensor([[-2.0, -2.0, 3.0, 1.5, 0.1]], dtype=torch.float32)
+            )
+            self.fc.bias.copy_(torch.tensor([0.5], dtype=torch.float32))
 
-W_init = numpy_helper.from_array(W, name="weight")
-b_init = numpy_helper.from_array(b, name="bias")
+    def forward(self, x):
+        return self.sigmoid(self.fc(x))
 
-matmul = helper.make_node("MatMul", ["input", "weight"], ["matmul_out"])
-add = helper.make_node("Add", ["matmul_out", "bias"], ["add_out"])
-sigmoid = helper.make_node("Sigmoid", ["add_out"], ["output"])
 
-graph = helper.make_graph(
-    [matmul, add, sigmoid],
-    "stress_classifier",
-    [X],
-    [Y],
-    initializer=[W_init, b_init],
-)
+def main():
+    model = StressClassifier()
+    model.eval()
 
-model = helper.make_model(graph, opset_imports=[helper.make_opsetid("", 13)])
-model.ir_version = 7
+    out_dir = "public/ezkl"
+    os.makedirs(out_dir, exist_ok=True)
+    model_path = os.path.join(out_dir, "model.onnx")
 
-onnx.checker.check_model(model)
-onnx.save(model, "public/ezkl/model.onnx")
-print("Saved: public/ezkl/model.onnx")
+    # Export with opset 10 (ezkl tract examples use this)
+    torch.onnx.export(
+        model,
+        torch.randn(1, 5),
+        model_path,
+        input_names=["input"],
+        output_names=["output"],
+        opset_version=10,
+        do_constant_folding=True,
+    )
+
+    # Update input.json for witness generation
+    input_path = os.path.join(out_dir, "input.json")
+    with open(input_path, "w") as f:
+        json.dump({
+            "input_data": [[0.25, 0.26, 0.08, 0.18, 0.42]],
+            "input_shapes": [[1, 5]],
+        }, f, indent=2)
+
+    # Validate
+    onnx_model = onnx.load(model_path)
+    onnx.checker.check_model(onnx_model)
+
+    # Inspect nodes for debugging
+    print("Nodes:")
+    for node in onnx_model.graph.node:
+        print(f"  {node.op_type}: {node.input} -> {node.output}")
+    print(f"  Opset: {onnx_model.opset_import[0].version}")
+    print(f"  Input: {onnx_model.graph.input[0].name} -> {onnx_model.graph.input[0].type.tensor_type.shape}")
+
+    # Test
+    test_input = np.array([[0.25, 0.26, 0.08, 0.18, 0.42]], dtype=np.float32)
+    with torch.no_grad():
+        output = model(torch.from_numpy(test_input)).numpy()
+    print(f"  Test output: {output[0][0]:.4f}")
+    print(f"  Saved: {model_path}")
+
+
+if __name__ == "__main__":
+    main()

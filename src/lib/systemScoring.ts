@@ -290,7 +290,8 @@ export function formatClearanceTime(isoString: string): string {
 
   if (isToday) return `${timeStr} today`;
   if (isTomorrow) return `${timeStr} tomorrow`;
-  return `${timeStr} in ${Math.round(diffHrs / 24)} days`;
+  const days = Math.round(diffHrs / 24);
+  return `${timeStr} in ${days} ${days === 1 ? "day" : "days"}`;
 }
 
 // ─── Circadian alignment ──────────────────────────────────────────────────────

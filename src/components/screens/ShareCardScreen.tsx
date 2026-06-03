@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { share } from "@eazo/sdk";
+import { auth, memory, share } from "@eazo/sdk";
+import { useEazo } from "@eazo/sdk/react";
 
 // ─── Score colour helpers ────────────────────────────────────────────────────
 
@@ -215,7 +216,7 @@ function ShareCardVisual({
           bodydebt.app
         </span>
         <span className="text-[8px] uppercase tracking-[0.2em] font-semibold" style={{ color: "#3a3835" }}>
-          What's yours?
+          What&apos;s yours?
         </span>
       </motion.div>
     </div>
@@ -227,6 +228,8 @@ function ShareCardVisual({
 export function ShareCardScreen() {
   const router = useRouter();
   const { analysis } = useBodyDebtStore();
+  const user = useEazo((s) => s.auth.user);
+  const isGuest = !user && !!analysis;
   const [revealing, setRevealing] = useState(true);
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
@@ -263,7 +266,13 @@ export function ShareCardScreen() {
         targetPath: "/dashboard",
       });
       setShareDone(true);
-    } catch (err) {
+      memory.reportAction({
+        content: `User shared score. Score: ${score}. ${verdict}`,
+        event_type: "share",
+        page: "share-card",
+        metadata: { type: "share_score", debt_score: score },
+      }).catch(() => {});
+    } catch {
       // share.compose() rejects when running outside Eazo Mobile (web fallback)
       // Use Web Share API as secondary fallback
       if (navigator.share) {
@@ -395,6 +404,27 @@ export function ShareCardScreen() {
             </motion.p>
           )}
         </AnimatePresence>
+
+        {/* Auth upgrade */}
+        {isGuest && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.3, duration: 0.4 }}
+            className="rounded-2xl p-4 text-center"
+            style={{ backgroundColor: "#141416", border: "1px solid rgba(234,88,12,0.25)" }}>
+            <p className="text-xs font-semibold mb-1" style={{ color: "#F5F5F4" }}>
+              Your data is saved on this device
+            </p>
+            <p className="text-[10px] mb-3" style={{ color: "#A8A29E" }}>
+              Sign in to keep your history across devices and unlock AI-powered insights.
+            </p>
+            <motion.button whileTap={{ scale: 0.97 }}
+              onClick={() => auth.login().catch(() => undefined)}
+              className="text-xs font-semibold px-5 py-2.5 rounded-xl"
+              style={{ backgroundColor: "#EA580C", color: "#F5F5F4" }}>
+              Sign in to save
+            </motion.button>
+          </motion.div>
+        )}
 
         {/* Back */}
         <button

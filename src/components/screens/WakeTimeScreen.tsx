@@ -1,154 +1,16 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence, useMotionValue, animate, PanInfo } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-
-// ─── Time slots: 4:00 AM – 12:00 PM in 30-min increments ─────────────────────
-function buildTimeSlots(): string[] {
-  const slots: string[] = [];
-  for (let h = 4; h <= 11; h++) {
-    ["00", "30"].forEach((m) => {
-      slots.push(`${h}:${m} ${h < 12 ? "AM" : "PM"}`);
-    });
-  }
-  slots.push("12:00 PM");
-  return slots;
-}
+import { memory } from "@eazo/sdk";
+import { DawnParticle } from "./dawn-particle";
+import { TimeDrum } from "./time-drum";
+import { buildTimeSlots } from "@/lib/time-utils";
 
 const TIME_SLOTS = buildTimeSlots();
 const DEFAULT_IDX = TIME_SLOTS.indexOf("7:30 AM");
-const ITEM_H = 72; // px per slot — generous touch target
-const VISIBLE = 5; // rows shown (2 above + selected + 2 below)
-
-// ─── Floating dawn particle ───────────────────────────────────────────────────
-function DawnParticle({ delay, x, size }: { delay: number; x: string; size: number }) {
-  return (
-    <motion.div
-      className="absolute rounded-full pointer-events-none"
-      style={{
-        width: size, height: size, left: x, bottom: "10%",
-        backgroundColor: "rgba(245,158,11,0.35)", filter: "blur(1px)",
-      }}
-      animate={{ y: [0, -180, -320], opacity: [0, 0.6, 0], scale: [0.6, 1, 0.4], x: [0, 12, -8] }}
-      transition={{ duration: 5 + delay * 0.4, delay, repeat: Infinity, ease: "easeOut" }}
-    />
-  );
-}
-
-// ─── Momentum drum picker ─────────────────────────────────────────────────────
-function TimeDrum({ slots, selectedIdx, onSelect }: {
-  slots: string[];
-  selectedIdx: number;
-  onSelect: (i: number) => void;
-}) {
-  // y offset: 0 = first item centred. Positive y = scroll down (later times)
-  const y = useMotionValue(-selectedIdx * ITEM_H);
-  const isDragging = useRef(false);
-  const animRef = useRef<ReturnType<typeof animate> | null>(null);
-
-  // Clamp index helper
-  const clampIdx = (i: number) => Math.max(0, Math.min(slots.length - 1, i));
-
-  // Snap to a given index with spring
-  const snapTo = useCallback((idx: number, velocity = 0) => {
-    const clamped = clampIdx(idx);
-    animRef.current?.stop();
-    animRef.current = animate(y, -clamped * ITEM_H, {
-      type: "spring",
-      velocity,
-      stiffness: 260,
-      damping: 28,
-      restDelta: 0.5,
-      onComplete: () => onSelect(clamped),
-    });
-    onSelect(clamped);
-  }, [y, slots.length, onSelect]);
-
-  // Keep synced when external selectedIdx changes (e.g. default)
-  useEffect(() => {
-    y.set(-selectedIdx * ITEM_H);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleDragEnd = (_: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
-    isDragging.current = false;
-    const rawIdx    = -y.get() / ITEM_H;
-    const velocity  = -info.velocity.y / ITEM_H;
-    // Apply momentum: project index forward by velocity
-    const projected = rawIdx + velocity * 0.18;
-    snapTo(Math.round(projected), info.velocity.y);
-  };
-
-  const handleTap = (i: number) => {
-    if (!isDragging.current) snapTo(i);
-  };
-
-  return (
-    <div
-      className="relative w-full overflow-hidden select-none"
-      style={{ height: ITEM_H * VISIBLE }}
-    >
-      {/* Selection highlight band */}
-      <div
-        className="absolute left-4 right-4 rounded-2xl pointer-events-none z-10"
-        style={{
-          top: "50%", transform: "translateY(-50%)", height: ITEM_H,
-          background: "linear-gradient(135deg, rgba(234,88,12,0.2) 0%, rgba(245,158,11,0.13) 100%)",
-          border: "1.5px solid rgba(234,88,12,0.4)",
-          boxShadow: "0 0 24px rgba(234,88,12,0.12)",
-        }}
-      />
-      {/* Accent lines */}
-      <div className="absolute left-6 z-20 pointer-events-none" style={{ top: "50%", transform: "translateY(-50%)", height: 1, width: 20, backgroundColor: "rgba(234,88,12,0.6)" }} />
-      <div className="absolute right-6 z-20 pointer-events-none" style={{ top: "50%", transform: "translateY(-50%)", height: 1, width: 20, backgroundColor: "rgba(234,88,12,0.6)" }} />
-
-      {/* Fade masks */}
-      <div className="absolute inset-0 pointer-events-none z-20" style={{
-        background: "linear-gradient(to bottom, #0A0A0B 0%, transparent 28%, transparent 72%, #0A0A0B 100%)",
-      }} />
-
-      {/* Draggable drum */}
-      <motion.div
-        drag="y"
-        dragConstraints={{ top: -(slots.length - 1) * ITEM_H, bottom: 0 }}
-        dragElastic={0.08}
-        style={{ y, paddingTop: ITEM_H * 2, paddingBottom: ITEM_H * 2 }}
-        onDragStart={() => { isDragging.current = true; animRef.current?.stop(); }}
-        onDragEnd={handleDragEnd}
-        className="cursor-grab active:cursor-grabbing"
-      >
-        {slots.map((slot, i) => {
-          const dist = Math.abs(i - selectedIdx);
-          const isSelected = i === selectedIdx;
-          return (
-            <motion.div
-              key={slot}
-              onClick={() => handleTap(i)}
-              animate={{
-                opacity: isSelected ? 1 : dist === 1 ? 0.5 : dist === 2 ? 0.2 : 0.08,
-                scale:   isSelected ? 1 : dist === 1 ? 0.8 : 0.65,
-              }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full flex items-center justify-center font-normal"
-              style={{
-                height: ITEM_H,
-                fontFamily: "var(--font-heading)",
-                fontSize: isSelected ? "3rem" : dist === 1 ? "1.65rem" : "1.1rem",
-                color: isSelected ? "#F5F5F4" : "#A8A29E",
-                letterSpacing: isSelected ? "-0.025em" : "0",
-                WebkitTapHighlightColor: "transparent",
-              }}
-            >
-              {slot}
-            </motion.div>
-          );
-        })}
-      </motion.div>
-    </div>
-  );
-}
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
@@ -159,6 +21,12 @@ export function WakeTimeScreen() {
 
   const handleConfirm = () => {
     setWakeTime(TIME_SLOTS[selectedIdx]);
+    memory.reportAction({
+      content: `User set wake time to ${TIME_SLOTS[selectedIdx]}.`,
+      event_type: "update",
+      page: "wake-time",
+      metadata: { type: "set_wake_time", wake_time: TIME_SLOTS[selectedIdx] },
+    }).catch(() => {});
     router.push("/bed-time");
   };
 

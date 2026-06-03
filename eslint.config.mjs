@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Python virtual env (may contain JS test fixtures from torch)
+    ".venv/**",
   ]),
 ]);
 

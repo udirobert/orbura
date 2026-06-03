@@ -211,6 +211,15 @@ witness.json
 *.bin
 *.weights
 
+# Python virtual environment
+.venv/
+
+# EZKL temporary test directory
+public/ezkl-test/
+
+# EZKL large regeneratable artifacts (proving key, SRS, verification key)
+public/ezkl/*.key
+
 # OS specific
 .DS_Store
 Thumbs.db

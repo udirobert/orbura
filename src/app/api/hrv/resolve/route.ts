@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { HRVData, HRVSource } from "@/lib/types";
+import type { HRVData } from "@/lib/types";
 
 export const maxDuration = 20;
 

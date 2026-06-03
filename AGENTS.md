@@ -28,10 +28,13 @@ This repository is **Body Debt**, a health and recovery tracking application bui
 The base template setup is complete. Focus on these domain-specific areas when adding features:
 - **State** — `src/stores/useBodyDebtStore.ts` (guest-first session management)
 - **Scoring Logic** — `src/lib/systemScoring.ts` (deterministic physiological modifiers)
-- **AI Analysis** — `src/app/api/analyze/route.ts` (streams `DebtAnalysis` object)
-- **Face Scan** — `src/app/api/face-scan/route.ts` (processes canvas image data)
-- **HRV Integration** — `src/app/api/garmin/parse/route.ts` and wearable auth flows
-- **Auth & DB** — `src/app/api/user/profile/route.ts`, `src/lib/db/schema/`, `src/lib/db/queries/`
+- **AI Analysis** — `src/app/api/analyze/stream/route.ts` (3-layer SSE streaming pipeline), `src/app/api/analyze/score/route.ts` (deterministic layer), `src/app/api/analyze/verdict/route.ts`, `src/app/api/analyze/prescription/route.ts`, and non-streaming `src/app/api/analyze/route.ts`
+- **Face Scan** — `src/app/api/face-scan/route.ts` (processes canvas image data via vision AI)
+- **HRV & Wearable Integration** — `src/app/api/terra/*` (Terra OAuth + webhook + data polling), `src/app/api/garmin/parse/route.ts` (CSV upload), `src/app/api/google-fit/*` (Google Fit OAuth + data), `src/app/api/hrv/resolve/route.ts` (unified fallback chain)
+- **QVAC Edge AI** — `src/lib/qvac/index.ts` (local LLM inference) + `src/app/api/qvac/infer/route.ts`
+- **ZK Proof Pipeline** — `src/workers/ezkl-prover.worker.ts` (Web Worker), `src/lib/ai/face-mesh.ts` (feature extraction), `src/lib/blockchain/skale-client.ts` (SKALE integration), `contracts/HealthCredentialVerifier.sol`
+- **Orb Personality** — `src/lib/orbPersonality.ts` (4 voice modes: honest, gentle, scientific, sarcastic)
+- **Auth & DB** — `src/app/api/user/profile/route.ts`, `src/lib/db/schema/` (users, debt-sessions, terra-connections), `src/lib/db/queries/`
 
 ## 3. Hackathon Architecture: Edge AI + Programmable Privacy
 
@@ -41,10 +44,34 @@ For QVAC Edge AI and SKALE Programmable Privacy hackathon submissions, the app i
 2. **ZK Proof Generation**: Uses `ezkl-js` (running in a dedicated Web Worker to avoid main-thread blocking) to generate a cryptographic proof that a specific, audited ONNX model was executed on the private feature vector to produce a public "Stress Score" or boolean health status. *Raw biometric data never leaves the device.*
 3. **SKALE Verification**: The generated proof and public inputs are submitted to a minimal Solidity verifier contract on the SKALE Europa Testnet. Upon successful cryptographic verification, the contract emits a `HealthCredentialVerified` event or mints a Soulbound Token (SBT), creating a trustless, privacy-preserving health ledger.
 
+### Pipeline Status — Fully Compiled ✅
+
+The EZKL circuit compilation now succeeds end-to-end via the CLI binary (v23.0.3).
+
+**What works:**
+- ONNX model generation: `scripts/generate-stress-model.py` (PyTorch → opset 10, Gemm+Sigmoid)
+- Circuit compilation: `scripts/compile-circuit.py` (uses `ezkl` CLI, 6 steps)
+- Prover worker: fetches real artifacts from `/ezkl/`, generates cryptographic proofs in-browser
+- Face scan pipeline: handles both real and mock proof paths
+
+**Key files:**
+- `scripts/generate-stress-model.py` — PyTorch model → ONNX export
+- `scripts/compile-circuit.py` — EZKL CLI wrapper (gen-settings → calibrate-settings → compile-circuit → gen-witness → gen-srs → setup)
+- `src/workers/ezkl-prover.worker.ts` — Web Worker for in-browser proof generation
+- `src/lib/ai/face-mesh.ts` — MediaPipe feature extraction (5 floats)
+
+**Installation note:** The EZKL CLI binary (v23.0.3) must be installed separately — it is not available on crates.io and v23.0.5+ dropped macOS support. Install from GitHub releases:
+```bash
+curl -sL https://github.com/zkonduit/ezkl/releases/download/v23.0.3/\
+  build-artifacts.ezkl-macos-aarch64.tar.gz | tar xz
+cp ezkl ~/.local/bin/
+```
+
 **Critical Implementation Rules for this Feature:**
 - **NEVER** run the EZKL prover on the main React thread. Always use `src/workers/ezkl-prover.worker.ts`.
 - **NEVER** send raw pixels or the full 468-point MediaPipe landmark array to the ZK circuit. Always pre-process to a reduced feature vector (<20 floats) to prevent browser WASM Out-Of-Memory crashes.
 - **ALWAYS** use quantized (8-bit or 4-bit) ONNX models for ZKML to ensure proof generation completes in seconds, not minutes.
+- Large ZK artifacts (`.key` files) are gitignored and must be regenerated via `python scripts/compile-circuit.py`.
 
 ## 3. Commands
 
@@ -78,34 +105,71 @@ bun run db:studio
 ```
 src/
   app/
+    wake-time/page.tsx          — Step 1: wake time drum picker
+    bed-time/page.tsx           — Step 2: bed time drum picker
+    intake/page.tsx             — Step 3: stressor selection
+    context-deepener/page.tsx   — Step 3b: stressor detail context
+    face-scan/page.tsx          — Step 4: face scan (optional, with ZK proof)
+    hrv-pull/page.tsx           — Step 5: HRV / wearable connect
+    dashboard/page.tsx          — Main score dashboard
+    prescription/page.tsx       — Prescription display
+    share-card/page.tsx         — Shareable score card
+    layout.tsx                  — Root layout; mounts <EazoProvider> + <WagmiProviderWrapper>
+    page.tsx                    — Entry point → OpeningScreen
     api/
-      user/profile/route.ts   — GET: returns the authenticated user; upserts user to DB (both Web and Mobile paths)
-      todos/route.ts          — GET (list) + POST (create)
-      todos/[id]/route.ts     — GET / PATCH / DELETE
-      todos/analyze/route.ts  — POST: streams AI analysis of the user's todo list (SSE)
-      mcp/route.ts            — GET / POST / DELETE: MCP Streamable HTTP server (exposes todo CRUD as MCP tools)
-    layout.tsx                — root layout; mounts <EazoProvider> (SDK auto-renders login UI inside)
-    page.tsx                  — demo page
+      analyze/                  — AI analysis (stream, score, verdict, prescription)
+      face-scan/route.ts        — Vision AI face biomarker analysis
+      terra/                    — Terra OAuth widget, callback, data, webhook
+      google-fit/               — Google Fit OAuth + data pull
+      garmin/parse/route.ts     — Garmin HRV CSV parser
+      hrv/resolve/route.ts      — Unified HRV fallback chain
+      qvac/infer/route.ts       — QVAC Edge AI local inference
+      user/profile/route.ts     — Auth-guarded user profile + DB upsert
+      mcp/route.ts              — MCP Streamable HTTP server
+      notifications/            — Test + cron daily-digest push
   components/
-    user-profile/
-      user-badge.tsx          — reads user via useEazo(s => s.auth.user); Sign-in button calls auth.login()
-      user-sync-effect.tsx    — fires GET /api/user/profile after Mobile bridge login to upsert the user to DB
-    todo-list/                — Todo List demo
-      ai-analysis-panel.tsx   — streams and renders the AI analysis response
-    ui/                       — shadcn/ui primitives
-  lib/
-    api/
-      request.ts              — fetch wrapper; injects x-eazo-session via auth.getSessionHeader()
-      user-profile.ts         — fetchUserProfile() → GET /api/user/profile
-      todos.ts                — getTodos / createTodo / updateTodo / deleteTodo
-    auth/
-      index.ts                — re-exports requireAuth from @eazo/sdk/server
-    db/
-      schema/                 — Drizzle table definitions (todos, users)
-      queries/                — db client + CRUD helpers (todos, users)
-      migrations/             — auto-generated SQL files (commit to git)
-  utils/
-    utils.ts                  — cn() Tailwind class helper
+    screens/                    — Full-page screen components (OpeningScreen, DebtIntakeScreen, etc.)
+    face-scan/                  — PrivacyNotice, useFaceScanPipeline, ScanResult
+    hrv/                        — ManualProxy, useTerraConnect
+    user-profile/               — UserBadge, UserSyncEffect
+    notifications/              — NotificationsToggle
+    ui/                         — shadcn/ui primitives
+    SystemPanels.tsx            — 5-system recovery collapsible panels
+    SystemClearanceNotifier.tsx — Browser notification scheduler for system clearance
+    SystemOrb.tsx               — SVG morphing system orb (heart, brain, liver, muscle, gut)
+    DebtOrb.tsx                 — Main animated score orb
+    MiniOrb.tsx                 — Compact orb for nav headers
+    AnalysisLoader.tsx          — Loading screen with science facts + progress
+    PageTransition.tsx          — Framer Motion page transitions
+    ProgressBar.tsx             — Multi-step progress indicator
+    stores/
+      useBodyDebtStore.ts       — Zustand store with localStorage persistence
+    hooks/
+      useStreamingAnalysis.ts   — SSE consumer for /api/analyze/stream
+    lib/
+      systemScoring.ts          — Deterministic 5-system scoring with circadian penalties
+      orbPersonality.ts         — 4 voice modes
+      types.ts                  — Shared TypeScript types
+      ai/
+        face-mesh.ts            — MediaPipe face landmark feature extraction
+      blockchain/
+        skale-client.ts         — SKALE verifier client (viem)
+      qvac/index.ts             — QVAC Edge AI local LLM wrapper
+      db/
+        schema/                 — Drizzle: users, debt_sessions, terra_connections
+        queries/                — CRUD helpers (users, debt-sessions)
+      mcp/
+        server.ts               — MCP server assembly
+        tools/                  — get-latest-debt, get-debt-history, get-prescription, log-stressors, get-recovery-status
+      api/
+        request.ts              — fetch wrapper; injects x-eazo-session
+        user-profile.ts         — fetchUserProfile
+  contracts/
+    HealthCredentialVerifier.sol — SKALE verifier contract
+  scripts/
+    generate-stress-model.py     — ONNX stress classifier model generator
+    compile-ezkl-circuit.sh      — EZKL circuit compilation pipeline
+    deploy-contract.ts           — Hardhat deploy to SKALE Europa testnet
 ```
 
 ## 5. Capabilities
@@ -115,28 +179,36 @@ The platform exposes capabilities through `@eazo/sdk`. Most capabilities (`auth`
 
 ### 5.1 React Provider
 
-Mount `EazoProvider` once at the root layout. Also mount `UserSyncEffect` inside the provider — it upserts the authenticated user to the local DB after every login (Web and Mobile both converge through `GET /api/user/profile`):
+Mount `EazoProvider` once at the root layout. Also mount `WagmiProviderWrapper` (for SKALE blockchain interactions) and `UserSyncEffect` inside the provider — it upserts the authenticated user to the local DB after every login (Web and Mobile both converge through `GET /api/user/profile`):
 
 ```tsx
 // src/app/layout.tsx
 import { EazoProvider } from "@eazo/sdk/react";
 import { Toaster } from "@/components/ui/sonner";
 import { UserSyncEffect } from "@/components/user-profile/user-sync-effect";
+import { PageTransition } from "@/components/PageTransition";
+import { WagmiProviderWrapper } from "@/components/providers/WagmiProviderWrapper";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
         <EazoProvider>
-          <UserSyncEffect />
-          {children}
-          <Toaster />
+          <WagmiProviderWrapper>
+            <UserSyncEffect />
+            <PageTransition>
+              {children}
+            </PageTransition>
+            <Toaster />
+          </WagmiProviderWrapper>
         </EazoProvider>
       </body>
     </html>
   );
 }
 ```
+
+**Note**: `WagmiProviderWrapper` wraps wagmi + `@tanstack/react-query` for the SKALE blockchain write operations (ZK proof verification transactions). It is optional and only needed if the face-scan → ZK proof → SKALE verification pipeline is used.
 
 Read reactive state with `useEazo(selector)` inside components. Call singletons directly outside render:
 
@@ -467,16 +539,17 @@ Client component  →  fetch("/api/my-feature/...")  →  API route handler  →
 
 ```ts
 import { memory } from "@eazo/sdk";
-import type { MemoryActionParams } from "@eazo/sdk";
 
 // Fire-and-forget — always catch so Gum failures never block the user
 memory.reportAction({
-  content: 'User created todo: "Buy groceries"',   // required — readable description
-  event_type: "create",                             // action category
-  page: "todo_list",                               // page identifier
+  content: 'User completed debt assessment. Score: 62. Verdict: "Significant debt."',
+  event_type: "create",
+  page: "hrv-pull",
   metadata: {
-    type: "create_todo",
-    todo: { id: "123", title: "Buy groceries" },
+    type: "complete_debt_assessment",
+    debt_score: 62,
+    has_hrv: true,
+    provider: "terra",
   },
 }).catch(() => {});
 ```
@@ -485,9 +558,9 @@ memory.reportAction({
 
 | Field | Type | Description |
 |---|---|---|
-| `content` | `string` (required) | Readable, full-sentence description of the event. Good: `"User clicked the publish button on the editor page"`. Bad: `"click"`. |
-| `event_type` | `string` | Action category, e.g. `"create"`, `"update"`, `"delete"`, `"click"`, `"search"`. |
-| `page` | `string` | Page or screen identifier, e.g. `"todo_list"`, `"editor"`, `"settings"`. |
+| `content` | `string` (required) | Readable, full-sentence description of the event. Good: `"User completed debt assessment. Score: 62."`. Bad: `"completed"`. |
+| `event_type` | `string` | Action category, e.g. `"create"`, `"update"`, `"delete"`, `"click"`, `"search"`, `"page_view"`. |
+| `page` | `string` | Page or screen identifier, e.g. `"hrv-pull"`, `"dashboard"`, `"face-scan"`, `"intake"`. |
 | `metadata` | `Record<string, unknown>` | Structured event data. `appid` is auto-injected by the SDK. Include a `type` field matching `event_type` and the relevant business objects. |
 | `session_id` | `string` | Associate the event with a Gum session for conversational memory. |
 | `device_id` | `string` | Device identifier. |
@@ -500,22 +573,27 @@ memory.reportAction({
 Model `metadata` after the event type so Gum can understand what happened:
 
 ```ts
-// create / update / delete a record
+// debt assessment complete
 metadata: {
-  type: "create_todo",
-  todo: { id: 123, title: "Buy groceries", done: false },
+  type: "complete_debt_assessment",
+  debt_score: 62,
+  has_face_scan: true,
+  has_hrv: true,
+  confidence_tier: "precise",
 }
 
-// toggle / status change
+// stressor toggle
 metadata: {
-  type: "complete_todo",
-  todo_id: 123,
+  type: "toggle_stressor",
+  stressor_type: "alcohol",
+  enabled: true,
 }
 
-// search
+// navigation
 metadata: {
-  type: "search_app",
-  search_query: "recipe app",
+  type: "page_view",
+  page: "dashboard",
+  previous_page: "hrv-pull",
 }
 ```
 
@@ -526,35 +604,43 @@ metadata: {
 Always chain `.catch(() => {})`. Gum is auxiliary — its failure must never break core user flows:
 
 ```ts
-async function handleDelete(id: number) {
+async function handleRunAnalysis() {
   try {
-    await deleteTodo(id);                   // primary operation
-    memory.reportAction({                   // fire-and-forget
-      content: "User deleted a todo",
-      event_type: "delete",
-      page: "todo_list",
-      metadata: { type: "delete_todo", todo_id: id },
+    // primary operation
+    await runAnalysis(hrvData, false);
+
+    // fire-and-forget memory
+    memory.reportAction({
+      content: `Debt assessment started. Stressors: ${count} items.`,
+      event_type: "create",
+      page: "hrv-pull",
+      metadata: {
+        type: "start_debt_assessment",
+        stressor_count: count,
+        has_face_scan: !!faceAnalysis,
+        has_hrv: !!hrvData,
+      },
     }).catch(() => {});
-    setTodos((prev) => prev.filter((t) => t.id !== id));
-  } catch {
-    toast.error("Failed to delete todo");
+  } catch (err) {
+    console.error("Analysis failed", err);
   }
 }
 ```
 
 **When to call it:**
 
-- After every meaningful mutation (create, update, delete, upload, attach)
-- After user navigation to an important screen
-- After completing a significant workflow step
+- After completing a debt assessment
+- After logging stressors
+- After face scan (accept or skip)
+- After connecting a wearable (Terra, Google Fit, or Garmin)
+- After navigating to dashboard or prescription views
+- After taking a significant action (set reminders, share score)
 
 **When NOT to call it:**
 
 - On every keystroke or scroll event
 - For read-only operations like list fetches (low-signal noise)
 - Inside server-side route handlers (`src/app/api/`) — it is a browser-only API
-
-See `src/components/todo-list/index.tsx` for a complete example of six todo mutations each reporting to Gum.
 
 ## 7. Notifications — System Push
 
@@ -573,7 +659,7 @@ await notifications.unsubscribe();
 
 In a plain browser the methods resolve `{ subscribed: false }` and don't throw — apps render the right UI without special-casing. Inside Eazo Mobile the host writes the bit and the result reflects the new state.
 
-The template wires this via `src/components/notifications/notifications-toggle.tsx`, mounted on the todo list page.
+The template wires this via `src/components/notifications/notifications-toggle.tsx`. Mount it wherever you want users to manage subscriptions (e.g., the dashboard, prescription page, or settings panel).
 
 **Server (`@eazo/sdk/server`)** — fan out a notification to every subscriber:
 
@@ -600,7 +686,7 @@ The helper signs an ES256K JWT with `EAZO_PRIVATE_KEY` and POSTs to `/api/open/n
 
 ## 8. MCP Server
 
-The template ships a built-in **MCP (Model Context Protocol) server** at `/api/mcp`. After running `bun run cleanup:demo`, all demo tools are removed and `src/lib/mcp/server.ts` is kept as a clean entry point ready for your own tools.
+Body Debt ships a built-in **MCP (Model Context Protocol) server** at `/api/mcp` with 5 Body Debt tools registered.
 
 ### Transport
 
@@ -635,33 +721,33 @@ For local development replace the URL with `http://localhost:3000/api/mcp`.
 
 **Step 1 — Create `src/lib/mcp/tools/<tool-name>.ts`**
 
-Each tool lives in its own file and exports one `register*` function that receives the `McpServer` instance and the authenticated `userId`:
+Each tool lives in its own file and exports one `register*` function that receives the `McpServer` instance and the authenticated `userId`. Example from the existing codebase — `get-latest-debt`:
 
 ```ts
-// src/lib/mcp/tools/get-project.ts
+// src/lib/mcp/tools/get-latest-debt.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { getProjectById } from "@/lib/db/queries";
+import { getLatestDebtSession } from "@/lib/db/queries";
 
-export function registerGetProject(server: McpServer, userId: string) {
-  server.registerTool(
-    "get_project",
-    {
-      description: "Get a project by ID.",
-      inputSchema: {
-        id: z.number().int().positive().describe("The project ID"),
-      },
-    },
-    async ({ id }) => {
-      const project = await getProjectById(id, userId);
-      if (!project) {
+export function registerGetLatestDebtTool(server: McpServer, userId: string) {
+  server.tool(
+    "get_latest_debt",
+    "Get the user's most recent body debt score and recovery prescription.",
+    {},
+    async () => {
+      const session = await getLatestDebtSession(userId);
+      if (!session) {
         return {
-          isError: true,
-          content: [{ type: "text", text: `Project ${id} not found.` }],
+          content: [{ type: "text", text: "No debt sessions found for this user." }],
         };
       }
       return {
-        content: [{ type: "text", text: JSON.stringify(project, null, 2) }],
+        content: [{ type: "text", text: JSON.stringify({
+          debtScore: session.debtScore,
+          verdict: session.verdict,
+          recoveryTime: session.recoveryTime,
+          prescription: session.prescription,
+          createdAt: session.createdAt,
+        }, null, 2) }],
       };
     }
   );
@@ -680,13 +766,20 @@ Rules for tool files:
 ```ts
 // src/lib/mcp/server.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerGetProject } from "./tools/get-project";
+import { registerGetLatestDebtTool } from "./tools/get-latest-debt";
+import { registerGetDebtHistoryTool } from "./tools/get-debt-history";
+import { registerLogStressorsTool } from "./tools/log-stressors";
+import { registerGetPrescriptionTool } from "./tools/get-prescription";
+import { registerGetRecoveryStatusTool } from "./tools/get-recovery-status";
 
 export function buildMcpServer(userId: string): McpServer {
-  const server = new McpServer({ name: "eazo-mcp", version: "1.0.0" });
+  const server = new McpServer({ name: "body-debt-mcp", version: "1.0.0" });
 
-  registerGetProject(server, userId);
-  // add more tools here...
+  registerGetLatestDebtTool(server, userId);
+  registerGetDebtHistoryTool(server, userId);
+  registerLogStressorsTool(server, userId);
+  registerGetPrescriptionTool(server, userId);
+  registerGetRecoveryStatusTool(server, userId);
 
   return server;
 }
@@ -727,15 +820,19 @@ export async function DELETE(request: NextRequest) {
 }
 ```
 
-### File Layout
+### File Layout (current)
 
 ```
 src/lib/mcp/
-  server.ts              — assembles McpServer and registers all tools
+  server.ts                    — assembles McpServer and registers all tools
   tools/
-    <tool-name>.ts       — one register* function per file
+    get-latest-debt.ts          — `get_latest_debt` tool
+    get-debt-history.ts         — `get_debt_history` tool
+    get-prescription.ts         — `get_prescription` tool
+    log-stressors.ts            — `log_stressors` tool
+    get-recovery-status.ts      — `get_recovery_status` tool
 src/app/api/mcp/
-  route.ts               — HTTP glue only (auth + transport + handler)
+  route.ts                     — HTTP glue only (auth + transport + handler)
 ```
 
 ## 9. Environment Variables
@@ -743,9 +840,17 @@ src/app/api/mcp/
 | Variable | Required | Description |
 |---|---|---|
 | `EAZO_APP_ID` | Yes | Eazo app ID. Also passed as the `appId` arg to `notifications.publish` server-side. |
+| `NEXT_PUBLIC_EAZO_APP_ID` | If sharing | Eazo app ID exposed to the client (used in share card). Same value as `EAZO_APP_ID`. |
 | `EAZO_PRIVATE_KEY` | Yes | Hex-encoded 64-char private key; used by `requireAuth` to decrypt sessions and by `notifications.publish` to sign JWTs. |
 | `DATABASE_URL` | If using DB | `postgresql://USER:PASS@HOST:PORT/DATABASE` |
 | `CRON_SECRET` | If you ship the daily-digest cron | Shared secret Vercel Cron sends as `Authorization: Bearer …` when firing scheduled invocations. |
+| `TERRA_DEV_ID` | If using Terra | Terra API developer ID for wearable integration. |
+| `TERRA_API_KEY` | If using Terra | Terra API key. |
+| `TERRA_SIGNING_SECRET` | If using Terra | Terra webhook HMAC signing secret for payload verification. |
+| `GOOGLE_FIT_CLIENT_ID` | If using Google Fit | Google OAuth client ID for Google Fit REST API. |
+| `GOOGLE_FIT_CLIENT_SECRET` | If using Google Fit | Google OAuth client secret. |
+| `NEXT_PUBLIC_VERIFIER_ADDRESS` | If using SKALE | `HealthCredentialVerifier` contract address on SKALE Europa testnet. |
+| `DEPLOYER_PRIVATE_KEY` | If deploying contracts | Private key for deploying contracts to SKALE testnet (no 0x prefix). |
 | `EAZO_PLATFORM_API_BASE` | Optional | Override the Eazo platform base URL (defaults to `https://eazo.ai`). |
 | `NEXT_PUBLIC_GENAUTH_APP_ID` | Optional | Override GenAuth App ID default. |
 | `NEXT_PUBLIC_GENAUTH_APP_DOMAIN` | Optional | Override GenAuth tenant domain default. |
@@ -874,21 +979,22 @@ When a file approaches its hard limit, split it before continuing.
 ### 12.4 State and Data
 
 - Do not fetch data directly inside a `page.tsx`. Delegate to a client component or a server component that lives in `src/components/`.
-- Read auth state with `useAuthStore((s) => s.user)` — do not re-fetch profile inside individual components.
+- Read auth state with `useEazo((s) => s.auth.user)` from `@eazo/sdk/react` — do not re-fetch profile inside individual components.
 - Keep Zustand stores in `src/stores/`. Do not create ad-hoc `useState` sprawl across multiple files for shared state.
 
 ### 12.5 API Requests (mandatory)
 
 - **All API call logic must live in `src/lib/api/`.** Never call `fetch` or `request()` directly inside a page or component file.
-- Group by resource: `src/lib/api/todos.ts`, `src/lib/api/projects.ts`, etc. Each file exports typed async functions for that resource's CRUD operations.
+- Group by resource: `src/lib/api/features.ts`, `src/lib/api/analysis.ts`, etc. Each file exports typed async functions for that resource's operations.
 - Re-export everything through `src/lib/api/index.ts` so consumers import from one place:
 
 ```ts
 // correct
-import { getTodos, createTodo } from "@/lib/api";
+import { fetchUserProfile } from "@/lib/api";
+const user = await fetchUserProfile();
 
 // wrong — fetch inside a component
-const res = await request("/api/todos");
+const res = await request("/api/user/profile");
 ```
 
 - API functions must be fully typed: explicit parameter types and return types (no implicit `any`).

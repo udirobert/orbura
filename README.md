@@ -76,24 +76,57 @@ MediaPipe FaceMesh → extractStressFeatures (5 floats)
       → QVAC local AI health coach (/api/qvac/infer)
 ```
 
+The pipeline is fully compiled and operational. Real ZK proof artifacts are served from `/ezkl/` and the prover worker generates cryptographic proofs in-browser.
+
 ### Setup
 
-1. **Generate the ONNX model** (requires Python + onnx):
+1. **Generate the ONNX model** (requires Python + PyTorch + onnx):
    ```bash
+   source .venv/bin/activate   # or set up a venv first: python3 -m venv .venv && pip install torch onnx numpy
    python scripts/generate-stress-model.py
    ```
+   Produces `public/ezkl/model.onnx` — a 5→1 Gemm+Sigmoid stress classifier at opset 10.
 
-2. **Compile the EZKL circuit** (requires [EZKL CLI](https://docs.ezkl.xyz/)):
+2. **Install the EZKL CLI** (macOS ARM64, v23.0.3):
    ```bash
-   bash scripts/compile-ezkl-circuit.sh
+   curl -sL https://github.com/zkonduit/ezkl/releases/download/v23.0.3/\
+     build-artifacts.ezkl-macos-aarch64.tar.gz | tar xz
+   cp ezkl ~/.local/bin/
+   export PATH="$HOME/.local/bin:$PATH"
    ```
-   This produces `public/ezkl/{compiled.ezkl,pk.key,srs.key}`. If these files are missing at runtime, the worker falls back to a realistic mock proof automatically.
+   > **Note**: v23.0.5 dropped macOS binary support. v23.0.3 is the latest macOS-compatible release.
 
-3. **Deploy the verifier contract** (requires sFUEL from the [SKALE faucet](https://docs.skale.network/develop/faucet)):
+3. **Compile the EZKL circuit**:
+   ```bash
+   python scripts/compile-circuit.py
+   ```
+   Runs 6 steps: `gen-settings` → `calibrate-settings` → `compile-circuit` → `gen-witness` → `gen-srs` → `setup`.
+   Produces `public/ezkl/{compiled.ezkl,settings.json,witness.json,pk.key,srs.key,vk.key}`.
+   Large `.key` artifacts (`pk.key` ~164MB, `srs.key` ~16MB, `vk.key` ~75KB) are gitignored and regeneratable.
+
+4. **Deploy the verifier contract** (requires sFUEL from the [SKALE faucet](https://docs.skale.network/develop/faucet)):
    ```bash
    bunx hardhat run scripts/deploy-contract.ts --network skaleEuropaTestnet
    ```
    Then set `NEXT_PUBLIC_VERIFIER_ADDRESS` to the deployed address.
+
+### Artifact Summary
+
+| File | Size | Committed? | Regeneratable? |
+|---|---|---|---|
+| `model.onnx` | 318 B | ✅ | `python scripts/generate-stress-model.py` |
+| `compiled.ezkl` | 2 KB | ✅ | `python scripts/compile-circuit.py` |
+| `settings.json` | 1.3 KB | ✅ | `python scripts/compile-circuit.py` |
+| `witness.json` | 1.2 KB | ✅ | `python scripts/compile-circuit.py` |
+| `pk.key` | 164 MB | ❌ gitignored | `python scripts/compile-circuit.py` |
+| `srs.key` | 16 MB | ❌ gitignored | `python scripts/compile-circuit.py` |
+| `vk.key` | 75 KB | ❌ gitignored | `python scripts/compile-circuit.py` |
+
+### Architecture notes
+
+- The **prover worker** (`src/workers/ezkl-prover.worker.ts`) fetches `compiled.ezkl`, `pk.key`, and `srs.key` from the server on init. If any artifact is missing, it falls back to a mock proof with a clear label.
+- The **face scan pipeline** (`src/components/face-scan/use-face-scan-pipeline.ts`) sends a `ProofRequest` to the worker and handles both real and mock proof paths.
+- WASM and COOP/COEP headers are already configured in `next.config.ts`.
 
 ## Privacy & Data
 

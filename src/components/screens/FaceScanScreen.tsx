@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Camera, AlertTriangle, ShieldCheck, Loader2 } from "lucide-react";
 import { MiniOrb } from "@/components/MiniOrb";
+import { memory } from "@eazo/sdk";
 import { ProgressBar } from "@/components/ProgressBar";
 import { PrivacyNotice } from "@/components/face-scan/PrivacyNotice";
 import {
@@ -12,6 +14,8 @@ import {
   SCAN_MESSAGES,
 } from "@/components/face-scan/use-face-scan-pipeline";
 import { ScanResult } from "@/components/face-scan/scan-result";
+import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
+import { getOrbCopy } from "@/lib/orbPersonality";
 
 export function FaceScanScreen() {
   const router = useRouter();
@@ -21,10 +25,26 @@ export function FaceScanScreen() {
     canvasRef, streamRef,
     startCamera, captureAndProve, handleSkip, retry,
   } = useFaceScanPipeline();
+  const { orbPersonality } = useBodyDebtStore();
+  const personalityCopy = getOrbCopy(orbPersonality);
 
   const errorCopy = cameraError ? cameraErrorCopy(cameraError) : null;
   const isFinalError = phase === "error" && cameraError === "unavailable";
   const isProcessing = phase === "extracting" || phase === "proving" || phase === "verifying";
+
+  // Report face scan completion once
+  const reportedScan = useRef(false);
+  useEffect(() => {
+    if ((phase === "result" || isConfirmed) && !reportedScan.current) {
+      reportedScan.current = true;
+      memory.reportAction({
+        content: "Face scan completed successfully with zero-knowledge proof.",
+        event_type: "create",
+        page: "face-scan",
+        metadata: { type: "face_scan_complete", tx_hash: txHash },
+      }).catch(() => {});
+    }
+  }, [phase, isConfirmed, txHash]);
 
   return (
     <div className="relative min-h-svh flex flex-col px-5 overflow-hidden" style={{ backgroundColor: "#0A0A0B" }}>
@@ -41,7 +61,15 @@ export function FaceScanScreen() {
         {phase === "privacy" && (
           <motion.div key="privacy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="relative z-10 flex-1 flex flex-col justify-between pb-10">
-            <PrivacyNotice onAccept={() => setPhase("prompt")} onDecline={handleSkip} />
+            <PrivacyNotice onAccept={() => {
+              memory.reportAction({
+                content: "User accepted face scan privacy notice.",
+                event_type: "start",
+                page: "face-scan",
+                metadata: { type: "accept_privacy" },
+              }).catch(() => {});
+              setPhase("prompt");
+            }} onDecline={handleSkip} />
           </motion.div>
         )}
 
@@ -50,7 +78,7 @@ export function FaceScanScreen() {
             className="relative z-10 flex-1 flex flex-col">
             <div className="text-center px-4 mb-6">
               <h2 className="font-normal leading-snug" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.4rem, 5.5vw, 1.75rem)", color: "#F5F5F4" }}>
-                Can I see your face for 30 seconds?
+                {personalityCopy.scanPrompt}
               </h2>
               <p className="text-xs mt-1.5 flex items-center justify-center gap-1.5" style={{ color: "#524F4C" }}>
                 <ShieldCheck className="w-3 h-3 text-emerald-500" /> Processed entirely on your device

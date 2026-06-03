@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { ShieldCheck } from "lucide-react";
+import { getQvacAdvice } from "@/lib/api";
 
 export function ScanResult({ txHash }: { txHash?: string }) {
   const router = useRouter();
@@ -18,29 +19,22 @@ export function ScanResult({ txHash }: { txHash?: string }) {
       ? Math.round(zkProof.stressScore * 100)
       : 50;
 
-    fetch("/api/qvac/infer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        stressScore,
-        isHealthy: zkProof?.isHealthy ?? true,
-        features: {
-          eyeFatigue: (zkProof?.stressScore ?? 0.5) > 0.4,
-          browTension: (zkProof?.stressScore ?? 0.5) > 0.3,
-          mouthTension: false,
-        },
-        stressors: selectedStressors.map((s) => s.type),
-      }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        setAdvice(data.advice ?? "Focus on rest and hydration.");
-        setAdviceSource(data.source ?? "fallback");
-      })
-      .catch(() => {
-        setAdvice("Focus on hydration and rest. Your body needs recovery time.");
-        setAdviceSource("fallback");
-      });
+    getQvacAdvice({
+      stressScore,
+      isHealthy: zkProof?.isHealthy ?? true,
+      features: {
+        eyeFatigue: (zkProof?.stressScore ?? 0.5) > 0.4,
+        browTension: (zkProof?.stressScore ?? 0.5) > 0.3,
+        mouthTension: false,
+      },
+      stressors: selectedStressors.map((s) => s.type),
+    }).then((result) => {
+      setAdvice(result.advice);
+      setAdviceSource(result.source);
+    }).catch(() => {
+      setAdvice("Focus on hydration and rest. Your body needs recovery time.");
+      setAdviceSource("fallback");
+    });
   }, [zkProof, selectedStressors, advice]);
 
   return (
