@@ -15,36 +15,44 @@ export interface ProofResponse {
 }
 
 let ezklInitialized = false;
+let initPromise: Promise<boolean> | null = null;
 let compiledCircuit: Uint8Array | null = null;
 let provingKey: Uint8Array | null = null;
 let srsKey: Uint8Array | null = null;
 
 async function initEzkl(): Promise<boolean> {
   if (ezklInitialized) return true;
-  try {
-    const initModule = await import("@ezkljs/engine/web/ezkl.js");
-    const init = initModule.default;
-    await init(
-      undefined,
-      new WebAssembly.Memory({ initial: 20, maximum: 4096, shared: true })
-    );
+  if (initPromise) return initPromise;
 
-    const [circuitRes, pkRes, srsRes] = await Promise.all([
-      fetch("/ezkl/compiled.ezkl"),
-      fetch("/ezkl/pk.key"),
-      fetch("/ezkl/srs.key"),
-    ]);
+  initPromise = (async () => {
+    try {
+      const initModule = await import("@ezkljs/engine/web/ezkl.js");
+      const init = initModule.default;
+      await init(
+        undefined,
+        new WebAssembly.Memory({ initial: 20, maximum: 4096, shared: true })
+      );
 
-    if (!circuitRes.ok || !pkRes.ok || !srsRes.ok) return false;
+      const [circuitRes, pkRes, srsRes] = await Promise.all([
+        fetch("/ezkl/compiled.ezkl"),
+        fetch("/ezkl/pk.key"),
+        fetch("/ezkl/srs.key"),
+      ]);
 
-    compiledCircuit = new Uint8Array(await circuitRes.arrayBuffer());
-    provingKey = new Uint8Array(await pkRes.arrayBuffer());
-    srsKey = new Uint8Array(await srsRes.arrayBuffer());
-    ezklInitialized = true;
-    return true;
-  } catch {
-    return false;
-  }
+      if (!circuitRes.ok || !pkRes.ok || !srsRes.ok) return false;
+
+      compiledCircuit = new Uint8Array(await circuitRes.arrayBuffer());
+      provingKey = new Uint8Array(await pkRes.arrayBuffer());
+      srsKey = new Uint8Array(await srsRes.arrayBuffer());
+      ezklInitialized = true;
+      return true;
+    } catch {
+      initPromise = null;  // allow retry on real proof request
+      return false;
+    }
+  })();
+
+  return initPromise;
 }
 
 async function proveWithEzkl(
@@ -70,6 +78,8 @@ async function proveWithEzkl(
       features.rightEyeAspect,
       features.browTension,
       features.mouthTension,
+      features.eyeSymmetry,
+      features.mouthOpening,
       timeNorm,
     ]],
   };
@@ -112,10 +122,22 @@ function generateMockProof(
   modelId: string,
   startTime: number
 ): ProofResponse {
+  // Simple MLP approximation matching the 7→16→8→1 model
   const avgEye = (features.leftEyeAspect + features.rightEyeAspect) / 2;
+  const eyeFatigue = Math.max(0, 1 - avgEye * 2);
+  const asymmetry = features.eyeSymmetry;
+  const browStress = features.browTension;
+  const mouthStress = features.mouthTension;
+  const jawClench = Math.max(0, 0.15 - features.mouthOpening) * 3;
   const stressScore = Math.max(
     0,
-    Math.min(1, (1 - avgEye) * 0.4 + features.browTension * 2 + 0.1)
+    Math.min(1,
+      eyeFatigue * 0.35 +
+      asymmetry * 0.15 +
+      browStress * 0.25 +
+      mouthStress * 0.10 +
+      jawClench * 0.15
+    )
   );
   const isHealthy = stressScore < threshold;
 
@@ -143,8 +165,20 @@ function generateMockProof(
   };
 }
 
-self.onmessage = async (event: MessageEvent<ProofRequest>) => {
-  const { features, threshold, modelId } = event.data;
+self.onmessage = async (event: MessageEvent) => {
+  const msg = event.data;
+
+  // Prefetch: start loading WASM + ZK artifacts in the background
+  // so they're cached by the time the user triggers a real proof.
+  if (msg && msg.type === "prefetch") {
+    initEzkl().then((ok) => {
+      self.postMessage({ type: "prefetch-result", success: ok });
+    });
+    return;
+  }
+
+  // Real proof request
+  const { features, threshold, modelId } = msg as ProofRequest;
   const startTime = performance.now();
 
   try {

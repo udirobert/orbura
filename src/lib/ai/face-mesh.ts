@@ -25,6 +25,8 @@ export interface StressFeatures {
   rightEyeAspect: number;
   browTension: number;
   mouthTension: number;
+  eyeSymmetry: number;       // relative asymmetry between left/right eyes
+  mouthOpening: number;      // mouth height/width ratio (jaw tension)
   timestamp: number;
 }
 
@@ -58,7 +60,10 @@ export function extractStressFeatures(landmarks: MediaPipeLandmark[]): StressFea
   const mouthHeight = distance(p(LANDMARKS.MOUTH_TOP), p(LANDMARKS.MOUTH_BOTTOM));
   const mouthTension = mouthHeight > 0 ? mouthWidth / mouthHeight : 1;
 
-  return { leftEyeAspect: leftEAR, rightEyeAspect: rightEAR, browTension, mouthTension, timestamp: Date.now() };
+  const eyeSymmetry = Math.abs(leftEAR - rightEAR) / ((leftEAR + rightEAR) / 2 + 0.001);
+  const mouthOpening = mouthHeight > 0 ? mouthHeight / mouthWidth : 0.1;
+
+  return { leftEyeAspect: leftEAR, rightEyeAspect: rightEAR, browTension, mouthTension, eyeSymmetry, mouthOpening, timestamp: Date.now() };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

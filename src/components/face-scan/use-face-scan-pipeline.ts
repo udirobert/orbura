@@ -70,6 +70,10 @@ export function useFaceScanPipeline() {
   useEffect(() => {
     if (typeof window !== "undefined" && !workerRef.current) {
       workerRef.current = new Worker(new URL("@/workers/ezkl-prover.worker.ts", import.meta.url));
+      // Prefetch ZK artifacts (164MB pk.key, 16MB srs.key) in the background
+      // during the privacy/prompt phase so they're cached by the time the
+      // user captures and triggers proof generation.
+      workerRef.current.postMessage({ type: "prefetch" });
     }
     return () => { workerRef.current?.terminate(); };
   }, []);

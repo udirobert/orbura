@@ -124,10 +124,10 @@ The pipeline is fully compiled and operational. Real ZK proof artifacts are serv
 
 | File | Size | Committed? | Regeneratable? |
 |---|---|---|---|
-| `model.onnx` | 318 B | ✅ | `python scripts/generate-stress-model.py` |
-| `compiled.ezkl` | 2 KB | ✅ | `python scripts/compile-circuit.py` |
-| `settings.json` | 1.3 KB | ✅ | `python scripts/compile-circuit.py` |
-| `witness.json` | 1.2 KB | ✅ | `python scripts/compile-circuit.py` |
+| `model.onnx` | 1.9 KB | ✅ | `python scripts/generate-stress-model.py` |
+| `compiled.ezkl` | 10.7 KB | ✅ | `python scripts/compile-circuit.py` |
+| `settings.json` | 1.6 KB | ✅ | `python scripts/compile-circuit.py` |
+| `witness.json` | 1.6 KB | ✅ | `python scripts/compile-circuit.py` |
 | `pk.key` | 164 MB | ❌ gitignored | `python scripts/compile-circuit.py` |
 | `srs.key` | 16 MB | ❌ gitignored | `python scripts/compile-circuit.py` |
 | `vk.key` | 75 KB | ❌ gitignored | `python scripts/compile-circuit.py` |
