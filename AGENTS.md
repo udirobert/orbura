@@ -1,73 +1,166 @@
 # Agent Guide: Body Debt
 
-Health/recovery tracking app on the Eazo platform. Quantifies physiological/cognitive "debt" from lifestyle stressors and provides AI-backed recovery prescriptions.
+Body Debt is a health and recovery tracking app on the Eazo platform. It logs lifestyle stressors, computes deterministic physiological debt across five body systems, and streams AI-backed recovery prescriptions.
+
+This file is intentionally compact. Put longer architecture notes in `docs/` instead of expanding this guide.
 
 ## Stack
-- Next.js 16 + React 19 + TypeScript + Tailwind CSS v4 + Bun
-- `@eazo/sdk`: auth, device, ai, storage, memory, notifications
+
+- Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4
+- Bun for install, scripts, and local development
+- `@eazo/sdk` for auth, device, AI gateway, memory, notifications
+- Zustand for guest-first state in `src/stores/useBodyDebtStore.ts`
+- Drizzle ORM + PostgreSQL via `DATABASE_URL`
 - shadcn/ui, lucide-react, framer-motion
-- Drizzle ORM (PostgreSQL), Zustand
+- MediaPipe FaceMesh, EZKL, wagmi/viem, SKALE Europa testnet
+- QVAC local LLM worker for edge AI coaching
+
+## Commands
+
+```bash
+bun install
+bun dev
+bun run lint
+bun run build
+bun run test
+
+bun run db:generate
+bun run db:push
+bun run db:studio
+
+python scripts/generate-stress-model.py
+python scripts/compile-circuit.py
+bun run zk:chunks
+bun run zk:fixture
+bun run zk:submit-fixture
+node scripts/register-vk-on-chain.mjs
+node scripts/deploy-standalone.mjs
+```
+
+Known local build caveats: production build may fail until Google font fetching and the QVAC worker bundling path are fixed. Do not treat those as blockchain regressions unless your change touched them.
 
 ## Key Files
 
 | Domain | Location |
-|--------|----------|
+|---|---|
 | State | `src/stores/useBodyDebtStore.ts` |
+| Types | `src/lib/types.ts` |
 | Scoring | `src/lib/systemScoring.ts` |
-| AI Analysis | `src/app/api/analyze/` (stream, score, verdict, prescription routes) |
-| Face Scan | `src/app/api/face-scan/route.ts` |
-| HRV/Wearable | `src/app/api/terra/`, `src/app/api/garmin/`, `src/app/api/google-fit/` |
-| QVAC Edge AI | `src/lib/qvac/index.ts`, `src/app/api/qvac/infer/route.ts` |
-| ZK Proofs | `src/workers/ezkl-prover.worker.ts`, `src/lib/blockchain/`, `contracts/HealthCredentialVerifier.sol` |
-| Orb Personality | `src/lib/orbPersonality.ts` (4 modes: honest, gentle, scientific, sarcastic) |
+| AI analysis | `src/app/api/analyze/` |
+| Streaming analysis hook | `src/hooks/useStreamingAnalysis.ts` |
+| Face scan UI | `src/components/screens/FaceScanScreen.tsx`, `src/components/face-scan/` |
+| Face feature extraction | `src/lib/ai/face-mesh.ts` |
+| EZKL prover worker | `src/workers/ezkl-prover.worker.ts` |
+| Blockchain client | `src/lib/blockchain/skale-client.ts` |
+| Wagmi config | `src/lib/providers/wagmi-config.ts`, `src/components/providers/WagmiProviderWrapper.tsx` |
+| Contracts | `contracts/HealthCredentialVerifier.sol`, `contracts/EZKLVerifierReusable.sol` |
+| Contract scripts | `scripts/deploy-reusable-verifier.mjs`, `scripts/register-vk-on-chain.mjs`, `scripts/deploy-standalone.mjs` |
+| QVAC | `scripts/qvac-worker.mjs`, `src/lib/qvac/index.ts`, `src/app/api/qvac/infer/route.ts` |
+| Wearables | `src/app/api/terra/`, `src/app/api/google-fit/`, `src/app/api/garmin/parse/route.ts`, `src/app/api/hrv/resolve/route.ts` |
+| DB | `src/lib/db/schema/`, `src/lib/db/queries/`, `src/lib/db/client.ts` |
 
-## Scoring System
-- 5 biological systems: Cardiovascular, Brain/Cognition, Liver, Muscular/CNS, Gut
-- Deterministic debt calculation from logged stressors (alcohol, training, sleep, stress, illness)
-- Circadian penalties applied
+## Hard Rules
 
-## Integrations
-- **Terra API**: WHOOP/Oura via OAuth; webhook + polling at `src/app/api/terra/*`
-- **Garmin**: CSV upload parsing at `src/app/api/garmin/parse/route.ts`
-- **Google Fit**: OAuth + data at `src/app/api/google-fit/*`
-- **HRV Resolve**: Unified fallback chain at `src/app/api/hrv/resolve/route.ts`
+- Never import or call `ai` from `@eazo/sdk` in client components, hooks, browser helpers, or `src/lib/api/`. AI calls belong in `src/app/api/` route handlers only.
+- Guard server-side AI routes with `requireAuth` before calling `ai.chat()`.
+- Use `auth.login()` from `@eazo/sdk` for login UI. Do not build a custom login form unless explicitly required.
+- In render, read Eazo auth/device state through `useEazo(selector)`. In event handlers/effects, use SDK singletons directly.
+- Fire-and-forget `memory.reportAction(...).catch(() => {})` after significant user actions. Never let memory failures block core flow.
+- Never store face scan images, raw pixels, or full MediaPipe landmark arrays.
+- Never run EZKL proof generation on the main React thread. Always use `src/workers/ezkl-prover.worker.ts`.
+- Never send app-level rounded scores as verifier public inputs. On-chain verification must use exact public instances emitted by EZKL.
+- Never claim SKALE verification unless the `verifyAndLogCredential` transaction is confirmed.
+- Keep `zkProof` ephemeral. It is intentionally excluded from Zustand persistence.
 
-## ZKML Pipeline (SKALE Hackathon)
-1. **Edge AI**: `@mediapipe/face_mesh` → 7-dim feature vector → 7→16→8→1 MLP via `@qvac/ezkl`
-2. **ZK Proof**: `ezkl-js` Web Worker generates proof + verifies locally; raw biometrics never leave device
-3. **SKALE Verification**: Single atomic tx to `HealthCredentialVerifier` which calls `Halo2VerifierReusable.verifyProof` internally; credential event emitted only on valid proof
+## ZK/SKALE Flow
 
-**Artifacts**: ONNX model (`scripts/generate-stress-model.py`), compiled circuit, 164MB pk.key
-**Blockchain**: `src/lib/blockchain/skale-client.ts` (viem clients, ABIs, chain guard), `src/lib/providers/wagmi-config.ts`
+The face-scan privacy path is:
 
-## Coding Requirements
+```text
+Camera frame
+  -> MediaPipe FaceMesh in browser
+  -> 7-dimensional feature vector
+  -> EZKL worker proof generation
+  -> local EZKL verify
+  -> exact proof bytes + public instances
+  -> HealthCredentialVerifier.verifyAndLogCredential(...)
+  -> HealthCredentialVerified event only after Halo2 proof verification passes
+```
 
-### Component Rules
-- One component per file, `kebab-case.tsx` naming
-- `page.tsx` = thin entry point (≤50 lines), imports from `src/components/<feature>/`
-- Extract non-trivial UI into separate component files
-- Group by feature, not type
+`HealthCredentialVerifier` is the app-facing contract. It calls `Halo2VerifierReusable.verifyProof` internally and emits a credential event only after proof validation succeeds.
 
-### File Size Limits
-| Type | Hard limit |
-|------|------------|
-| Page component | 50 lines |
-| Feature component | 250 lines |
-| API route | 100 lines |
+Current reusable verifier address is defined in `src/lib/blockchain/skale-client.ts` and `scripts/deploy-standalone.mjs`. If you redeploy `EZKLVerifierReusable`, update both constants.
 
-### API Layer
-- All fetch logic in `src/lib/api/` — never in components
-- Typed functions, explicit return types
-- Re-export via `src/lib/api/index.ts`
+## ZK Artifact Order
 
-### Imports
-- Use `@/` path aliases
-- UI primitives from `@/components/ui/`
+1. Generate or update the ONNX model:
+   ```bash
+   python scripts/generate-stress-model.py
+   ```
+2. Compile the circuit and generate proving/verifying keys:
+   ```bash
+   python scripts/compile-circuit.py
+   ```
+   This also runs `node scripts/generate-vk-chunks.mjs`.
+3. Generate a local proof fixture when changing the proof boundary:
+   ```bash
+   bun run zk:fixture
+   ```
+4. Register the VKA chunks on `Halo2VerifierReusable`:
+   ```bash
+   node scripts/register-vk-on-chain.mjs
+   ```
+5. Deploy the app-facing credential verifier:
+   ```bash
+   node scripts/deploy-standalone.mjs
+   ```
+6. Set the resulting address:
+   ```bash
+   NEXT_PUBLIC_VERIFIER_ADDRESS=0x...
+   ```
+7. Prove the deployed verifier with the local fixture when changing this flow:
+   ```bash
+   bun run zk:submit-fixture
+   ```
 
-## Project Rules
+Large artifacts such as `public/ezkl/*.key` are gitignored and must be regenerated locally or in deployment setup.
 
-- **AI calls only in `src/app/api/` route handlers** — never in client components
-- **Call `memory.reportAction()` after every mutation** — chain `.catch(() => {})`
-- **Never store face scan images**
-- **Maintain local `users` table** — upsert on every `GET /api/user/profile`
-- Run `bun run lint` and `bun run build` before shipping
+## Environment
+
+Required for core app:
+
+```bash
+EAZO_APP_ID=
+EAZO_PRIVATE_KEY=
+DATABASE_URL=
+```
+
+Optional by feature:
+
+```bash
+CRON_SECRET=
+TERRA_DEV_ID=
+TERRA_API_KEY=
+TERRA_SIGNING_SECRET=
+GOOGLE_FIT_CLIENT_ID=
+GOOGLE_FIT_CLIENT_SECRET=
+NEXT_PUBLIC_VERIFIER_ADDRESS=
+DEPLOYER_PRIVATE_KEY=
+NEXT_PUBLIC_APP_URL=
+QVAC_MODEL_PATH=
+```
+
+## Implementation Preferences
+
+- Prefer established repo patterns over new abstractions.
+- Keep `page.tsx` files thin and move real UI into components.
+- Use `@/` imports and UI primitives from `@/components/ui/`.
+- Keep API fetch wrappers in `src/lib/api/` and route logic in `src/app/api/`.
+- Keep comments short and only where they clarify non-obvious behavior.
+- Do not touch generated or large artifacts unless the task explicitly needs it.
+
+## Docs
+
+- Contract deployment: `contracts/README.md`
+- ZK pipeline details: `docs/zk-pipeline.md`
+- Demo notes: `docs/qvac-edge-ai-demo.md`, `docs/skale-privacy-demo.md`

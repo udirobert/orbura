@@ -1,4 +1,5 @@
 import type { StressFeatures } from "@/lib/ai/face-mesh";
+import { extractPublicInstances } from "@/lib/zk/field-elements";
 
 export interface ProofRequest {
   features: StressFeatures;
@@ -25,41 +26,6 @@ let provingKey: Uint8Array | null = null;
 let srsKey: Uint8Array | null = null;
 let vkKey: Uint8Array | null = null;
 let settingsJson: Uint8Array | null = null;
-
-function collectFieldElements(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.flatMap((item) => collectFieldElements(item));
-  }
-  if (typeof value === "bigint") {
-    return [value.toString()];
-  }
-  if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
-    return [value.toString()];
-  }
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (/^0x[0-9a-fA-F]+$/.test(trimmed) || /^\d+$/.test(trimmed)) {
-      return [trimmed];
-    }
-  }
-  return [];
-}
-
-function extractPublicInstances(proofData: unknown): string[] | undefined {
-  if (!proofData || typeof proofData !== "object") return undefined;
-  const record = proofData as Record<string, unknown>;
-  const candidates = [
-    record.instances,
-    record.public_inputs,
-    record.publicInputs,
-    record.inputs,
-  ];
-  for (const candidate of candidates) {
-    const elements = collectFieldElements(candidate);
-    if (elements.length > 0) return elements;
-  }
-  return undefined;
-}
 
 async function initEzkl(): Promise<boolean> {
   if (ezklInitialized) return true;

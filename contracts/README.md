@@ -1,50 +1,110 @@
-# Smart Contracts — Deployment
+# Smart Contracts
+
+Body Debt uses the reusable EZKL/Halo2 verifier path. The old one-off generated `EZKLVerifier.sol` path is deprecated; normal app traffic should go through `HealthCredentialVerifier`.
 
 ## Contracts
 
 | Contract | File | Purpose |
 |---|---|---|
-| `HealthCredentialVerifier` | `HealthCredentialVerifier.sol` | Atomic ZK proof verification + credential logging |
-| `Halo2VerifierReusable` | `EZKLVerifierReusable.sol` | EZKL-generated Halo2 proof verifier (deployed separately) |
+| `Halo2VerifierReusable` | `EZKLVerifierReusable.sol` | EZKL-generated reusable Halo2 verifier. Deployed separately and reused across app-facing verifier deployments. |
+| `HealthCredentialVerifier` | `HealthCredentialVerifier.sol` | App-facing contract. Atomically verifies a proof through `Halo2VerifierReusable` and logs a credential event only on success. |
 
-`HealthCredentialVerifier` calls `Halo2VerifierReusable.verifyProof` internally and only emits `HealthCredentialVerified` after the proof passes.
+`HealthCredentialVerifier.verifyAndLogCredential(...)` is the only function the frontend should call for SKALE verification.
 
 ## Prerequisites
 
-1. Set your deployer private key in `.env`:
+Set a funded deployer in `.env`:
+
+```bash
+DEPLOYER_PRIVATE_KEY=0x...
+```
+
+Get SKALE Europa testnet sFUEL from the SKALE faucet.
+
+## Deployment Order
+
+1. Generate or refresh the ONNX model:
+
+   ```bash
+   python scripts/generate-stress-model.py
    ```
-   DEPLOYER_PRIVATE_KEY=0x...
+
+2. Compile the EZKL circuit and keys:
+
+   ```bash
+   python scripts/compile-circuit.py
    ```
 
-2. Get SKALE Europa testnet sFUEL from the faucet at https://portal.skale.space/faucet
+   This also runs `scripts/generate-vk-chunks.mjs`. If you already have `public/ezkl/vk.key`, you can run only:
 
-## Deploy (standalone scripts, no Hardhat required)
+   ```bash
+   bun run zk:chunks
+   ```
 
-### 1. Deploy Halo2VerifierReusable (one-time)
+3. Deploy `Halo2VerifierReusable` if no reusable verifier exists for this circuit family:
 
-```bash
-node scripts/deploy-reusable-verifier.mjs
-```
+   ```bash
+   node scripts/deploy-reusable-verifier.mjs
+   ```
 
-### 2. Register the verification key
+   If redeployed, update `HALO2_VERIFIER_ADDRESS` in:
 
-```bash
-node scripts/register-vk-on-chain.mjs
-```
+   - `src/lib/blockchain/skale-client.ts`
+   - `scripts/deploy-standalone.mjs`
+   - `scripts/register-vk-on-chain.mjs`
 
-### 3. Deploy HealthCredentialVerifier
+4. Register the VKA chunks on `Halo2VerifierReusable`:
 
-Requires the Halo2 verifier address and a registered VK digest:
+   ```bash
+   node scripts/register-vk-on-chain.mjs
+   ```
 
-```bash
-node scripts/deploy-standalone.mjs
-# or with explicit VK digest:
-node scripts/deploy-standalone.mjs --vk-digest 0x...
-```
+   Save the printed VKA digest.
 
-After deployment, add to `.env`:
-```
-NEXT_PUBLIC_VERIFIER_ADDRESS=0x...
-```
+5. Generate a local proof fixture if you changed proof serialization or calldata handling:
 
-Then restart `bun dev`.
+   ```bash
+   bun run zk:fixture
+   ```
+
+6. Deploy `HealthCredentialVerifier`:
+
+   ```bash
+   node scripts/deploy-standalone.mjs
+   ```
+
+   Or pass the digest explicitly:
+
+   ```bash
+   node scripts/deploy-standalone.mjs --vk-digest 0x...
+   ```
+
+7. Add the deployed app-facing verifier to `.env`:
+
+   ```bash
+   NEXT_PUBLIC_VERIFIER_ADDRESS=0x...
+   ```
+
+8. Submit the local fixture against the deployed verifier:
+
+   ```bash
+   bun run zk:submit-fixture
+   ```
+
+9. Restart the app.
+
+## Verification Contract Notes
+
+`HealthCredentialVerifier` constructor pins:
+
+- `halo2Verifier`: deployed `Halo2VerifierReusable`
+- `approvedVkDigest`: expected digest for the VKA chunks in `vk-chunks.json`
+
+At runtime, it:
+
+- computes `keccak256(proof)` for replay protection
+- checks the submitted VK artifact digest against `approvedVkDigest`
+- calls `halo2Verifier.verifyProof(proof, instances, vka)`
+- emits `HealthCredentialVerified` only if the proof passes
+
+Do not submit mock proofs or app-level rounded scores. The frontend must send raw proof bytes and exact EZKL public instances.

@@ -43,10 +43,10 @@ async function main() {
   const wallet = new ethers.Wallet(privateKey, provider);
   const address = await wallet.getAddress();
   const balance = await provider.getBalance(address);
-  console.log("Registering VK via account:", address);
+  console.log("Registering VKA via account:", address);
   console.log("Balance:", ethers.formatEther(balance), "sFUEL");
 
-  // Read VK chunks
+  // Read VKA chunks
   const chunksPath = resolve(__dirname, "..", "public", "ezkl", "vk-chunks.json");
   let vka;
   try {
@@ -55,9 +55,9 @@ async function main() {
     console.error("ERROR: vk-chunks.json not found. Run the chunking script first.");
     process.exit(1);
   }
-  console.log("VK chunks:", vka.length);
+  console.log("VKA chunks:", vka.length);
   const vkDigest = ethers.keccak256(ethers.concat(vka.map((h) => h)));
-  console.log("VK digest:", vkDigest);
+  console.log("VKA digest:", vkDigest);
 
   // Build the minimal ABI for registerVka
   const abi = [
@@ -81,17 +81,17 @@ async function main() {
 
   const receipt = await tx.wait();
   const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`\n✅ VK registered in ${duration}s`);
+  console.log(`\n✅ VKA registered in ${duration}s`);
   console.log("Gas used:", receipt.gasUsed.toString());
   console.log("Tx hash:", tx.hash);
-  console.log("VK digest:", vkDigest);
+  console.log("VKA digest:", vkDigest);
 
-  // The registerVka returns the VK digest via the event
+  // The registerVka returns the VKA digest via the event
   // It's also logged in the tx logs
-  console.log("\nVK digest available above and from tx logs on explorer:");
+  console.log("\nVKA digest available above and from tx logs on explorer:");
   console.log(`https://juicy-low-small-testnet.explorer.skalenodes.com/tx/${tx.hash}`);
 
-  console.log("\n✅ VK is now registered. verifyProof() is ready to use.");
+  console.log("\n✅ VKA is now registered. verifyProof() is ready to use.");
 }
 
 main().catch((err) => {

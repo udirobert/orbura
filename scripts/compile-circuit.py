@@ -131,7 +131,7 @@ def main():
         run(cmd)
         print()
 
-    print("Generating VK chunks for on-chain verification...")
+    print("Generating VKA chunks for on-chain verification...")
     run(["node", "scripts/generate-vk-chunks.mjs"])
     print()
 

@@ -73,7 +73,7 @@
 **Show:** Click the SKALE Explorer link — open in a new tab
 
 **Say:**
-> *"You can verify the transaction yourself on the SKALE Explorer. The contract emits a `HealthCredentialVerified` event — permanent, transparent, auditable. The proof hash is committed on-chain, and the verification key was registered in a prior transaction — `registerVka()` with 2,089 bytes32 entries."*
+> *"You can verify the transaction yourself on the SKALE Explorer. The contract emits a `HealthCredentialVerified` event — permanent, transparent, auditable. The proof hash is committed on-chain, and the verification key was registered in a prior transaction — `registerVka()` with 157 bytes32 VKA entries."*
 
 **Show:** The explorer page with the contract events visible
 
@@ -107,7 +107,7 @@
 | **Why SKALE?** | "Sub-cent on-chain ZK verification. Ethereum would cost $50-100 per proof." |
 | **Halo2VerifierReusable** | "Deployed at `0x01c8C3...` — real EZKL verifier, 1,607 lines of Solidity." |
 | **Proof lifecycle** | "Extract → Prove → Verify (browser) → Verify (SKALE) — 4-stage pipeline." |
-| **Gas costs** | "VK registration: 720K gas. Proof verification: 2.2M gas. Sub-cent total." |
+| **Gas costs** | "VKA registration: ~125K gas. Proof verification: ~2.3M gas. Sub-cent total." |
 | **Privacy model** | "Raw biometric data never leaves the device. Only the proof and public outputs go on-chain." |
 | **Browser verify** | "EZKL's `verify()` runs in the Web Worker — cryptographic certainty without network." |
 

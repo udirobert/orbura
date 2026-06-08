@@ -19,6 +19,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "zk:chunks": "node scripts/generate-vk-chunks.mjs",
+    "zk:fixture": "node scripts/generate-proof-fixture.mjs",
+    "zk:submit-fixture": "node scripts/submit-proof-fixture.mjs",
     "db:drop": "drizzle-kit drop",
     "prepare": "husky",
     "postinstall": "node scripts/trim-node-modules.mjs"

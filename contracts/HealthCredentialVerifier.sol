@@ -6,7 +6,7 @@ interface IHalo2Verifier {
         bytes calldata proof,
         uint256[] calldata instances,
         bytes32[] memory vka
-    ) external returns (bool success, bytes32 vka_digest, int256[] memory rescaled_instances);
+    ) external returns (bool success, bytes32 vka_digest);
 }
 
 contract HealthCredentialVerifier {
@@ -40,7 +40,8 @@ contract HealthCredentialVerifier {
         bytes32 vkaDigest = keccak256(abi.encodePacked(vka));
         require(vkaDigest == approvedVkDigest, "Unapproved verification key");
 
-        (bool success,,) = halo2Verifier.verifyProof(proof, instances, vka);
+        (bool success, bytes32 returnedDigest) = halo2Verifier.verifyProof(proof, instances, vka);
+        require(returnedDigest == approvedVkDigest, "Verifier digest mismatch");
         require(success, "Invalid proof");
 
         verifiedProofs[proofHash] = true;

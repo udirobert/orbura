@@ -47,7 +47,7 @@ export const halo2VerifierAbi = [
 ] as const;
 
 /**
- * Fetch VK chunks from the public directory for on-chain verification.
+ * Fetch VKA chunks from the public directory for on-chain verification.
  * The chunks are served as a static JSON file from /ezkl/vk-chunks.json.
  */
 export async function fetchVkChunks(): Promise<string[]> {

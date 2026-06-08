@@ -5,7 +5,7 @@
  * Uses solc + ethers directly — no hardhat dependency.
  *
  * The new contract requires the Halo2VerifierReusable to already be deployed
- * with a VK registered. The VK digest is computed from vk-chunks.json or
+ * with a VK registered. The VKA digest is computed from vk-chunks.json or
  * passed via --vk-digest.
  *
  * Usage: node scripts/deploy-standalone.mjs [--vk-digest 0x...]
@@ -50,7 +50,7 @@ async function main() {
   console.log("Deployer address:", address);
   console.log("Balance:", ethers.formatEther(await provider.getBalance(address)), "sFUEL");
 
-  // Resolve VK digest
+  // Resolve VKA digest
   let vkDigest = process.argv.find((_, i, arr) => arr[i - 1] === "--vk-digest");
   if (!vkDigest) {
     console.log("No --vk-digest provided, computing from vk-chunks.json...");
@@ -61,13 +61,13 @@ async function main() {
     }
     const vka = JSON.parse(readFileSync(chunksPath, "utf8"));
     vkDigest = ethers.keccak256(ethers.concat(vka.map(h => h)));
-    console.log("Computed VK digest:", vkDigest);
+    console.log("Computed VKA digest:", vkDigest);
 
     console.log("Ensure this digest has been registered with scripts/register-vk-on-chain.mjs before using the app.");
   }
 
   console.log("\nHalo2 verifier:", HALO2_VERIFIER_ADDRESS);
-  console.log("VK digest:", vkDigest);
+  console.log("VKA digest:", vkDigest);
 
   const contractPath = resolve(__dirname, "..", "contracts", "HealthCredentialVerifier.sol");
   const source = readFileSync(contractPath, "utf8");

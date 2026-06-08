@@ -198,6 +198,8 @@ broadcast/
 *.json
 !package.json
 !tsconfig.json
+!public/ezkl/vk-chunks.json
+!public/ezkl/vk-digest.json
 
 # ZK / EZKL generated files (can be large or regenerated)
 *.zk
@@ -219,6 +221,7 @@ public/ezkl-test/
 
 # EZKL large regeneratable artifacts (proving key, SRS, verification key)
 public/ezkl/*.key
+public/ezkl/*.bytes
 
 # OS specific
 .DS_Store
