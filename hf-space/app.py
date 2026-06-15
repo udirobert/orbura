@@ -17,12 +17,13 @@ from scoring import (
     Stressor,
     compute_live_score,
     compute_system_scores,
+    compute_counterfactual,
     STRESSOR_DEFS,
     SYSTEM_META,
 )
 from face_scan import run_face_scan, features_to_array
 from stress_model import predict_stress_score
-from health_coach import stream_advice, _fallback_advice
+from health_coach import stream_advice, stream_plan, _fallback_advice
 
 # ─── Design tokens (mirrors src/lib/design-tokens.ts) ────────────────────────
 
@@ -496,6 +497,77 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
     animation: pulse 1.6s ease-in-out infinite;
 }}
 
+/* Triage plan */
+.plan-block {{
+    margin-bottom: 20px;
+    animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.15s backwards;
+}}
+.plan-source {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: {TEXT_FAINT};
+    font-weight: 600;
+    margin-left: auto;
+    text-transform: none;
+    letter-spacing: 0.1em;
+}}
+.plan-line {{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid {BORDER_SOFT};
+    animation: fadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}}
+.plan-line:last-child {{ border-bottom: none; }}
+.plan-tag {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    padding: 3px 8px;
+    border: 1px solid;
+    border-radius: 4px;
+    flex-shrink: 0;
+    min-width: 78px;
+    text-align: center;
+}}
+.plan-text {{
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: {TEXT_PRIMARY};
+    line-height: 1.4;
+}}
+
+/* Counterfactual hint */
+.cf-block {{
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    background: {BG_SURFACE};
+    border: 1px solid {BORDER};
+    border-left: 2px solid;
+    border-radius: 0 10px 10px 0;
+    margin: 16px 0;
+    animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s backwards;
+}}
+.cf-label {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    flex-shrink: 0;
+    padding-top: 2px;
+    min-width: 140px;
+}}
+.cf-body {{
+    font-size: 13px;
+    color: {TEXT_SECONDARY};
+    line-height: 1.55;
+}}
+
 /* Mobile / narrow viewport */
 @media (max-width: 900px) {{
     .gradio-container {{ padding: 0 16px 40px !important; }}
@@ -662,6 +734,74 @@ def render_face_scan(face_stress, is_healthy, features) -> str:
     """
 
 
+def render_plan(plan: dict | None, lines_so_far: list[str] | None = None) -> str:
+    """Triage plan: 3 lines from SmolLM2's structured plan step.
+
+    `lines_so_far` lets the UI show the plan being formed (one line at a
+    time) as the LLM streams. Falls back to `plan` dict for the final
+    render.
+    """
+    if lines_so_far is None:
+        lines_so_far = []
+        if plan:
+            if plan.get("priority"):
+                lines_so_far.append(f"PRIORITY: {plan['priority']}")
+            if plan.get("secondary"):
+                lines_so_far.append(f"SECONDARY: {plan['secondary']}")
+            if plan.get("avoid"):
+                lines_so_far.append(f"AVOID: {plan['avoid']}")
+
+    if not lines_so_far and not plan:
+        return ""
+
+    rendered_lines = []
+    for line in lines_so_far:
+        up = line.upper().strip()
+        if up.startswith("PRIORITY:"):
+            color = "#DC2626"
+            label = "PRIORITY"
+        elif up.startswith("SECONDARY:"):
+            color = "#EA580C"
+            label = "SECONDARY"
+        elif up.startswith("AVOID:"):
+            color = "#A78BFA"
+            label = "AVOID"
+        else:
+            color = TEXT_MUTED
+            label = ""
+        rest = line.split(":", 1)[1].strip() if ":" in line else line
+        rendered_lines.append(f"""
+        <div class="plan-line">
+            <span class="plan-tag" style="color: {color}; border-color: {color}40; background: {color}10;">{label}</span>
+            <span class="plan-text">{html.escape(rest)}</span>
+        </div>
+        """)
+
+    return f"""
+    <div class="plan-block">
+        <div class="section-label">Triage plan <span class="plan-source">SmolLM2-360M</span></div>
+        {''.join(rendered_lines)}
+    </div>
+    """
+
+
+def render_counterfactual(cf: dict | None) -> str:
+    if not cf:
+        return ""
+    accent = SYSTEM_ACCENTS.get(cf["system"], (TEXT_SECONDARY,))[0]
+    return f"""
+    <div class="cf-block" style="border-left-color: {accent};">
+        <span class="cf-label" style="color: {accent};">WHAT WOULD CHANGE THIS</span>
+        <span class="cf-body">
+            If you had <strong style="color: {TEXT_PRIMARY};">{html.escape(cf['lever_label'])}</strong>,
+            <strong style="color: {accent};">{html.escape(cf['system_label'])}</strong> debt would drop
+            from <strong style="color: {TEXT_PRIMARY};">{cf['from_score']}</strong> to
+            <strong style="color: {RECOVERY_GREEN};">{cf['to_score']}</strong>.
+        </span>
+    </div>
+    """
+
+
 def render_agent_trace(steps: list[tuple[str, str, str]]) -> str:
     """steps: list of (label, status, message) where status is pending|active|done|error."""
     if steps:
@@ -755,7 +895,10 @@ def run_analysis_stream(
     face_image,
     progress=gr.Progress(),
 ):
-    """Streaming generator: yields (hero_html, meters_html, rx_html, face_html, advice_html, trace_html)."""
+    """Streaming generator. Yield tuple:
+
+        (hero, meters, rx, face, plan, trace, counterfactual, coach)
+    """
     stressors = build_stressors(
         alcohol, alcohol_type, alcohol_count,
         training, training_area, training_intensity,
@@ -763,22 +906,26 @@ def run_analysis_stream(
         ill, ill_severity, care,
     )
 
+    EMPTY = render_empty_state()
+    NUL = ""
+    E_C = _empty_coach()
+    E_P = ""
+    E_T = render_agent_trace([])
+    E_CF = ""
+
     # Step 1: parse stressors
     trace = [("parse_stressors", "active", f"{len(stressors)} selected")]
-    yield (
-        render_empty_state(), render_empty_state(), "",
-        "", _empty_coach(), render_agent_trace(trace),
-    )
+    yield (EMPTY, EMPTY, NUL, NUL, E_P, E_T, E_CF, E_C)
     time.sleep(0.05)
 
     if not stressors:
         trace[-1] = ("parse_stressors", "error", "none selected")
-        yield (
-            f"""<div class="empty-state"><div class="icon">🫀</div>
-                <div class="label">Log at least one stressor</div>
-                <div class="sub">Tap a checkbox on the left to begin.</div></div>""",
-            "", "", "", _empty_coach(), render_agent_trace(trace),
+        msg = (
+            f'<div class="empty-state"><div class="icon">🫀</div>'
+            f'<div class="label">Log at least one stressor</div>'
+            f'<div class="sub">Tap a checkbox on the left to begin.</div></div>'
         )
+        yield (msg, NUL, NUL, NUL, E_P, render_agent_trace(trace), E_CF, E_C)
         return
 
     trace[-1] = ("parse_stressors", "done", f"{len(stressors)} stressors")
@@ -786,7 +933,7 @@ def run_analysis_stream(
 
     # Step 2: compute scores
     trace.append(("compute_live_score", "active", "deterministic engine"))
-    yield ("", "", "", "", _empty_coach(), render_agent_trace(trace))
+    yield (NUL, NUL, NUL, NUL, E_P, render_agent_trace(trace), E_CF, E_C)
     time.sleep(0.05)
 
     live_score = compute_live_score(stressors)
@@ -804,7 +951,7 @@ def run_analysis_stream(
     face_stress = None
     if face_image is not None:
         trace.append(("face_scan", "active", "MediaPipe FaceMesh"))
-        yield ("", "", "", "", _empty_coach(), render_agent_trace(trace))
+        yield (NUL, NUL, NUL, NUL, E_P, render_agent_trace(trace), E_CF, E_C)
         time.sleep(0.05)
 
         features = run_face_scan(face_image)
@@ -818,14 +965,38 @@ def run_analysis_stream(
     else:
         trace.append(("face_scan", "done", "skipped"))
 
+    # Step 3.5: triage plan (the real "agent" step)
+    system_dicts = [
+        {"label": s.label, "score": s.score, "cleared_at": s.cleared_at}
+        for s in system_scores
+    ]
+    trace.append(("triage_plan", "active", "SmolLM2-360M"))
+    plan_html = render_plan(None, [])
+    yield (NUL, NUL, NUL, NUL, plan_html, render_agent_trace(trace), E_CF, E_C)
+
+    plan_dict: dict = {"priority": None, "secondary": None, "avoid": None}
+    plan_lines: list[str] = []
+    try:
+        for plan_dict, line in stream_plan(system_dicts):
+            if line:
+                plan_lines.append(line)
+                plan_html = render_plan(None, list(plan_lines))
+                yield (NUL, NUL, NUL, NUL, plan_html, render_agent_trace(trace), E_CF, E_C)
+    except Exception as e:
+        print(f"Plan stream failed: {e}")
+    plan_html = render_plan(plan_dict, plan_lines)
+    trace[-1] = ("triage_plan", "done", "PRIORITY · SECONDARY · AVOID")
+
     progress(0.5, desc="Building system breakdown...")
 
-    # Step 4: render hero + systems
+    # Step 4: render hero + systems + prescription
     _, verdict, _ = debt_tier(live_score)
     hero_html = render_hero(live_score, verdict)
     meters_html = render_system_meters(system_scores)
     rx_html = render_prescription(system_scores, live_score)
     science_html = render_science(system_scores)
+    cf = compute_counterfactual(stressors, system_scores, bed_time, wake_time)
+    cf_html = render_counterfactual(cf)
 
     # Step 5: streaming LLM advice
     trace.append(("llm_coach", "active", "SmolLM2-360M local"))
@@ -833,14 +1004,10 @@ def run_analysis_stream(
     stressor_summary = ", ".join(
         f"{STRESSOR_DEFS[s.type]['icon']} {STRESSOR_DEFS[s.type]['label']}" for s in stressors
     )
-    system_dicts = [
-        {"label": s.label, "score": s.score, "cleared_at": s.cleared_at} for s in system_scores
-    ]
 
     yield (
         hero_html, meters_html, rx_html + science_html, face_html,
-        _coach_with_cursor(""),
-        render_agent_trace(trace),
+        plan_html, render_agent_trace(trace), cf_html, _coach_with_cursor(""),
     )
 
     try:
@@ -848,24 +1015,24 @@ def run_analysis_stream(
             accumulated += piece
             yield (
                 hero_html, meters_html, rx_html + science_html, face_html,
+                plan_html, render_agent_trace(trace), cf_html,
                 _coach_with_cursor(accumulated),
-                render_agent_trace(trace),
             )
     except Exception as e:
         print(f"Stream fallback: {e}")
         accumulated = _fallback_advice(live_score, system_dicts, stressor_summary)
         yield (
             hero_html, meters_html, rx_html + science_html, face_html,
+            plan_html, render_agent_trace(trace), cf_html,
             _coach_with_cursor(accumulated),
-            render_agent_trace(trace),
         )
 
     trace[-1] = ("llm_coach", "done", f"{len(accumulated)} chars")
     progress(1.0, desc="Done")
     yield (
         hero_html, meters_html, rx_html + science_html, face_html,
+        plan_html, render_agent_trace(trace), cf_html,
         _coach_with_cursor(accumulated),
-        render_agent_trace(trace),
     )
 
 
@@ -972,6 +1139,7 @@ with gr.Blocks(title="Body Debt") as demo:
 
         with gr.Column(scale=2):
             hero_output = gr.HTML(value=render_empty_state())
+            plan_output = gr.HTML(value="")
             meters_output = gr.HTML(value="")
             face_output = gr.HTML(value="")
             with gr.Row():
@@ -979,6 +1147,7 @@ with gr.Blocks(title="Body Debt") as demo:
                     rx_output = gr.HTML(value="")
                 with gr.Column(scale=2):
                     trace_output = gr.HTML(value=render_agent_trace([]))
+            counterfactual_output = gr.HTML(value="")
             coach_output = gr.HTML(value=_empty_coach())
 
     # Toggle detail sections
@@ -1000,7 +1169,10 @@ with gr.Blocks(title="Body Debt") as demo:
             bed_time, wake_time,
             face_image,
         ],
-        outputs=[hero_output, meters_output, rx_output, face_output, coach_output, trace_output],
+        outputs=[
+            hero_output, meters_output, rx_output, face_output,
+            plan_output, trace_output, counterfactual_output, coach_output,
+        ],
     )
 
     gr.HTML(f"""

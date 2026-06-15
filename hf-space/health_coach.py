@@ -146,3 +146,121 @@ def _fallback_advice(debt_score: int, system_scores: list[dict], stressor_summar
         advice += "**Today:** Train if you want. Stay hydrated.\n\n"
         advice += "**Avoid:** Nothing specific — maintain the streak.\n"
     return advice
+
+
+# ─── Plan step ────────────────────────────────────────────────────────────────
+#
+# A small but real "agentic" step. The LLM is given the system scores and
+# must produce a 3-line plan: PRIORITY / SECONDARY / AVOID. Structured
+# output is much more reliable than free-form from a 360M model. The plan
+# is shown in the agent trace panel and fed into the final prescription
+# prompt as additional context.
+
+PLAN_PROMPT_SYSTEM = (
+    "You are a triage planner. Given a 5-system body debt breakdown, "
+    "output EXACTLY three lines, in this format, with no other text:\n"
+    "PRIORITY: <system name> <score>\n"
+    "SECONDARY: <system name> <score>\n"
+    "AVOID: <one specific thing to avoid today>\n"
+    "Pick the highest-scoring system for PRIORITY, the next-highest for "
+    "SECONDARY, and a concrete avoidance based on the worst system. "
+    "No commentary, no extra lines."
+)
+
+
+def _build_plan_messages(system_scores: list[dict]) -> list[dict]:
+    systems_text = "\n".join(
+        f"- {s['label']}: {s['score']}/100"
+        for s in sorted(system_scores, key=lambda x: -x["score"])
+    )
+    return [
+        {"role": "system", "content": PLAN_PROMPT_SYSTEM},
+        {"role": "user", "content": f"System scores:\n{systems_text}\n\nOutput the 3-line plan."},
+    ]
+
+
+def _parse_plan(raw: str, system_scores: list[dict]) -> dict:
+    """Best-effort parse of the LLM's 3-line plan.
+
+    Falls back to a deterministic plan computed from the system scores
+    if the LLM output is malformed. The fallback is what we render.
+    """
+    text = raw.strip()
+    plan = {"priority": None, "secondary": None, "avoid": None}
+    for line in text.splitlines():
+        up = line.upper().strip()
+        if up.startswith("PRIORITY:") and not plan["priority"]:
+            plan["priority"] = line.split(":", 1)[1].strip()
+        elif up.startswith("SECONDARY:") and not plan["secondary"]:
+            plan["secondary"] = line.split(":", 1)[1].strip()
+        elif up.startswith("AVOID:") and not plan["avoid"]:
+            plan["avoid"] = line.split(":", 1)[1].strip()
+    return plan
+
+
+def _fallback_plan(system_scores: list[dict]) -> dict:
+    """Deterministic plan from the system scores alone (no LLM)."""
+    ranked = sorted(system_scores, key=lambda s: -s["score"])
+    plan = {"priority": None, "secondary": None, "avoid": None}
+    if ranked:
+        plan["priority"] = f"{ranked[0]['label']} {ranked[0]['score']}/100"
+    if len(ranked) > 1 and ranked[1]["score"] > 10:
+        plan["secondary"] = f"{ranked[1]['label']} {ranked[1]['score']}/100"
+    top = ranked[0]["label"].lower() if ranked else "this system"
+    avoid_map = {
+        "brain": "late caffeine, deep-focus work before 11am",
+        "liver": "more alcohol, fatty foods",
+        "muscular / cns": "high-intensity training, heavy lifts",
+        "cardiovascular": "intervals, sauna, alcohol",
+        "gut": "sugar, dairy, large meals",
+    }
+    plan["avoid"] = avoid_map.get(top, "stress and stimulants")
+    return plan
+
+
+def generate_plan(system_scores: list[dict], plan_lines: list[str]) -> dict:
+    """Try the LLM plan first, fall back to deterministic.
+
+    `plan_lines` is filled with the LLM's raw output line-by-line as it
+    streams, so the UI can show the plan being formed in the agent trace.
+    """
+    try:
+        from transformers import pipeline
+
+        pipe = pipeline("text-generation", model=MODEL_ID, device_map="auto", torch_dtype="auto")
+        messages = _build_plan_messages(system_scores)
+        out = pipe(messages, max_new_tokens=60, temperature=0.3, do_sample=False)
+        raw = out[0]["generated_text"][-1]["content"]
+        for line in raw.splitlines():
+            if line.strip():
+                plan_lines.append(line.strip())
+        plan = _parse_plan(raw, system_scores)
+        if not plan["priority"] or not plan["avoid"]:
+            return _fallback_plan(system_scores)
+        return plan
+    except Exception as e:
+        print(f"Plan generation failed: {e}")
+        return _fallback_plan(system_scores)
+
+
+def stream_plan(system_scores: list[dict]):
+    """Yield (plan_dict_so_far, raw_line) tuples as the LLM produces them.
+
+    On failure, yield a single deterministic plan.
+    """
+    lines: list[str] = []
+    plan = generate_plan(system_scores, lines)
+    if not lines:
+        # Fallback path: emit the deterministic lines so the UI can show them
+        for piece in (
+            f"PRIORITY: {plan['priority']}",
+            f"SECONDARY: {plan['secondary']}" if plan["secondary"] else "",
+            f"AVOID: {plan['avoid']}",
+        ):
+            if piece:
+                lines.append(piece)
+                yield plan, piece
+        return
+    for line in lines:
+        yield plan, line
+

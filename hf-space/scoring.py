@@ -363,3 +363,112 @@ def _build_action_text(system: str, stressors: list[Stressor]) -> str:
             else "Probiotic-rich foods will help speed gut clearance."
         )
     return ""
+
+
+# ─── Counterfactual engine ────────────────────────────────────────────────────
+#
+# "If you had slept 7+ hours, Brain debt would drop from 67 to 22."
+#
+# The most leveraged single change to the user's stress profile. We find the
+# highest non-cleared system, identify the stressor contributing most to it,
+# and propose a single reversible flip (e.g. sleep 4-6 -> 6-7) that would
+# lower the score the most. Returned as a renderable sentence.
+
+COUNTERFACTUAL_FLIPS = {
+    "sleep": {
+        "field": "sleep_hours",
+        "from_to": {"under_4": "6-7", "4-6": "6-7", "6-7": "6-7"},
+        "label": "slept 7+ hours",
+    },
+    "training": {
+        "field": "training_intensity",
+        "from_to": {"destroyed": "easy", "hard": "easy", "easy": "easy"},
+        "label": "trained easy instead of hard",
+    },
+    "alcohol": {
+        "field": "alcohol_count",
+        "from_to": {"lost_count": "1-2", "5+": "1-2", "3-4": "1-2", "1-2": "1-2"},
+        "label": "kept it to 1–2 drinks",
+    },
+    "stress": {
+        "field": "stress_carried",
+        "from_to": {"yes": "mostly_gone", "mostly_gone": "mostly_gone"},
+        "label": "let the stress clear",
+    },
+    "ill": {
+        "field": "ill_severity",
+        "from_to": {"floored": "mild", "moderate": "mild", "mild": "mild"},
+        "label": "caught the illness earlier",
+    },
+}
+
+SYSTEM_LABEL_NICE = {
+    "cardiovascular": "Cardiovascular",
+    "brain": "Brain",
+    "liver": "Liver",
+    "muscular": "Muscular / CNS",
+    "gut": "Gut",
+}
+
+
+def compute_counterfactual(
+    stressors: list,
+    current_system_scores: list,
+    bed_time: Optional[str] = None,
+    wake_time: Optional[str] = None,
+) -> Optional[dict]:
+    """Return the single highest-leverage change the user could make.
+
+    Iterates over every stressor × every possible flip and returns the
+    flip that lowers the target (worst non-cleared) system the most.
+
+    Returns a dict {system, from_score, to_score, drop, lever_label} or None
+    if no clear lever exists.
+    """
+    ranked = sorted(current_system_scores, key=lambda s: -s.score)
+    target = next((s for s in ranked if s.score > 20), None)
+    if not target:
+        return None
+
+    best: Optional[dict] = None
+    for s in stressors:
+        if s.type not in COUNTERFACTUAL_FLIPS:
+            continue
+        flip = COUNTERFACTUAL_FLIPS[s.type]
+        field = flip["field"]
+        current_val = getattr(s, field, None)
+        if current_val is None:
+            continue
+        target_val = flip["from_to"].get(current_val)
+        if target_val is None or target_val == current_val:
+            continue
+        modified = []
+        for s2 in stressors:
+            if s2 is s:
+                modified.append(Stressor(**{**s2.__dict__, field: target_val}))
+            else:
+                modified.append(s2)
+        new_scores = compute_system_scores(
+            modified,
+            now=datetime.now(),
+            bed_time=bed_time,
+            wake_time=wake_time,
+        )
+        new_target = next((x for x in new_scores if x.system == target.system), None)
+        if new_target is None:
+            continue
+        drop = target.score - new_target.score
+        if drop <= 0:
+            continue
+        candidate = {
+            "system": target.system,
+            "system_label": SYSTEM_LABEL_NICE.get(target.system, target.system),
+            "from_score": target.score,
+            "to_score": new_target.score,
+            "drop": drop,
+            "lever_label": flip["label"],
+        }
+        if best is None or candidate["drop"] > best["drop"]:
+            best = candidate
+    return best
+

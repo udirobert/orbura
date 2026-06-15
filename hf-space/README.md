@@ -17,6 +17,7 @@ tags:
   - openai-codex
 models:
   - HuggingFaceTB/SmolLM2-360M-Instruct
+  - Papajams/body-debt-stress-mlp
 ---
 
 # 🫀 Body Debt
@@ -24,6 +25,16 @@ models:
 **Quantify your physiological debt. Get AI-backed recovery prescriptions.**
 
 Body Debt calculates the precise recovery cost of last night's choices — alcohol, training, poor sleep, stress, illness — across five biological systems, then generates personalized recovery advice using a **1-billion parameter local LLM**.
+
+## Why I built this
+
+I built Body Debt for myself. I kept training on bad sleep, drinking on Wednesdays, and wondering on Saturday why I felt like I was running through mud. Wearables told me *what* my body was doing; nothing told me *why today* felt like a high-debt day and what the cheapest recovery move was.
+
+So this is the app I wanted: log last night, get a single number, see which of the five systems is the actual problem, and read a four-line prescription that tells me what to do in the next 60 seconds. The face scan is a bonus — it catches the days when the *number* says I'm fine but my face says I look like I slept on a plane.
+
+I've been running the local version for two weeks. The agent trace (top-right of the results panel) is the part I trust most: it's a transparent record of *why* the score is what it is. I can disagree with the prescription, but I can't disagree with the chain of reasoning that produced it.
+
+The whole thing runs on a $300 Chromebook with no internet. That was the constraint that made it worth building — privacy on health data isn't a feature here, it's the only design space that exists.
 
 ## What it does
 
@@ -44,7 +55,7 @@ A 360M parameter model is the *right* size for this product, not a compromise:
 - **Footprint.** 360M fits in 250MB of RAM. The whole app, model and all, runs on a $300 Chromebook.
 - **Output shape.** The advice is short, structured, and rule-bound (Right Now / This Morning / Today / Avoid). Bigger models wouldn't make it more correct.
 
-The face scan stress classifier is a custom 7→16→8→1 MLP (~2KB ONNX) that converts facial geometry features into a fatigue score.
+The face scan stress classifier is a custom 7→16→8→1 MLP (~2KB ONNX, 553 parameters) that converts facial geometry features into a fatigue score. The model is published separately as [`Papajams/body-debt-stress-mlp`](https://huggingface.co/Papajams/body-debt-stress-mlp) with a full model card.
 
 ## Tech
 
