@@ -16,7 +16,7 @@ tags:
   - off-brand
   - openai-codex
 models:
-  - hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF
+  - HuggingFaceTB/SmolLM2-360M-Instruct
 ---
 
 # 🫀 Body Debt
@@ -30,34 +30,34 @@ Body Debt calculates the precise recovery cost of last night's choices — alcoh
 1. **Log stressors** — tap what happened (drank, trained, slept badly, stressed, ill, or took care)
 2. **Face scan** (optional) — webcam capture analyzed by MediaPipe FaceMesh to detect fatigue markers (eye aspect ratio, brow tension, eye symmetry)
 3. **Deterministic scoring** — five biological systems (Cardiovascular, Brain, Liver, Muscular/CNS, Gut) scored with physiological weights and circadian penalties
-4. **Local AI recovery coach** — Llama-3.2-1B generates a personalized prescription (Right Now / This Morning / Today / Avoid)
+4. **Visible agent trace** — every step of the reasoning chain streams into the UI: parse stressors → compute score → face scan → LLM coach
+5. **Local AI recovery coach** — SmolLM2-360M-Instruct streams a personalized prescription token-by-token, right now
 
 ## The model
 
-**Llama-3.2-1B-Instruct** (Q4_K_M quantization, ~700MB) — runs entirely on CPU via `llama-cpp-python`. No API calls, no cloud inference. Your health data never leaves your machine.
+**SmolLM2-360M-Instruct** (360M parameters) — runs entirely on CPU via HuggingFace Transformers. No external API calls, no cloud inference. Your health data stays on-device.
+
+A 360M parameter model is the *right* size for this product, not a compromise:
+
+- **Privacy.** Health data never leaves the device. A 70B model doesn't help when the user is undressed, hungover, or at 2am with a chest flutter — they need on-device.
+- **Latency.** 360M streams the first token in under a second on a modern laptop. A 7B cloud call is 2-8 seconds of network + queue.
+- **Footprint.** 360M fits in 250MB of RAM. The whole app, model and all, runs on a $300 Chromebook.
+- **Output shape.** The advice is short, structured, and rule-bound (Right Now / This Morning / Today / Avoid). Bigger models wouldn't make it more correct.
 
 The face scan stress classifier is a custom 7→16→8→1 MLP (~2KB ONNX) that converts facial geometry features into a fatigue score.
 
 ## Tech
 
-- **LLM**: Llama-3.2-1B-Instruct (1B params, Q4_K_M GGUF) via llama-cpp-python
+- **LLM**: SmolLM2-360M-Instruct (360M params) via HuggingFace Transformers, streamed via `TextIteratorStreamer`
 - **Face analysis**: MediaPipe FaceMesh → 7 stress features → ONNX MLP
 - **Scoring**: Deterministic 5-system engine with physiological weights, drink-type modifiers, training CNS load, circadian alignment penalties
-- **UI**: Gradio 5 with custom dark theme
+- **UI**: Custom dark Gradio theme — `DM Serif Display` for the debt number, system-specific accent tokens, breathing-orb animation, monogram glyphs, agent trace panel
 
 ## Privacy
 
 - Face scan runs via MediaPipe on-device — no images are transmitted
 - LLM inference is local — no API calls to external services
 - No data persistence — nothing is stored between sessions
-
-## Demo
-
-[Demo video link]
-
-## Social
-
-[Social media post link]
 
 ## Try it locally
 
@@ -69,14 +69,16 @@ python app.py
 
 ## OpenAI Codex Track
 
-This Space was built with OpenAI Codex as the coding agent. The public source repository, including Codex-attributed commits, is here:
+This Space was built end-to-end with **OpenAI Codex** as the coding agent. The full source repository, including Codex-attributed commits, is here:
 
 **Repository:** [github.com/udirobert/bodydebt](https://github.com/udirobert/bodydebt)
 
+Codex handled the bulk of the architecture: porting the Next.js TypeScript scoring engine to Python, porting the dark design system from CSS variables into a custom Gradio theme, and wiring the streaming agent trace. The repo's `git log` shows consecutive Codex-attributed commits for each subsystem.
+
 ## Full product
 
-The complete Body Debt application (Next.js, ZK proofs on SKALE, real-time animated dashboard) is at: [github.com/udirobert/bodydebt](https://github.com/udirobert/bodydebt)
+The complete Body Debt application — Next.js, animated debt orb, ZK proofs on SKALE, full state machine — is at: [github.com/udirobert/bodydebt](https://github.com/udirobert/bodydebt)
 
 ---
 
-*Built for the [Build Small Hackathon](https://huggingface.co/spaces/huggingface/build-small-hackathon). Everything under 32B parameters, running on hardware you own.*
+*Built for the [Build Small Hackathon](https://huggingface.co/build-small-hackathon). 360M parameters, on a laptop, no cloud.*
