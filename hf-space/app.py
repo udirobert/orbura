@@ -336,10 +336,27 @@ footer {{ display: none !important; }}
     gap: 16px;
     margin-bottom: 16px;
 }}
+.face-pill-placeholder {{
+    padding: 20px;
+    background: var(--bg-surface);
+    border: 1.5px dashed var(--border);
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+}}
+.face-pill-placeholder:hover {{
+    border-color: var(--brand);
+}}
+.face-pill-placeholder .icon {{ font-size: 28px; opacity: 0.4; margin-bottom: 6px; }}
+.face-pill-placeholder .label {{ font-size: 11px; color: var(--text-muted); font-weight: 500; }}
+.face-pill-placeholder .sub {{ font-size: 9px; color: var(--text-faint); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }}
 .face-num {{ font-family: 'DM Serif Display', serif; font-size: 36px; line-height: 1; }}
 .face-label {{ font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); }}
 .face-status {{ font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }}
 .face-meta {{ font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-faint); margin-top: 4px; }}
+.face-bar {{ margin-top: 8px; height: 4px; background: rgba(168, 162, 158, 0.08); border-radius: 2px; overflow: hidden; }}
+.face-bar-fill {{ height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }}
 
 /* Agent trace */
 .trace-step {{
@@ -727,7 +744,7 @@ button.clear-all:hover {{
 
 /* Smooth theme transitions — 0.2s matches existing hover rhythms */
 .gradio-container,
-.sys-meter, .coach-block, .coach-pill, .face-pill, .cf-block,
+.sys-meter, .coach-block, .coach-pill, .tl-wrap, .face-pill, .face-pill-placeholder, .cf-block,
 .debt-pill, .attr-pill,
 input, textarea, .gr-input, .gr-text-input, .gr-dropdown,
 .gr-checkbox input[type="checkbox"]:not(:checked),
@@ -856,6 +873,105 @@ button.primary, .gr-button-primary {{
     font-size: 12px;
 }}
 
+/* Timeline chart */
+.tl-wrap {{
+    margin: 16px 0;
+    padding: 14px 16px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}}
+.tl-label {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    min-width: 32px;
+    flex-shrink: 0;
+}}
+.tl-row {{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+}}
+.tl-bar-wrap {{
+    flex: 1;
+    height: 10px;
+    background: rgba(168, 162, 158, 0.06);
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+}}
+.tl-bar {{
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}}
+.tl-bar-stack {{
+    height: 100%;
+    display: flex;
+    border-radius: 5px;
+    overflow: hidden;
+}}
+.tl-seg {{
+    height: 100%;
+    transition: flex 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}}
+.tl-seg:first-child {{ border-radius: 5px 0 0 5px; }}
+.tl-seg:last-child {{ border-radius: 0 5px 5px 0; }}
+.tl-seg:only-child {{ border-radius: 5px; }}
+.tl-score {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 22px;
+    text-align: right;
+    flex-shrink: 0;
+}}
+.tl-now {{
+    display: inline-block;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--brand);
+    margin-left: 4px;
+}}
+.tl-dom {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 800;
+    min-width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}}
+/* Timeline legend */
+.tl-legend {{
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-soft);
+}}
+.tl-leg {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}}
+.tl-leg-swatch {{
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+}}
+
 /* Save compare button */
 .save-compare {{
     font-family: 'JetBrains Mono', monospace !important;
@@ -880,10 +996,83 @@ button.primary, .gr-button-primary {{
     .debt-hero {{ font-size: clamp(5.5rem, 28vw, 8rem); }}
     .orb-wrap {{ padding: 28px 20px 22px; }}
     .theme-toggle {{ top: 12px; right: 12px; width: 32px; height: 32px; font-size: 14px; }}
-}}
-@media (max-width: 720px) {{
-    .gradio-container {{ padding: 0 12px 32px !important; }}
     .gradio-row > div {{ flex-wrap: wrap !important; }}
+}}
+@media (max-width: 600px) {{
+    .gradio-container {{ padding: 0 10px 28px !important; }}
+    .app-header {{ padding: 18px 0 16px; margin-bottom: 14px; }}
+    .app-title {{ font-size: 10px; }}
+    .app-subtitle {{ font-size: 11px; }}
+    .attr-pill {{ font-size: 8px; padding: 2px 8px; }}
+    .debt-hero {{ font-size: clamp(3.8rem, 24vw, 5.5rem) !important; }}
+    .debt-hero-label {{ font-size: 8px; }}
+    .debt-verdict {{ font-size: 12px; }}
+    .orb-wrap {{ padding: 20px 12px 16px; }}
+    .orb-wrap::before {{ inset: -20px; }}
+    .orb-wrap::after {{ inset: -35px; }}
+    .section-label {{ font-size: 8px; margin: 0 0 8px; }}
+    .sys-meter {{ padding: 8px 10px; gap: 8px; }}
+    .sys-glyph {{ width: 22px; height: 22px; font-size: 10px; }}
+    .sys-label {{ font-size: 11px; }}
+    .sys-time {{ font-size: 8px; }}
+    .sys-cause {{ font-size: 10px; }}
+    .coach-block {{ padding: 14px 16px; }}
+    .coach-body {{ font-size: 12px; min-height: 40px; }}
+    .proto-action {{ font-size: 11px; }}
+    .proto-step {{ gap: 8px; }}
+    .preset-chip {{ font-size: 9px !important; padding: 4px 10px !important; }}
+    .debt-pill {{ font-size: 9px; padding: 4px 10px; }}
+    .face-pill {{ padding: 10px 12px; gap: 10px; }}
+    .face-num {{ font-size: 28px; }}
+    .cf-block {{ padding: 10px 12px; flex-direction: column; gap: 6px; }}
+    .cf-label {{ min-width: auto; font-size: 8px; }}
+    .cf-body {{ font-size: 11px; }}
+    .plan-line {{ gap: 8px; padding: 7px 0; }}
+    .plan-tag {{ font-size: 8px; min-width: 64px; padding: 2px 6px; }}
+    .plan-text {{ font-size: 11px; }}
+    .trace-step {{ font-size: 9px; padding: 4px 8px; }}
+    .tl-legend {{ gap: 6px; }}
+    .tl-leg {{ font-size: 7px; }}
+    .tl-leg-swatch {{ width: 6px; height: 6px; }}
+    .tl-dom {{ font-size: 7px; min-width: 12px; }}
+    .cmp-card {{ min-width: 140px; max-width: 160px; padding: 10px 10px; }}
+    .cmp-hero {{ font-size: 24px; }}
+    .cmp-label {{ font-size: 8px; }}
+    .empty-state {{ padding: 40px 16px; }}
+    .empty-state .icon {{ font-size: 36px; }}
+    .empty-state .label {{ font-size: 12px; }}
+    .empty-state .sub {{ font-size: 10px; }}
+    .sci-card {{ padding: 10px 12px; }}
+    .sci-fact {{ font-size: 11px; }}
+    .sci-cite {{ font-size: 9px; }}
+    .theme-toggle {{ top: 10px; right: 10px; width: 28px; height: 28px; font-size: 12px; }}
+    .face-meta {{ font-size: 8px; }}
+    .face-status {{ font-size: 9px; }}
+    input, textarea {{ font-size: 14px !important; }}
+    .gr-checkbox input[type="checkbox"] {{ width: 22px; height: 22px; }}
+    .gr-checkbox input[type="checkbox"]:checked::after {{ font-size: 16px; top: -1px; left: 5px; }}
+    .gr-checkbox label {{ font-size: 14px !important; }}
+    .gr-dropdown {{ font-size: 13px !important; }}
+}}
+@media (max-width: 420px) {{
+    .gradio-container {{ padding: 0 8px 24px !important; }}
+    .app-header {{ padding: 14px 0 12px; margin-bottom: 12px; }}
+    .app-title {{ font-size: 9px; letter-spacing: 0.16em; }}
+    .debt-hero {{ font-size: clamp(2.8rem, 22vw, 3.8rem) !important; }}
+    .orb-wrap {{ padding: 14px 8px 12px; }}
+    .orb-wrap::before {{ inset: -14px; }}
+    .orb-wrap::after {{ inset: -24px; }}
+    .preset-row {{ gap: 4px; }}
+    .preset-chip {{ font-size: 8px !important; padding: 3px 8px !important; }}
+    .attr-pill {{ font-size: 7px; padding: 2px 6px; gap: 4px; }}
+    .cmp-card {{ min-width: 120px; max-width: 140px; padding: 8px; }}
+    .cmp-hero {{ font-size: 20px; }}
+    .plan-tag {{ font-size: 7px; min-width: 54px; }}
+    .coach-block {{ padding: 12px 12px; }}
+    .coach-header {{ font-size: 8px; }}
+    .coach-pill {{ font-size: 8px; padding: 2px 6px; }}
+    button.clear-all {{ font-size: 9px !important; padding: 3px 8px !important; }}
+    .save-compare {{ font-size: 9px !important; padding: 3px 10px !important; }}
 }}
 """
 
@@ -1057,10 +1246,11 @@ def render_science(system_scores) -> str:
     """
 
 
-def render_face_scan(face_stress, is_healthy, features) -> str:
+def render_face_scan(face_stress, is_healthy, _features) -> str:
     status_color = "var(--recovery-green)" if is_healthy else "var(--brand)"
     status_text = "Healthy" if is_healthy else "Stressed"
     status_bg = "rgba(74, 222, 128, 0.10)" if is_healthy else "rgba(234, 88, 12, 0.10)"
+    pct = max(0, min(100, face_stress))
 
     return f"""
     <div class="face-pill">
@@ -1070,9 +1260,159 @@ def render_face_scan(face_stress, is_healthy, features) -> str:
         </div>
         <div style="flex: 1;">
             <span class="face-status" style="color: {status_color}; background: {status_bg};">{status_text}</span>
-            <div class="face-meta">EAR L={features.left_eye_aspect:.3f} R={features.right_eye_aspect:.3f} · Brow={features.brow_tension:.4f} · Sym={features.eye_symmetry:.3f}</div>
+            <div class="face-bar">
+                <div class="face-bar-fill" style="width: {pct}%; background: {status_color};"></div>
+            </div>
             <div class="face-meta" style="margin-top: 6px; font-style: italic;">Processed on-device. No biometric data transmitted.</div>
         </div>
+    </div>
+    """
+
+
+def render_face_scan_placeholder() -> str:
+    """Call-to-action placeholder for face scan before the user runs an analysis."""
+    return f"""
+    <div class="face-pill-placeholder">
+        <div class="icon">📷</div>
+        <div class="label">Capture a photo or use your webcam</div>
+        <div class="sub">MediaPipe FaceMesh → 7 features → stress MLP · all on-device</div>
+    </div>
+    """
+
+
+# ─── Debt timeline chart ─────────────────────────────────────────────────
+
+
+def compute_debt_timeline(system_scores, now=None):
+    """Compute how total body debt changes over the recovery window.
+
+    Each system decays linearly from its current score to 0 over its
+    recovery window. Returns list of dicts, each with total score, per-system
+    breakdown, and the dominant system at that point.
+    """
+    if now is None:
+        now = datetime.now()
+
+    max_window = max((s for s in system_scores), default=None, key=lambda s: s.recovery_hrs)
+    max_hrs = max_window.recovery_hrs if max_window else 10
+    max_hrs = max(max_hrs, 8)
+    max_hrs = min(max_hrs, 48)
+
+    system_order = ["cardiovascular", "brain", "liver", "muscular", "gut"]
+
+    points = []
+    for h in range(0, int(max_hrs) + 2, 2):
+        total = 0
+        systems_at_h = []
+        for sys_name in system_order:
+            s = next((x for x in system_scores if x.system == sys_name), None)
+            if s is None:
+                continue
+            if s.recovery_hrs > 0 and h <= s.recovery_hrs:
+                remaining_frac = (s.recovery_hrs - h) / s.recovery_hrs
+                sys_score = round(s.score * remaining_frac, 1)
+            else:
+                sys_score = 0.0
+            total += sys_score
+            accent = SYSTEM_ACCENTS.get(sys_name, ("var(--text-muted)",))[0]
+            systems_at_h.append({
+                "name": sys_name,
+                "glyph": SYSTEM_GLYPHS.get(sys_name, "•"),
+                "score": round(sys_score),
+                "color": accent,
+            })
+
+        total = round(total)
+        color, _, _ = debt_tier(total)
+        label = "Now" if h == 0 else f"+{h}h"
+
+        # Find dominant system (highest contributing)
+        dominant = max(systems_at_h, key=lambda x: x["score"]) if systems_at_h else None
+
+        points.append({
+            "hour": h,
+            "score": total,
+            "color": color,
+            "label": label,
+            "systems": systems_at_h,
+            "dominant": dominant["name"] if dominant and dominant["score"] > 0 else None,
+            "dominant_glyph": dominant["glyph"] if dominant and dominant["score"] > 0 else "",
+        })
+
+    return points
+
+
+def render_timeline(points: list[dict]) -> str:
+    """Render the debt timeline as a horizontal bar chart with system breakdown.
+
+    Each bar is a stacked segment showing each system's contribution in its
+    accent color. The dominant system is labeled to the right of the bar.
+    """
+    if not points:
+        return ""
+
+    max_score = max(p["score"] for p in points) or 1
+
+    rows = []
+    for p in points:
+        now_tag = '<span class="tl-now">· now</span>' if p["hour"] == 0 else ""
+
+        # Build stacked bar segments — each system gets a proportional slice
+        bar_pct = max(2.0, (p["score"] / max_score) * 100)
+        segments = []
+        if p["systems"] and p["score"] > 0:
+            total_sys = sum(x["score"] for x in p["systems"])
+            for sys in p["systems"]:
+                if sys["score"] <= 0:
+                    continue
+                share = (sys["score"] / total_sys) * 100
+                sys_label = {"cardiovascular":"Cardiovascular","brain":"Brain","liver":"Liver","muscular":"Muscular","gut":"Gut"}.get(sys["name"], sys["name"])
+                segments.append(f'<span class="tl-seg" style="flex:{share:.1f};background:{sys["color"]}" title="{sys_label}: {sys["score"]} pts"></span>')
+        else:
+            segments = []
+
+        seg_html = "".join(segments) if segments else f'<span class="tl-bar" style="width:100%;background:{p["color"]}"></span>'
+
+        # Dominant system indicator
+        dom_html = ""
+        if p["dominant"] and p["dominant_glyph"]:
+            dom_color = SYSTEM_ACCENTS.get(p["dominant"], ("var(--text-secondary)",))[0]
+            dom_html = f'<span class="tl-dom" style="color:{dom_color};">{p["dominant_glyph"]}</span>'
+
+        rows.append(f"""
+        <div class="tl-row">
+            <span class="tl-label">{p['label']}{now_tag}</span>
+            <div class="tl-bar-wrap">
+                <div class="tl-bar-stack" style="width:{bar_pct:.0f}%;">
+                    {seg_html}
+                </div>
+            </div>
+            <span class="tl-score" style="color: {p['color']};">{p['score']}</span>
+            {dom_html}
+        </div>
+        """)
+
+    # Build a legend showing system glyphs
+    legend_items = []
+    for sys_name in ["cardiovascular", "brain", "liver", "muscular", "gut"]:
+        accent = SYSTEM_ACCENTS.get(sys_name, ("var(--text-muted)",))[0]
+        glyph = SYSTEM_GLYPHS.get(sys_name, "•")
+        label = {
+            "cardiovascular": "Cardio",
+            "brain": "Brain",
+            "liver": "Liver",
+            "muscular": "Muscle",
+            "gut": "Gut",
+        }.get(sys_name, sys_name)
+        legend_items.append(f'<span class="tl-leg" style="color:{accent};"><span class="tl-leg-swatch" style="background:{accent};"></span>{glyph} {label}</span>')
+
+    legend_html = f'<div class="tl-legend">{" ".join(legend_items)}</div>' if len(legend_items) > 0 else ""
+
+    return f"""
+    <div class="tl-wrap">
+        <div class="section-label" style="margin-bottom: 10px;">Recovery forecast</div>
+        {legend_html}
+        {"".join(rows)}
     </div>
     """
 
@@ -1356,7 +1696,9 @@ def render_sample_preview():
     ]
     trace_html = render_agent_trace(sample_trace)
 
-    return hero_html, plan_html, meters_html, "", rx_html + science_html, trace_html, cf_html, _sample_coach()
+    face_html = render_face_scan_placeholder()
+    timeline_html = render_timeline(compute_debt_timeline(sample_system_scores, now=sample_now))
+    return hero_html, plan_html, meters_html, face_html, timeline_html, rx_html + science_html, trace_html, cf_html, _sample_coach()
 
 
 def _sample_coach() -> str:
@@ -1414,7 +1756,7 @@ def run_analysis_stream(
 ):
     """Streaming generator. Yield tuple:
 
-        (hero, meters, rx, face, plan, trace, counterfactual, coach)
+        (hero, meters, rx, face, timeline, plan, trace, counterfactual, coach)
     """
     stressors = build_stressors(
         alcohol, alcohol_type, alcohol_count,
@@ -1432,7 +1774,7 @@ def run_analysis_stream(
 
     # Step 1: parse stressors
     trace = [("parse_stressors", "active", f"{len(stressors)} selected")]
-    yield (EMPTY, EMPTY, NUL, NUL, E_P, E_T, E_CF, E_C)
+    yield (EMPTY, EMPTY, NUL, NUL, "", E_P, E_T, E_CF, E_C)
     time.sleep(0.05)
 
     if not stressors:
@@ -1442,7 +1784,7 @@ def run_analysis_stream(
             f'<div class="label">Log at least one stressor</div>'
             f'<div class="sub">Tap a checkbox on the left to begin.</div></div>'
         )
-        yield (msg, NUL, NUL, NUL, E_P, render_agent_trace(trace), E_CF, E_C)
+        yield (msg, NUL, NUL, NUL, "", E_P, render_agent_trace(trace), E_CF, E_C)
         return
 
     trace[-1] = ("parse_stressors", "done", f"{len(stressors)} stressors")
@@ -1450,7 +1792,7 @@ def run_analysis_stream(
 
     # Step 2: compute scores
     trace.append(("compute_live_score", "active", "deterministic engine"))
-    yield (NUL, NUL, NUL, NUL, E_P, render_agent_trace(trace), E_CF, E_C)
+    yield (NUL, NUL, NUL, NUL, "", E_P, render_agent_trace(trace), E_CF, E_C)
     time.sleep(0.05)
 
     live_score = compute_live_score(stressors)
@@ -1463,12 +1805,15 @@ def run_analysis_stream(
     trace[-1] = ("compute_live_score", "done", f"score={live_score}/100")
     progress(0.3, desc="Mapping 5 systems...")
 
+    # Compute timeline once system scores are available
+    timeline_html = render_timeline(compute_debt_timeline(system_scores))
+
     # Step 3: face scan
     face_html = ""
     face_stress = None
     if face_image is not None:
         trace.append(("face_scan", "active", "MediaPipe FaceMesh"))
-        yield (NUL, NUL, NUL, NUL, E_P, render_agent_trace(trace), E_CF, E_C)
+        yield (NUL, NUL, NUL, NUL, timeline_html, E_P, render_agent_trace(trace), E_CF, E_C)
         time.sleep(0.05)
 
         features = run_face_scan(face_image)
@@ -1489,7 +1834,7 @@ def run_analysis_stream(
     ]
     trace.append(("triage_plan", "active", "SmolLM2-360M"))
     plan_html = render_plan(None, [])
-    yield (NUL, NUL, NUL, NUL, plan_html, render_agent_trace(trace), E_CF, E_C)
+    yield (NUL, NUL, NUL, NUL, timeline_html, plan_html, render_agent_trace(trace), E_CF, E_C)
 
     plan_dict: dict = {"priority": None, "secondary": None, "avoid": None}
     plan_lines: list[str] = []
@@ -1498,7 +1843,7 @@ def run_analysis_stream(
             if line:
                 plan_lines.append(line)
                 plan_html = render_plan(None, list(plan_lines))
-                yield (NUL, NUL, NUL, NUL, plan_html, render_agent_trace(trace), E_CF, E_C)
+                yield (NUL, NUL, NUL, NUL, timeline_html, plan_html, render_agent_trace(trace), E_CF, E_C)
     except Exception as e:
         print(f"Plan stream failed: {e}")
     plan_html = render_plan(plan_dict, plan_lines)
@@ -1523,7 +1868,7 @@ def run_analysis_stream(
     )
 
     yield (
-        hero_html, meters_html, rx_html + science_html, face_html,
+        hero_html, meters_html, rx_html + science_html, face_html, timeline_html,
         plan_html, render_agent_trace(trace), cf_html, _coach_with_cursor(""),
     )
 
@@ -1531,7 +1876,7 @@ def run_analysis_stream(
         for piece in stream_advice(live_score, system_dicts, stressor_summary, face_stress):
             accumulated += piece
             yield (
-                hero_html, meters_html, rx_html + science_html, face_html,
+                hero_html, meters_html, rx_html + science_html, face_html, timeline_html,
                 plan_html, render_agent_trace(trace), cf_html,
                 _coach_with_cursor(accumulated),
             )
@@ -1539,7 +1884,7 @@ def run_analysis_stream(
         print(f"Stream fallback: {e}")
         accumulated = _fallback_advice(live_score, system_dicts, stressor_summary)
         yield (
-            hero_html, meters_html, rx_html + science_html, face_html,
+            hero_html, meters_html, rx_html + science_html, face_html, timeline_html,
             plan_html, render_agent_trace(trace), cf_html,
             _coach_with_cursor(accumulated),
         )
@@ -1547,7 +1892,7 @@ def run_analysis_stream(
     trace[-1] = ("llm_coach", "done", f"{len(accumulated)} chars")
     progress(1.0, desc="Done")
     yield (
-        hero_html, meters_html, rx_html + science_html, face_html,
+        hero_html, meters_html, rx_html + science_html, face_html, timeline_html,
         plan_html, render_agent_trace(trace), cf_html,
         _coach_with_cursor(accumulated),
     )
@@ -1679,7 +2024,7 @@ def clear_comparisons():
 
 # ─── Pre-compute sample preview ─────────────────────────────────────────────
 
-SAMPLE_HERO, SAMPLE_PLAN, SAMPLE_METERS, SAMPLE_FACE, SAMPLE_RX, SAMPLE_TRACE, SAMPLE_CF, SAMPLE_COACH = render_sample_preview()
+SAMPLE_HERO, SAMPLE_PLAN, SAMPLE_METERS, SAMPLE_FACE, SAMPLE_TIMELINE, SAMPLE_RX, SAMPLE_TRACE, SAMPLE_CF, SAMPLE_COACH = render_sample_preview()
 
 # ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -1793,6 +2138,7 @@ with gr.Blocks(title="Body Debt") as demo:
             plan_output = gr.HTML(value=SAMPLE_PLAN)
             meters_output = gr.HTML(value=SAMPLE_METERS)
             face_output = gr.HTML(value=SAMPLE_FACE)
+            timeline_output = gr.HTML(value=SAMPLE_TIMELINE)
             with gr.Row():
                 with gr.Column(scale=3):
                     rx_output = gr.HTML(value=SAMPLE_RX)
@@ -1818,7 +2164,7 @@ with gr.Blocks(title="Body Debt") as demo:
     ]
 
     ANALYSIS_OUTPUTS = [
-        hero_output, meters_output, rx_output, face_output,
+        hero_output, meters_output, rx_output, face_output, timeline_output,
         plan_output, trace_output, counterfactual_output, coach_output,
     ]
 
