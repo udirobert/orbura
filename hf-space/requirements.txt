@@ -1,0 +1,6 @@
+gradio>=5.0.0,<7.0.0
+mediapipe>=0.10.14
+numpy>=1.26.0
+onnxruntime>=1.18.0
+llama-cpp-python>=0.3.0
+huggingface_hub>=0.25.0
