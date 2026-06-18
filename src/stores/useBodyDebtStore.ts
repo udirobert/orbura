@@ -94,6 +94,10 @@ interface BodyDebtState {
   agentEvents: AgentEventState[];
   setAgentEvents: (events: AgentEventState[]) => void;
 
+  // Agent model download progress (live during analysis — not persisted)
+  agentProgress: { status: string; percent?: number; loaded?: number; total?: number } | null;
+  setAgentProgress: (progress: { status: string; percent?: number; loaded?: number; total?: number } | null) => void;
+
   // Session timestamp
   sessionStartedAt: string | null;
   setSessionStartedAt: (timestamp: string) => void;
@@ -178,6 +182,9 @@ export const useBodyDebtStore = create<BodyDebtState>()(
       agentEvents: [],
       setAgentEvents: (events) => set({ agentEvents: events }),
 
+      agentProgress: null,
+      setAgentProgress: (progress) => set({ agentProgress: progress }),
+
       recomputeConfidence: () => {
         const { selectedStressors, faceAnalysis, hrvData } = get();
         const hasSpecifics = selectedStressors.some((s) =>
@@ -224,6 +231,7 @@ export const useBodyDebtStore = create<BodyDebtState>()(
         sessionStartedAt: null,
         zkProof: null,
         agentEvents: [],
+        agentProgress: null,
       }),
     }),
     {

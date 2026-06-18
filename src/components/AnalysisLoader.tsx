@@ -88,9 +88,10 @@ interface AnalysisLoaderProps {
   hasFaceScan: boolean;
   hasHRV: boolean;
   agentEvents?: AgentEventState[];
+  agentProgress?: { status: string; percent?: number; loaded?: number; total?: number } | null;
 }
 
-export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents }: AnalysisLoaderProps) {
+export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress }: AnalysisLoaderProps) {
   const [elapsed, setElapsed] = useState(0);       // 0–1 simulated progress
   const [factIdx, setFactIdx] = useState(0);
   const [socialIdx] = useState(() => Math.floor(Math.random() * SOCIAL_COUNTS.length));
@@ -224,6 +225,33 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents }: AnalysisLoa
               QVAC · Llama-3.2-1B · on-device
             </span>
           </motion.div>
+        )}
+
+        {/* Model download progress bar */}
+        {agentProgress && agentProgress.status === "downloading" && (
+          <div className="w-full rounded-xl px-3 py-2.5"
+            style={{ backgroundColor: "rgba(234,88,12,0.06)", border: "1px solid rgba(234,88,12,0.15)" }}>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "#EA580C" }}>
+                Loading Llama-3.2-1B
+              </span>
+              <span className="text-[9px] font-mono" style={{ color: "#A8A29E" }}>
+                {agentProgress.percent != null ? `${agentProgress.percent}%` : "..."}
+              </span>
+            </div>
+            <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(168,162,158,0.1)" }}>
+              <motion.div className="h-full rounded-full"
+                style={{ backgroundColor: "#EA580C" }}
+                animate={{ width: `${agentProgress.percent ?? 50}%` }}
+                transition={{ duration: 0.3 }}
+              />
+            </div>
+            {agentProgress.loaded != null && agentProgress.total != null && (
+              <p className="text-[8px] font-mono mt-1" style={{ color: "#524F4C" }}>
+                {Math.round(agentProgress.loaded / 1024 / 1024)}MB / {Math.round(agentProgress.total / 1024 / 1024)}MB
+              </p>
+            )}
+          </div>
         )}
 
         {/* Live agent activity — replaces simulated signals when agents are running */}

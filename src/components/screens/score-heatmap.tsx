@@ -119,13 +119,18 @@ export function ScoreHeatmap() {
             className="overflow-hidden"
           >
             {loading ? (
-              <div
-                className="rounded-2xl px-4 py-5 text-center"
-                style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}
-              >
-                <p className="text-[10px]" style={{ color: "#524F4C" }}>
-                  Loading heatmap...
-                </p>
+              <div className="rounded-2xl px-4 py-5 space-y-2"
+                style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}>
+                <div className="grid grid-cols-10 gap-1.5">
+                  {Array.from({ length: 30 }).map((_, i) => (
+                    <motion.div key={i}
+                      className="rounded-sm"
+                      style={{ width: "100%", height: 18, backgroundColor: "rgba(168,162,158,0.06)" }}
+                      animate={{ opacity: [0.3, 0.6, 0.3] }}
+                      transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.03 }}
+                    />
+                  ))}
+                </div>
               </div>
             ) : cells.length === 0 ? (
               <div

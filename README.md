@@ -77,6 +77,44 @@ This Space was built with OpenAI Codex as the coding agent. The public source re
 
 The complete Body Debt application (Next.js, ZK proofs on SKALE, real-time animated dashboard) is at: [github.com/udirobert/bodydebt](https://github.com/udirobert/bodydebt)
 
+## QVAC Edge AI — Multi-Agent Pipeline
+
+The Next.js app uses **QVAC SDK** for all AI inference. Three agents run sequentially on-device via Llama-3.2-1B (Q4 quantized with TurboQuant KV-cache):
+
+1. **Triage Agent** — analyzes the 5-system debt breakdown, identifies the priority system, secondary concern, and what to avoid
+2. **Recovery Coach Agent** — generates a 4-part prescription (Right Now / This Morning / Today / Avoid) using the triage output as context
+3. **Schedule Agent** — produces a time-blocked recovery schedule for the next 12 hours
+
+Each agent streams tokens live to the UI. The agent trace panel shows each agent's role, duration, and QVAC source badge. Cloud AI (Eazo/deepseek) is fallback only when QVAC is unavailable.
+
+### Architecture
+
+```
+Camera frame
+  -> MediaPipe FaceMesh (browser, 468 landmarks)
+  -> 7-dim feature vector
+  -> EZKL ZK proof (Web Worker)
+  -> local verify + SKALE on-chain commit
+  -> Deterministic 5-system score (instant, <5ms)
+  -> QVAC 3-agent pipeline (Llama-3.2-1B, on-device)
+  -> Streaming SSE to dashboard
+```
+
+### Reproduce
+
+```bash
+bun install
+bun dev
+
+# QVAC worker runs automatically via child_process.fork()
+# Model downloads on first inference, caches for subsequent runs
+```
+
+Requirements:
+- Node.js 20+
+- QVAC SDK (`@qvac/sdk` ^0.12.2)
+- OpenSSL 3 (for native lib resolution)
+
 ---
 
-*Built for the [Build Small Hackathon](https://huggingface.co/spaces/huggingface/build-small-hackathon). Everything under 32B parameters, running on hardware you own.*
+*Built for the [QVAC Hackathon I — Unleash Edge AI](https://dorahacks.io/hackathon/qvac-unleach-edge-ai-i/). Three AI agents, one local model, zero cloud calls.*

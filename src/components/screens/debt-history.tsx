@@ -88,13 +88,29 @@ export function DebtHistory() {
             className="overflow-hidden"
           >
             {loading ? (
-              <div
-                className="rounded-2xl px-4 py-5 text-center"
-                style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}
-              >
-                <p className="text-[10px]" style={{ color: "#524F4C" }}>
-                  Loading history...
-                </p>
+              <div className="rounded-2xl px-4 py-5 space-y-3"
+                style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <motion.div className="rounded-full flex-shrink-0"
+                      style={{ width: 32, height: 32, backgroundColor: "rgba(168,162,158,0.06)" }}
+                      animate={{ opacity: [0.3, 0.6, 0.3] }}
+                      transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.1 }}
+                    />
+                    <div className="flex-1 space-y-1.5">
+                      <motion.div className="rounded"
+                        style={{ width: "60%", height: 10, backgroundColor: "rgba(168,162,158,0.06)" }}
+                        animate={{ opacity: [0.3, 0.6, 0.3] }}
+                        transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.1 }}
+                      />
+                      <motion.div className="rounded"
+                        style={{ width: "40%", height: 8, backgroundColor: "rgba(168,162,158,0.04)" }}
+                        animate={{ opacity: [0.3, 0.6, 0.3] }}
+                        transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.1 + 0.05 }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : items.length === 0 ? (
               <div

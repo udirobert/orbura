@@ -136,7 +136,7 @@ export function DashboardScreen() {
     analysis, selectedStressors, reset, isAnalyzing,
     hrvData, faceAnalysis,
     streakDays, confidenceTier,
-    orbPersonality, agentEvents,
+    orbPersonality, agentEvents, agentProgress,
   } = useBodyDebtStore();
 
   const user = useEazo((s) => s.auth.user);
@@ -222,6 +222,7 @@ export function DashboardScreen() {
         hasFaceScan={!!faceAnalysis}
         hasHRV={!!hrvData}
         agentEvents={agentEvents}
+        agentProgress={agentProgress}
       />
     );
   }
@@ -342,7 +343,7 @@ export function DashboardScreen() {
 
           {/* Debt gauge */}
           <div className="mt-2">
-            <DebtGauge score={data.debtScore} />
+            <DebtGauge score={displayScore} />
           </div>
 
           {/* Personality tagline */}

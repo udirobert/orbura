@@ -44,6 +44,7 @@ export function DebtIntakeScreen() {
   };
 
   const handleToggle = (type: StressorType) => {
+    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
     toggleStressor(type);
     const isNowSelected = !selectedStressors.some((s) => s.type === type);
     if (isNowSelected) {

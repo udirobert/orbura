@@ -3,24 +3,61 @@ import { request } from "./request";
 
 /**
  * Non-streaming debt analysis.
- * POST /api/analyze
+ *
+ * Uses the streaming endpoint internally and resolves with the final
+ * merged result. This is kept for compatibility with useTerraConnect
+ * and any code that needs a simple Promise rather than SSE parsing.
+ *
+ * POST /api/analyze/stream (consumed to completion)
  */
 export async function analyzeDebt(
   body: AnalyzeBodyRequest
 ): Promise<DebtAnalysis> {
-  const res = await request("/api/analyze", {
+  const res = await request("/api/analyze/stream", {
     method: "POST",
     body: JSON.stringify(body),
   });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return data as DebtAnalysis;
+
+  if (!res.ok || !res.body) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let final: DebtAnalysis | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    let eventType = "";
+    for (const line of lines) {
+      if (line.startsWith("event: ")) {
+        eventType = line.slice(7).trim();
+      } else if (line.startsWith("data: ")) {
+        const data = JSON.parse(line.slice(6));
+        if (eventType === "done") {
+          final = data as DebtAnalysis;
+        }
+      }
+    }
+  }
+
+  if (!final) {
+    throw new Error("Stream completed without final result");
+  }
+
+  return final;
 }
 
 /**
- * Streaming analysis — returns the body ReadableStream so the caller can
- * consume the SSE stream. The caller is responsible for parsing
- * the event stream.
+ * Streaming analysis — returns the raw ReadableStream so the caller can
+ * consume the SSE stream and progressively update UI.
  *
  * POST /api/analyze/stream
  */

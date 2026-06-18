@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { getTerraWidgetSession, getTerraData, analyzeDebt } from "@/lib/api";
-import { memory } from "@eazo/sdk";
+import { getTerraWidgetSession, getTerraData } from "@/lib/api";
 import type { HRVData } from "@/lib/types";
 
 export type TerraPhase =
@@ -24,15 +22,8 @@ export interface TerraState {
 }
 
 export function useTerraConnect() {
-  const router = useRouter();
   const {
-    selectedStressors,
-    faceAnalysis,
     setHrvData,
-    setHrvSkipped,
-    setAnalysis,
-    setIsAnalyzing,
-    isAnalyzing,
   } = useBodyDebtStore();
 
   const [terra, setTerra] = useState<TerraState>({
@@ -144,56 +135,6 @@ export function useTerraConnect() {
     }
   }, []);
 
-  const runAnalysis = useCallback(
-    async (hrvData: HRVData | null, skipped: boolean) => {
-      if (skipped) {
-        setHrvSkipped(true);
-        setHrvData(null);
-      }
-      setAnalysisError(null);
-      setIsAnalyzing(true);
-
-      try {
-        const data = await analyzeDebt({
-          stressors: selectedStressors,
-          faceAnalysis: faceAnalysis ?? null,
-          hrvData: hrvData ?? null,
-          currentTime: new Date().toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          }),
-        });
-
-        setAnalysis(data);
-
-        memory.reportAction({
-          content: `Debt assessment complete. Score: ${data.debtScore}. ${data.verdict}`,
-          event_type: "create",
-          page: "hrv-pull",
-          metadata: {
-            type: "complete_debt_assessment",
-            debt_score: data.debtScore,
-            has_hrv: !!hrvData,
-            provider: terra.provider,
-          },
-        }).catch(() => {});
-
-        router.push("/dashboard");
-      } catch (err) {
-        setIsAnalyzing(false);
-        setAnalysisError(
-          err instanceof Error && err.message
-            ? err.message.includes("fetch") || err.message.includes("network")
-              ? "No internet connection. Check your signal and try again."
-              : "Something went wrong calculating your score. Try again."
-            : "Something went wrong. Try again."
-        );
-      }
-    },
-    [selectedStressors, faceAnalysis, setHrvData, setHrvSkipped, setAnalysis, setIsAnalyzing, router, terra.provider]
-  );
-
   // Cleanup popup timer on unmount
   useEffect(() => {
     return () => {
@@ -202,5 +143,5 @@ export function useTerraConnect() {
     };
   }, []);
 
-  return { terra, analysisError, isAnalyzing, openWidget, runAnalysis };
+  return { terra, openWidget };
 }

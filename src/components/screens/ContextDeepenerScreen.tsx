@@ -185,6 +185,7 @@ export function ContextDeepenerScreen() {
                         key={opt.value}
                         whileTap={{ scale: 0.97 }}
                         onClick={() => {
+                          if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
                           updateStressorContext(q.type, opt.value);
                           memory.reportAction({
                             content: `User provided context for ${q.type}: ${opt.value}.`,

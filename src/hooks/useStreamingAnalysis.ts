@@ -43,6 +43,7 @@ export function useStreamingAnalysis() {
     abortRef.current?.abort();
     abortRef.current = new AbortController();
     setAgentEvents([]);
+    useBodyDebtStore.setState({ agentProgress: null });
 
     if (skipped) {
       setHrvSkipped(true);
@@ -117,6 +118,13 @@ export function useStreamingAnalysis() {
                 status: "active",
                 source: "qvac-local",
               });
+            }
+
+            if (eventType === "agent_progress") {
+              // Model download / loading progress from QVAC
+              useBodyDebtStore.setState((state) => ({
+                agentProgress: data as { status: string; percent?: number; loaded?: number; total?: number },
+              }));
             }
 
             if (eventType === "agent_token") {

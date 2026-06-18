@@ -39,6 +39,7 @@ export function OpeningScreen() {
   const handleFindOut = () => {
     setHasSeenOpening(true);
     setExiting(true);
+    router.prefetch("/wake-time");
     memory.reportAction({
       content: "User started a body debt session from the opening screen.",
       event_type: "start",
