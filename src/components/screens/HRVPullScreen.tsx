@@ -29,6 +29,7 @@ export function HRVPullScreen() {
 
   const {
     faceAnalysis,
+    agentEvents,
   } = useBodyDebtStore();
 
   const { runAnalysis } = useStreamingAnalysis();
@@ -122,6 +123,12 @@ export function HRVPullScreen() {
     setLayer("analyzing");
     runAnalysis(hrv, skipped);
   }, [runAnalysis]);
+
+  // Reset layer on unmount so the analyzing overlay doesn't reappear on back-nav
+  useEffect(() => {
+    return () => { setLayer("picker"); };
+  }, []);
+
   return (
     <div className="relative min-h-svh flex flex-col px-5 overflow-hidden" style={{ backgroundColor: "#0A0A0B" }}>
 
@@ -223,6 +230,7 @@ export function HRVPullScreen() {
             <AnalysisLoader
               hasFaceScan={!!faceAnalysis}
               hasHRV={!!resolvedHrv}
+              agentEvents={agentEvents}
             />
           </motion.div>
         )}

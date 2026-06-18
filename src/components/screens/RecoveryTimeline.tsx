@@ -98,8 +98,8 @@ export function RecoveryTimeline({ arc }: { arc: RecoveryArc }) {
 
       {/* Phase labels */}
       <div className="flex justify-between mt-1 text-[8px] uppercase tracking-wider" style={{ color: "#3a3835" }}>
-        <span>Acute recovery</span>
-        <span>Partial recovery</span>
+        <span>Danger zone</span>
+        <span>Recovering</span>
         <span>Cleared</span>
       </div>
     </motion.div>

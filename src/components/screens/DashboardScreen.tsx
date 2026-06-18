@@ -147,9 +147,11 @@ export function DashboardScreen() {
 
   // Animated score count-up
   const [displayScore, setDisplayScore] = useState(0);
+  const [scoreLanded, setScoreLanded] = useState(false);
   const countRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
     if (!analysis) return;
+    setScoreLanded(false);
     const target = analysis.debtScore;
     const duration = 1500;
     const steps = 40;
@@ -158,7 +160,13 @@ export function DashboardScreen() {
     countRef.current = setInterval(() => {
       current = Math.min(current + increment, target);
       setDisplayScore(Math.round(current));
-      if (current >= target) clearInterval(countRef.current!);
+      if (current >= target) {
+        clearInterval(countRef.current!);
+        setScoreLanded(true);
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          navigator.vibrate(target >= 60 ? [10, 50, 30] : 15);
+        }
+      }
     }, duration / steps);
     return () => clearInterval(countRef.current!);
   }, [analysis]);
@@ -182,7 +190,23 @@ export function DashboardScreen() {
     } catch { /* non-blocking */ }
   }, [analysis]);
 
-  const handleReLog = () => { reset(); router.push("/wake-time"); };
+  const [showReLogConfirm, setShowReLogConfirm] = useState(false);
+
+  const handleReLog = () => {
+    // Preserve streak and personality across resets
+    const preservedStreak = useBodyDebtStore.getState().streakDays;
+    const preservedLastStreak = useBodyDebtStore.getState().lastStreakDate;
+    const preservedPersonality = useBodyDebtStore.getState().orbPersonality;
+    const preservedSeen = useBodyDebtStore.getState().hasSeenOpening;
+    reset();
+    useBodyDebtStore.setState({
+      streakDays: preservedStreak,
+      lastStreakDate: preservedLastStreak,
+      orbPersonality: preservedPersonality,
+      hasSeenOpening: preservedSeen,
+    });
+    router.push("/wake-time");
+  };
 
   const scoreColor = getVerdictMeta(data.debtScore).color;
 
@@ -264,7 +288,7 @@ export function DashboardScreen() {
                 <span className="text-[10px] font-mono" style={{ color: "#4ADE80" }}>{streakDays}</span>
               </div>
             )}
-            <motion.button whileTap={{ scale: 0.97 }} onClick={handleReLog}
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowReLogConfirm(true)}
               className="text-[11px] font-medium rounded-xl"
               style={{ color: "#A8A29E", border: "1px solid rgba(168,162,158,0.15)", backgroundColor: "rgba(0,0,0,0.4)", minHeight: 36, padding: "6px 12px" }}>
               New assessment
@@ -284,10 +308,14 @@ export function DashboardScreen() {
           transition={{ delay: 0.2, type: "spring" }}>
 
           {/* Score number */}
-          <div className="font-black leading-none debt-score-display"
-            style={{ fontSize: "clamp(80px,22vw,120px)", color: scoreColor, lineHeight: 1 }}>
+          <motion.div
+            className="font-black leading-none debt-score-display"
+            style={{ fontSize: "clamp(80px,22vw,120px)", color: scoreColor, lineHeight: 1 }}
+            animate={scoreLanded ? { scale: [1, 1.06, 1] } : {}}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          >
             {displayScore}
-          </div>
+          </motion.div>
 
           {/* Verdict with personality prefix */}
           <h3 className="mt-2 font-normal text-center px-4" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1rem,4vw,1.25rem)", color: "#F5F5F4", lineHeight: 1.3 }}>
@@ -342,6 +370,24 @@ export function DashboardScreen() {
         <div ref={systemsRef} className="relative z-10 mb-8">
           <SystemPanels systems={data.systemScores} />
           <SystemClearanceNotifier systems={data.systemScores} analysisId={data.sessionId} />
+        </div>
+      )}
+
+      {/* ── Layer 2b: Counterfactual insight ────────────────────────── */}
+      {data.counterfactual && (
+        <div className="relative z-10 mb-6">
+          <div className="rounded-2xl p-4 flex items-start gap-3"
+            style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)", borderLeft: "2px solid #F59E0B" }}>
+            <span className="text-[8px] font-mono font-bold uppercase tracking-widest flex-shrink-0 pt-0.5" style={{ color: "#F59E0B", minWidth: 120 }}>
+              What would change this
+            </span>
+            <span className="text-xs leading-relaxed" style={{ color: "#A8A29E" }}>
+              If you had <strong style={{ color: "#F5F5F4" }}>{data.counterfactual.leverLabel}</strong>,{" "}
+              <strong style={{ color: "#F59E0B" }}>{data.counterfactual.systemLabel}</strong> debt would drop from{" "}
+              <strong style={{ color: "#F5F5F4" }}>{data.counterfactual.fromScore}</strong> to{" "}
+              <strong style={{ color: "#4ADE80" }}>{data.counterfactual.toScore}</strong>.
+            </span>
+          </div>
         </div>
       )}
 
@@ -412,7 +458,7 @@ export function DashboardScreen() {
           Share my score
         </motion.button>
 
-        {/* Premium nudge — only at low confidence */}
+        {/* Signal nudge — only at low confidence */}
         {(confidenceTier === "partial" || confidenceTier === "estimated") && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
             className="rounded-2xl p-4 text-center"
@@ -425,7 +471,7 @@ export function DashboardScreen() {
               onClick={() => router.push("/face-scan")}
               className="text-xs font-semibold uppercase tracking-wider px-4 py-2.5 rounded-xl"
               style={{ backgroundColor: "#EA580C", color: "#F5F5F4" }}>
-              7 days free · give your orb more signal
+              Give your orb more signal
             </motion.button>
           </motion.div>
         )}
@@ -436,6 +482,46 @@ export function DashboardScreen() {
         open={personalityOpen}
         onClose={() => setPersonalityOpen(false)}
       />
+
+      {/* Re-log confirmation */}
+      <AnimatePresence>
+        {showReLogConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-6"
+            style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+            onClick={() => setShowReLogConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="rounded-2xl p-6 w-full max-w-sm text-center"
+              style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.15)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="text-sm font-semibold mb-2" style={{ color: "#F5F5F4" }}>
+                Start a new assessment?
+              </p>
+              <p className="text-xs mb-5" style={{ color: "#A8A29E" }}>
+                Your current score will be replaced. Your streak and history are preserved.
+              </p>
+              <div className="flex flex-col gap-2">
+                <motion.button whileTap={{ scale: 0.98 }}
+                  onClick={() => { setShowReLogConfirm(false); handleReLog(); }}
+                  className="w-full font-semibold text-sm rounded-xl py-3"
+                  style={{ backgroundColor: "#EA580C", color: "#F5F5F4" }}>
+                  Start fresh
+                </motion.button>
+                <button onClick={() => setShowReLogConfirm(false)}
+                  className="w-full text-xs font-medium py-2.5"
+                  style={{ color: "#524F4C" }}>
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

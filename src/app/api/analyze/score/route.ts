@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { AnalyzeBodyRequest, HRVData, FaceAnalysisResult, StressorType, ConfidenceTier } from "@/lib/types";
 import { computeSystemScores } from "@/lib/systemScoring";
+import { computeCounterfactual } from "@/lib/systemScoring";
 
 /**
  * POST /api/analyze/score
@@ -211,6 +212,9 @@ export function computeScore(body: AnalyzeBodyRequest) {
   // Five-system scores
   const systemScores = computeSystemScores(stressors, now, body.wakeTime, body.bedTime);
 
+  // Counterfactual: "If you had slept 7+ hours, Brain debt would drop from 67 to 22."
+  const cf = computeCounterfactual(stressors, systemScores, body.wakeTime, body.bedTime);
+
   return {
     debtScore,
     verdict,
@@ -220,6 +224,12 @@ export function computeScore(body: AnalyzeBodyRequest) {
     confidenceLevel,
     confidenceTier,
     systemScores,
+    counterfactual: cf ? {
+      systemLabel: cf.systemLabel,
+      fromScore: cf.fromScore,
+      toScore: cf.toScore,
+      leverLabel: cf.leverLabel,
+    } : undefined,
     prescription: deterministicPrescription(stressors.map(s => s.type), debtScore),
     _layer: "deterministic" as const,
   };

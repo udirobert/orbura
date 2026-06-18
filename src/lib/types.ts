@@ -121,6 +121,13 @@ export interface DebtAnalysis {
   // ─── Multi-agent edge AI metadata ────────────────────────────────────────
   agentTrace?: AgentTrace;
   schedule?: ScheduleBlock[];
+  // ─── Counterfactual insight ──────────────────────────────────────────────
+  counterfactual?: {
+    systemLabel: string;
+    fromScore: number;
+    toScore: number;
+    leverLabel: string;
+  };
 }
 
 // ─── Multi-agent edge AI ─────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory } from "@eazo/sdk";
@@ -71,6 +72,13 @@ const QUESTIONS: Question[] = [
 export function ContextDeepenerScreen() {
   const router = useRouter();
   const { selectedStressors, updateStressorContext } = useBodyDebtStore();
+
+  // If no stressors selected (e.g. via skip path), redirect to face scan
+  useEffect(() => {
+    if (selectedStressors.length === 0) {
+      router.replace("/face-scan");
+    }
+  }, [selectedStressors, router]);
 
   const activeQuestions = QUESTIONS.filter((q) =>
     selectedStressors.some((s) => s.type === q.type)

@@ -227,7 +227,7 @@ function ShareCardVisual({
 
 export function ShareCardScreen() {
   const router = useRouter();
-  const { analysis } = useBodyDebtStore();
+  const { analysis, streakDays } = useBodyDebtStore();
   const user = useEazo((s) => s.auth.user);
   const isGuest = !user && !!analysis;
   const [revealing, setRevealing] = useState(true);
@@ -351,7 +351,9 @@ export function ShareCardScreen() {
               className="text-center text-[11px]"
               style={{ color: "#524F4C" }}
             >
-              Your friends would want to know their score.
+              {streakDays > 0
+                ? `${streakDays} day${streakDays !== 1 ? "s" : ""} under 20. Keep the streak alive.`
+                : "Your friends would want to know their score."}
             </motion.p>
           )}
         </AnimatePresence>
@@ -425,6 +427,25 @@ export function ShareCardScreen() {
             </motion.button>
           </motion.div>
         )}
+
+        {/* Recovery reminder CTA — closes the loop */}
+        <motion.button
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.4 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => router.push("/prescription")}
+          className="w-full font-semibold text-sm rounded-2xl flex items-center justify-center gap-2"
+          style={{
+            backgroundColor: "#141416",
+            color: "#F5F5F4",
+            border: "1px solid rgba(234,88,12,0.2)",
+            fontFamily: "var(--font-body)",
+            minHeight: 52,
+          }}
+        >
+          Set recovery reminder
+        </motion.button>
 
         {/* Back */}
         <button

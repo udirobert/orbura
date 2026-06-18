@@ -362,3 +362,87 @@ export function circadianPenaltyBrain(
 
   return { brainPts, cardioPts, label };
 }
+
+// ─── Counterfactual engine ───────────────────────────────────────────────────
+//
+// "If you had slept 7+ hours, Brain debt would drop from 67 to 22."
+//
+// Finds the highest-leverage single change the user could have made.
+
+const COUNTERFACTUAL_FLIPS: Record<string, { field: keyof Stressor; fromTo: Record<string, string>; label: string }> = {
+  sleep:    { field: "sleepHours",         fromTo: { under_4: "6-7", "4-6": "6-7", "6-7": "6-7" }, label: "slept 7+ hours" },
+  training: { field: "trainingIntensity",   fromTo: { destroyed: "easy", hard: "easy", easy: "easy" }, label: "trained easy instead of hard" },
+  alcohol:  { field: "alcoholCount",        fromTo: { lost_count: "1-2", "5+": "1-2", "3-4": "1-2", "1-2": "1-2" }, label: "kept it to 1-2 drinks" },
+  stress:   { field: "stressCarried",       fromTo: { yes: "mostly_gone", mostly_gone: "mostly_gone" }, label: "let the stress clear" },
+  ill:      { field: "illSeverity",         fromTo: { floored: "mild", moderate: "mild", mild: "mild" }, label: "caught the illness earlier" },
+};
+
+const SYSTEM_LABEL_NICE: Record<RecoverySystem, string> = {
+  cardiovascular: "Cardiovascular",
+  brain: "Brain",
+  liver: "Liver",
+  muscular: "Muscular / CNS",
+  gut: "Gut",
+};
+
+export interface CounterfactualResult {
+  system: RecoverySystem;
+  systemLabel: string;
+  fromScore: number;
+  toScore: number;
+  drop: number;
+  leverLabel: string;
+}
+
+export function computeCounterfactual(
+  stressors: Stressor[],
+  currentSystemScores: SystemScore[],
+  wakeTime?: string | null,
+  bedTime?: string | null,
+): CounterfactualResult | null {
+  // Find the worst non-cleared system
+  const ranked = [...currentSystemScores].sort((a, b) => b.score - a.score);
+  const target = ranked.find((s) => s.score > 20);
+  if (!target) return null;
+
+  let best: CounterfactualResult | null = null;
+
+  for (const s of stressors) {
+    const flip = COUNTERFACTUAL_FLIPS[s.type];
+    if (!flip) continue;
+
+    const field = flip.field;
+    const currentVal = s[field] as string | undefined;
+    if (!currentVal) continue;
+
+    const targetVal = flip.fromTo[currentVal];
+    if (!targetVal || targetVal === currentVal) continue;
+
+    // Build modified stressors with the flipped value
+    const modified: Stressor[] = stressors.map((s2) =>
+      s2 === s ? { ...s2, [field]: targetVal } : s2
+    );
+
+    const newScores = computeSystemScores(modified, new Date(), wakeTime, bedTime);
+    const newTarget = newScores.find((x) => x.system === target.system);
+    if (!newTarget) continue;
+
+    const drop = target.score - newTarget.score;
+    if (drop <= 0) continue;
+
+    const candidate: CounterfactualResult = {
+      system: target.system,
+      systemLabel: SYSTEM_LABEL_NICE[target.system] ?? target.system,
+      fromScore: target.score,
+      toScore: newTarget.score,
+      drop,
+      leverLabel: flip.label,
+    };
+
+    if (!best || candidate.drop > best.drop) {
+      best = candidate;
+    }
+  }
+
+  return best;
+}

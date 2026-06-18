@@ -237,7 +237,7 @@ export function PrescriptionScreen() {
               onClick={() => router.push("/face-scan")}
               className="text-[10px] font-semibold uppercase tracking-wider px-4 py-2 rounded-xl"
               style={{ backgroundColor: "rgba(234,88,12,0.15)", color: "#EA580C", border: "1px solid rgba(234,88,12,0.3)" }}>
-              7 days free · give your orb more signal
+              Give your orb more signal
             </motion.button>
           </motion.div>
         )}

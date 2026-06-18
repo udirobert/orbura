@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { SystemScore } from "@/lib/types";
 import { SystemOrb } from "@/components/SystemOrb";
@@ -58,7 +58,23 @@ function getBarColor(score: number): string {
 
 function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
   const [expanded, setExpanded] = useState(false);
+  const wasClearedRef = useRef(false);
+  const [justCleared, setJustCleared] = useState(false);
   const isCleared = sys.score === 0 || new Date(sys.clearedAt) <= now;
+
+  // Detect transition to cleared for micro-celebration
+  useEffect(() => {
+    if (isCleared && !wasClearedRef.current) {
+      wasClearedRef.current = true;
+      setJustCleared(true);
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate([10, 40, 10]);
+      }
+      const t = setTimeout(() => setJustCleared(false), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [isCleared]);
+
   const countdown = formatCountdown(sys.clearedAt, now);
   const clearTime = formatClearTime(sys.clearedAt);
   const barColor = getBarColor(sys.score);
@@ -67,7 +83,7 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
   return (
     <motion.div
       layout
-      className="rounded-2xl overflow-hidden cursor-pointer"
+      className="rounded-2xl overflow-hidden cursor-pointer relative"
       style={{
         backgroundColor: "#141416",
         border: `1px solid ${
@@ -80,9 +96,29 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
       }}
       onClick={() => setExpanded((e) => !e)}
     >
+      {/* Clearance sweep animation */}
+      <AnimatePresence>
+        {justCleared && (
+          <motion.div
+            className="absolute inset-0 pointer-events-none z-20"
+            style={{ background: "linear-gradient(90deg, transparent, rgba(74,222,128,0.15), transparent)" }}
+            initial={{ x: "-100%" }}
+            animate={{ x: "100%" }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* ── Collapsed row ── */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <span className="text-lg flex-shrink-0">{sys.icon}</span>
+        <motion.span
+          className="text-lg flex-shrink-0"
+          animate={justCleared ? { scale: [1, 1.3, 1] } : {}}
+          transition={{ duration: 0.5 }}
+        >
+          {sys.icon}
+        </motion.span>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
