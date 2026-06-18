@@ -4,24 +4,27 @@ import { createDebtSession } from "@/lib/db/queries";
 import type { AnalyzeBodyRequest, DebtAnalysis } from "@/lib/types";
 import { computeScore, deterministicPrescription } from "../score/route";
 import { ai } from "@eazo/sdk";
+import { runMultiAgentPipeline, buildAgentTrace } from "@/lib/qvac";
+import type { MultiAgentInput } from "@/lib/qvac";
 
-export const maxDuration = 30;
+export const maxDuration = 120;
 
 /**
  * POST /api/analyze/stream
  *
- * Three-layer progressive analysis via Server-Sent Events.
+ * Four-layer progressive analysis via Server-Sent Events:
  *
- * Event sequence (each is a complete JSON payload the client can render):
+ *   event: score        → Layer 1: deterministic score (instant, <5ms)
+ *   event: agent_start  → Agent begins (triage / coach / schedule)
+ *   event: agent_token  → Token streamed from QVAC local LLM
+ *   event: agent_done   → Agent completed with result + timing
+ *   event: verdict      → Layer 2: AI verdict + recovery arc
+ *   event: prescription → Layer 3: full prescription from QVAC multi-agent
+ *   event: done         → Final merged result with full agent trace
+ *   event: error        → Only if all layers fail
  *
- *   event: score        → Layer 1 result, emitted immediately (<5ms)
- *   event: verdict      → Layer 2 result, emitted when Haiku responds (~1-2s)
- *   event: prescription → Layer 3 result, emitted when DeepSeek responds (~3-5s)
- *   event: done         → Final merged result (same shape as /api/analyze)
- *   event: error        → Only emitted if all layers fail
- *
- * Layers 2 and 3 run in parallel. Each has its own fallback chain.
- * The client can render a progressively richer UI as each event arrives.
+ * AI inference runs on QVAC (Llama-3.2-1B, local) as the primary path.
+ * Cloud AI (Eazo/deepseek) is fallback only when QVAC is unavailable.
  */
 export async function POST(request: NextRequest) {
   const authResult = requireAuth(request);
@@ -59,23 +62,74 @@ export async function POST(request: NextRequest) {
         _layer: "deterministic",
       });
 
-      // ── Layers 2 & 3: Run concurrently ───────────────────────────────────
-      const [verdictResult, prescriptionResult] = await Promise.allSettled([
-        fetchVerdict(body, layer1),
-        fetchPrescription(body, layer1),
-      ]);
+      // ── Layer 2: AI verdict (runs in parallel with agents) ──────────────
+      const verdictPromise = fetchVerdict(body, layer1).catch(() => ({
+        verdict:     layer1.verdict,
+        recoveryTime: layer1.recoveryTime,
+        recoveryArc: layer1.recoveryArc,
+        _layer: "fallback",
+      }));
 
-      // Emit verdict as soon as it's ready
-      const verdictData = verdictResult.status === "fulfilled"
-        ? verdictResult.value
-        : { verdict: layer1.verdict, recoveryTime: layer1.recoveryTime, recoveryArc: layer1.recoveryArc, _layer: "fallback" };
-      emit("verdict", verdictData);
+      // ── Layer 3: QVAC multi-agent pipeline (primary AI path) ─────────────
+      const qvacInput: MultiAgentInput = {
+        debtScore:    layer1.debtScore,
+        systemScores: layer1.systemScores ?? [],
+        stressors:    body.stressors.map(s => s.type),
+        faceStress:   body.faceAnalysis?.debtContribution ?? null,
+        currentTime:  body.currentTime,
+        recoveryTime: layer1.recoveryTime,
+      };
+
+      let prescriptionData: { prescription: DebtAnalysis["prescription"]; _layer: string; _agentTrace?: unknown; _schedule?: unknown };
+      let schedule: DebtAnalysis["schedule"];
+      let agentTrace: DebtAnalysis["agentTrace"];
+
+      try {
+        const qvacResult = await runMultiAgentPipeline(
+          qvacInput,
+          // Progress (model download, etc.)
+          (progress) => {
+            emit("agent_progress", progress);
+          },
+          // Agent lifecycle events for real-time UI
+          (event) => {
+            if (event.type === "agent_start") {
+              emit("agent_start", { agent: event.agent, description: event.description });
+            } else if (event.type === "agent_token") {
+              emit("agent_token", { agent: event.agent, token: event.token });
+            } else if (event.type === "agent_done") {
+              emit("agent_done", { agent: event.agent, result: event.result, durationMs: event.durationMs });
+            } else if (event.type === "agent_error") {
+              emit("agent_error", { agent: event.agent, error: event.error });
+            }
+          },
+        );
+
+        if (qvacResult && qvacResult.prescription) {
+          prescriptionData = {
+            prescription: qvacResult.prescription,
+            _layer: "qvac_multi_agent",
+          };
+          schedule = qvacResult.schedule ?? undefined;
+          agentTrace = buildAgentTrace(qvacResult);
+        } else {
+          // QVAC unavailable — fall back to cloud AI
+          prescriptionData = await fetchPrescriptionFromCloud(body, layer1);
+        }
+      } catch {
+        prescriptionData = await fetchPrescriptionFromCloud(body, layer1);
+      }
 
       // Emit prescription as soon as it's ready
-      const prescriptionData = prescriptionResult.status === "fulfilled"
-        ? prescriptionResult.value
-        : { prescription: layer1.prescription, _layer: "fallback" };
-      emit("prescription", prescriptionData);
+      emit("prescription", {
+        ...prescriptionData,
+        schedule,
+        agentTrace,
+      });
+
+      // ── Emit verdict (may have arrived earlier in parallel) ──────────────
+      const verdictData = await verdictPromise;
+      emit("verdict", verdictData);
 
       // ── Final merged result ───────────────────────────────────────────────
       const final: DebtAnalysis = {
@@ -88,6 +142,8 @@ export async function POST(request: NextRequest) {
         recoveryTime:      verdictData.recoveryTime ?? layer1.recoveryTime,
         recoveryArc:       verdictData.recoveryArc  ?? layer1.recoveryArc,
         prescription:      prescriptionData.prescription ?? layer1.prescription,
+        agentTrace,
+        schedule,
       };
 
       // Persist to DB if authenticated (non-blocking)
@@ -118,6 +174,7 @@ export async function POST(request: NextRequest) {
       "Cache-Control": "no-cache",
       "Connection":    "keep-alive",
       "X-Accel-Buffering": "no",
+      "X-AI-Source":   "qvac-local",
     },
   });
 }
@@ -171,9 +228,12 @@ Respond with JSON only:
   throw new Error("All verdict models failed");
 }
 
-// ─── Layer 3: full prescription ───────────────────────────────────────────────
+// ─── Cloud fallback for prescription ─────────────────────────────────────────
 
-async function fetchPrescription(body: AnalyzeBodyRequest, layer1: ReturnType<typeof computeScore>) {
+async function fetchPrescriptionFromCloud(
+  body: AnalyzeBodyRequest,
+  layer1: ReturnType<typeof computeScore>
+): Promise<{ prescription: DebtAnalysis["prescription"]; _layer: string }> {
   const { stressors, faceAnalysis, hrvData, currentTime } = body;
   const now = currentTime ?? new Date().toLocaleTimeString("en-US", {
     hour: "numeric", minute: "2-digit", hour12: true,
@@ -210,11 +270,10 @@ Rules: specific quantities, times, substances. No generic advice. No caveats.`;
       const parsed = JSON.parse(res.choices[0]?.message?.content ?? "{}");
       const p = parsed.prescription ?? parsed;
       if (!p.rightNow || !p.thisMorning || !p.today || !p.avoid) throw new Error("incomplete");
-      return { prescription: p, _layer: "ai_prescription", _model: model };
+      return { prescription: p, _layer: "cloud_fallback" };
     } catch { continue; }
   }
 
-  // Both AI layers failed — deterministic fallback
   return {
     prescription: deterministicPrescription(stressors.map(s => s.type), layer1.debtScore),
     _layer: "deterministic_fallback",

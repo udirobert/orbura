@@ -12,6 +12,7 @@ import { MiniOrb } from "@/components/MiniOrb";
 import { DebtGauge } from "./DebtGauge";
 import { RecoveryTimeline } from "./RecoveryTimeline";
 import { DonutChart, BarChartView } from "./StressorBreakdownChart";
+import { AgentTracePanel } from "@/components/AgentTracePanel";
 
 // ─── Config ────────────────────────────────────────────────────────────────────
 
@@ -122,12 +123,23 @@ export function PrescriptionScreen() {
         transition={{ delay: 0.1 }}
         className="relative z-10 mt-4 mb-2"
       >
-        <h1 className="font-black uppercase tracking-widest"
-          style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.1rem,5vw,1.4rem)", color: "#F5F5F4", letterSpacing: "0.08em" }}>
-          {personalityCopy.prescriptionHeader}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="font-black uppercase tracking-widest"
+            style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.1rem,5vw,1.4rem)", color: "#F5F5F4", letterSpacing: "0.08em" }}>
+            {personalityCopy.prescriptionHeader}
+          </h1>
+          {analysis?.agentTrace?.source === "qvac-local" && (
+            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
+              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#4ADE80" }} />
+              <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#4ADE80" }}>Edge AI</span>
+            </span>
+          )}
+        </div>
         <p className="text-xs mt-1" style={{ color: "#524F4C" }}>
-          Based on your current body state. Specific. Actionable.
+          {analysis?.agentTrace?.source === "qvac-local"
+            ? "Generated on your device by 3 QVAC AI agents. No cloud calls."
+            : "Based on your current body state. Specific. Actionable."}
         </p>
       </motion.div>
 
@@ -230,6 +242,13 @@ export function PrescriptionScreen() {
           </motion.div>
         )}
       </div>
+
+      {/* Agent trace — show the multi-agent pipeline */}
+      {analysis?.agentTrace && (
+        <div className="relative z-10 mt-2 mb-2">
+          <AgentTracePanel trace={analysis.agentTrace} />
+        </div>
+      )}
 
       {/* Auth upgrade */}
       {isGuest && (

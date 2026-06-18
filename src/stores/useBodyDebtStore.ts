@@ -12,6 +12,15 @@ import type {
 } from "@/lib/types";
 import type { OrbPersonality } from "@/lib/orbPersonality";
 
+// Agent event state for live multi-agent UI
+export interface AgentEventState {
+  agent: string;
+  description: string;
+  status: "pending" | "active" | "done" | "error";
+  durationMs?: number;
+  tokens?: string;
+}
+
 // Midnight expiry — reset session each day
 function isSessionExpired(ts: string | null): boolean {
   if (!ts) return false;
@@ -80,6 +89,10 @@ interface BodyDebtState {
   // ZK proof result (ephemeral — not persisted)
   zkProof: ZKProofResult | null;
   setZkProof: (proof: ZKProofResult | null) => void;
+
+  // Agent events (live during analysis — not persisted)
+  agentEvents: AgentEventState[];
+  setAgentEvents: (events: AgentEventState[]) => void;
 
   // Session timestamp
   sessionStartedAt: string | null;
@@ -162,6 +175,9 @@ export const useBodyDebtStore = create<BodyDebtState>()(
       zkProof: null,
       setZkProof: (proof) => set({ zkProof: proof }),
 
+      agentEvents: [],
+      setAgentEvents: (events) => set({ agentEvents: events }),
+
       recomputeConfidence: () => {
         const { selectedStressors, faceAnalysis, hrvData } = get();
         const hasSpecifics = selectedStressors.some((s) =>
@@ -207,6 +223,7 @@ export const useBodyDebtStore = create<BodyDebtState>()(
         confidenceTier: "estimated",
         sessionStartedAt: null,
         zkProof: null,
+        agentEvents: [],
       }),
     }),
     {

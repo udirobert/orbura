@@ -5,17 +5,19 @@ import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { auth } from "@eazo/sdk";
 import { startAnalysisStream } from "@/lib/api";
-import type { DebtAnalysis, AnalyzeBodyRequest } from "@/lib/types";
+import type { DebtAnalysis, AnalyzeBodyRequest, AgentTrace, ScheduleBlock, AgentStep } from "@/lib/types";
+
 /**
  * useStreamingAnalysis
  *
  * Calls /api/analyze/stream and progressively patches the store
  * as each SSE layer arrives:
  *
- *   Layer 1 (score, ~0ms):   store gets debtScore + stressorBreakdown + seed prescription
- *   Layer 2 (verdict, ~1s):  store gets refined verdict + recoveryTime + recoveryArc
- *   Layer 3 (prescription, ~3s): store gets full personalised prescription
- *   done:                    store gets final merged result, navigation fires
+ *   Layer 1 (score, ~0ms):      debtScore + stressorBreakdown + seed prescription
+ *   Agent events (live):        triage / coach / schedule agents running on QVAC
+ *   Layer 2 (verdict, ~1-2s):   refined verdict + recoveryTime + recoveryArc
+ *   Layer 3 (prescription, ~3-8s): full prescription from QVAC multi-agent + schedule + trace
+ *   done:                       final merged result, navigation fires
  */
 export function useStreamingAnalysis() {
   const router   = useRouter();
@@ -28,6 +30,7 @@ export function useStreamingAnalysis() {
     setAnalysis,
     setIsAnalyzing,
     setConfidenceTier,
+    setAgentEvents,
     analysis: currentAnalysis,
   } = useBodyDebtStore();
 
@@ -39,6 +42,7 @@ export function useStreamingAnalysis() {
     // Cancel any in-flight request
     abortRef.current?.abort();
     abortRef.current = new AbortController();
+    setAgentEvents([]);
 
     if (skipped) {
       setHrvSkipped(true);
@@ -71,6 +75,8 @@ export function useStreamingAnalysis() {
 
       // Partial analysis state built up as layers arrive
       let partial: Partial<DebtAnalysis> = {};
+      // Agent trace built up from live events
+      const agentSteps: AgentStep[] = [];
 
       while (true) {
         const { done, value } = await reader.read();
@@ -96,6 +102,62 @@ export function useStreamingAnalysis() {
               router.push("/dashboard");
             }
 
+            if (eventType === "agent_start") {
+              // An edge AI agent has started
+              useBodyDebtStore.setState((state) => ({
+                agentEvents: [
+                  ...state.agentEvents,
+                  { agent: data.agent, description: data.description, status: "active", tokens: "" },
+                ],
+              }));
+              agentSteps.push({
+                agent: data.agent,
+                label: data.agent.charAt(0).toUpperCase() + data.agent.slice(1),
+                description: data.description,
+                status: "active",
+                source: "qvac-local",
+              });
+            }
+
+            if (eventType === "agent_token") {
+              // Token streamed from QVAC local LLM — update live token display
+              useBodyDebtStore.setState((state) => ({
+                agentEvents: state.agentEvents.map((a) =>
+                  a.agent === data.agent && a.status === "active"
+                    ? { ...a, tokens: (a.tokens ?? "") + data.token }
+                    : a
+                ),
+              }));
+            }
+
+            if (eventType === "agent_done") {
+              // Agent completed
+              useBodyDebtStore.setState((state) => ({
+                agentEvents: state.agentEvents.map((a) =>
+                  a.agent === data.agent
+                    ? { ...a, status: "done", durationMs: data.durationMs }
+                    : a
+                ),
+              }));
+              const step = agentSteps.find((s) => s.agent === data.agent && s.status === "active");
+              if (step) {
+                step.status = "done";
+                step.durationMs = data.durationMs;
+              }
+            }
+
+            if (eventType === "agent_error") {
+              useBodyDebtStore.setState((state) => ({
+                agentEvents: state.agentEvents.map((a) =>
+                  a.agent === data.agent
+                    ? { ...a, status: "error" }
+                    : a
+                ),
+              }));
+              const step = agentSteps.find((s) => s.agent === data.agent && s.status === "active");
+              if (step) step.status = "error";
+            }
+
             if (eventType === "verdict") {
               // Layer 2 arrived — patch verdict + recovery
               partial = {
@@ -108,10 +170,12 @@ export function useStreamingAnalysis() {
             }
 
             if (eventType === "prescription") {
-              // Layer 3 arrived — patch prescription
+              // Layer 3 arrived — patch prescription + schedule + agent trace
               partial = {
                 ...partial,
                 prescription: data.prescription,
+                schedule: data.schedule as ScheduleBlock[] | undefined,
+                agentTrace: data.agentTrace as AgentTrace | undefined,
               };
               setAnalysis({ ...partial } as DebtAnalysis);
             }
@@ -157,7 +221,7 @@ export function useStreamingAnalysis() {
         router.push("/dashboard");
       }
     }
-  }, [selectedStressors, faceAnalysis, setHrvData, setHrvSkipped, setAnalysis, setIsAnalyzing, setConfidenceTier, currentAnalysis, router]);
+  }, [selectedStressors, faceAnalysis, setHrvData, setHrvSkipped, setAnalysis, setIsAnalyzing, setConfidenceTier, setAgentEvents, currentAnalysis, router]);
 
   const cancel = useCallback(() => {
     abortRef.current?.abort();

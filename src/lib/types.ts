@@ -118,6 +118,41 @@ export interface DebtAnalysis {
   };
   confidenceLevel: "high" | "medium" | "low";
   sessionId?: number;
+  // ─── Multi-agent edge AI metadata ────────────────────────────────────────
+  agentTrace?: AgentTrace;
+  schedule?: ScheduleBlock[];
+}
+
+// ─── Multi-agent edge AI ─────────────────────────────────────────────────────
+
+export interface AgentStep {
+  agent: "triage" | "coach" | "schedule";
+  label: string;
+  description: string;
+  status: "pending" | "active" | "done" | "error";
+  durationMs?: number;
+  source: "qvac-local" | "eazo-cloud" | "deterministic";
+  model?: string;
+}
+
+export interface TriageResult {
+  priority: string;
+  secondary: string;
+  avoid: string;
+}
+
+export interface AgentTrace {
+  steps: AgentStep[];
+  triage?: TriageResult;
+  source: "qvac-local" | "eazo-cloud" | "deterministic";
+  totalDurationMs?: number;
+  model?: string;
+}
+
+export interface ScheduleBlock {
+  time: string;
+  action: string;
+  system: string;
 }
 
 export interface AnalyzeBodyRequest {

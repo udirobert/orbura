@@ -64,12 +64,33 @@ const SOCIAL_COUNTS = [
   "Average debt score: 58 — you're not alone",
 ];
 
+export interface AgentEventState {
+  agent: string;
+  description: string;
+  status: "pending" | "active" | "done" | "error";
+  durationMs?: number;
+  tokens?: string;
+}
+
+const AGENT_ICONS: Record<string, string> = {
+  triage: "🔬",
+  coach: "💊",
+  schedule: "📅",
+};
+
+const AGENT_LABELS: Record<string, string> = {
+  triage: "Triage Agent",
+  coach: "Recovery Coach",
+  schedule: "Schedule Agent",
+};
+
 interface AnalysisLoaderProps {
   hasFaceScan: boolean;
   hasHRV: boolean;
+  agentEvents?: AgentEventState[];
 }
 
-export function AnalysisLoader({ hasFaceScan, hasHRV }: AnalysisLoaderProps) {
+export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents }: AnalysisLoaderProps) {
   const [elapsed, setElapsed] = useState(0);       // 0–1 simulated progress
   const [factIdx, setFactIdx] = useState(0);
   const [socialIdx] = useState(() => Math.floor(Math.random() * SOCIAL_COUNTS.length));
@@ -104,6 +125,9 @@ export function AnalysisLoader({ hasFaceScan, hasHRV }: AnalysisLoaderProps) {
 
   const orbColor = orbScore >= 61 ? "#DC2626" : orbScore >= 41 ? "#EA580C" : "#F59E0B";
   const percentLabel = Math.round(elapsed * 100);
+
+  // If we have live agent events, show them instead of the simulated signals
+  const hasLiveAgents = agentEvents && agentEvents.length > 0;
 
   return (
     <div className="relative flex flex-col items-center justify-between min-h-svh px-5 py-12 overflow-hidden"
@@ -178,41 +202,101 @@ export function AnalysisLoader({ hasFaceScan, hasHRV }: AnalysisLoaderProps) {
             {percentLabel}%
           </motion.div>
           <p className="text-[10px] font-mono uppercase tracking-widest mt-1" style={{ color: "#524F4C" }}>
-            processing signals
+            {hasLiveAgents ? "edge AI agents working" : "processing signals"}
           </p>
         </div>
 
-        {/* Signal checklist — ticks off in real time */}
-        <div className="w-full space-y-2 mt-2">
-          {activeSignals.map((sig) => {
-            const done    = elapsed >= sig.doneAt;
-            const active  = !done && elapsed >= sig.doneAt - 0.15;
-            return (
-              <motion.div key={sig.id}
+        {/* Edge AI badge — only when live agents are running */}
+        {hasLiveAgents && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+            style={{ backgroundColor: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)" }}
+          >
+            <motion.span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: "#4ADE80" }}
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+            <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "#4ADE80" }}>
+              QVAC · Llama-3.2-1B · on-device
+            </span>
+          </motion.div>
+        )}
+
+        {/* Live agent activity — replaces simulated signals when agents are running */}
+        {hasLiveAgents ? (
+          <div className="w-full space-y-2 mt-2">
+            {agentEvents!.map((agent, i) => (
+              <motion.div key={`${agent.agent}-${i}`}
                 initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: done ? 1 : active ? 0.85 : 0.3, x: 0 }}
-                transition={{ duration: 0.3 }}
-                className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="rounded-xl px-3 py-2.5"
                 style={{
-                  backgroundColor: done ? "rgba(74,222,128,0.06)" : active ? "rgba(234,88,12,0.06)" : "#141416",
-                  border: `1px solid ${done ? "rgba(74,222,128,0.2)" : active ? "rgba(234,88,12,0.2)" : "rgba(168,162,158,0.08)"}`,
-                  transition: "background-color 0.4s, border-color 0.4s",
+                  backgroundColor: agent.status === "done" ? "rgba(74,222,128,0.06)" : "rgba(234,88,12,0.06)",
+                  border: `1px solid ${agent.status === "done" ? "rgba(74,222,128,0.2)" : "rgba(234,88,12,0.2)"}`,
                 }}>
-                <span className="text-sm flex-shrink-0">{sig.icon}</span>
-                <span className="text-xs font-medium flex-1" style={{ color: done ? "#4ADE80" : active ? "#F5F5F4" : "#524F4C" }}>
-                  {sig.label}
-                </span>
-                {done ? (
-                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400 }}
-                    className="text-[10px] font-mono font-bold" style={{ color: "#4ADE80" }}>✓</motion.span>
-                ) : active ? (
-                  <motion.div className="w-1 h-1 rounded-full" style={{ backgroundColor: "#EA580C" }}
-                    animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }} />
-                ) : null}
+                <div className="flex items-center gap-2.5">
+                  <span className="text-sm flex-shrink-0">{AGENT_ICONS[agent.agent] ?? "🤖"}</span>
+                  <span className="text-xs font-medium flex-1" style={{
+                    color: agent.status === "done" ? "#4ADE80" : "#F5F5F4",
+                  }}>
+                    {AGENT_LABELS[agent.agent] ?? agent.agent}
+                  </span>
+                  {agent.status === "done" ? (
+                    <span className="text-[10px] font-mono" style={{ color: "#4ADE80" }}>
+                      ✓ {((agent.durationMs ?? 0) / 1000).toFixed(1)}s
+                    </span>
+                  ) : (
+                    <motion.div className="w-1 h-1 rounded-full" style={{ backgroundColor: "#EA580C" }}
+                      animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }} />
+                  )}
+                </div>
+                {/* Live token stream preview (truncated) */}
+                {agent.status === "active" && agent.tokens && (
+                  <p className="text-[10px] mt-1.5 font-mono truncate" style={{ color: "#524F4C" }}>
+                    {agent.tokens.slice(-80)}
+                  </p>
+                )}
               </motion.div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          /* Original simulated signal checklist */
+          <div className="w-full space-y-2 mt-2">
+            {activeSignals.map((sig) => {
+              const done    = elapsed >= sig.doneAt;
+              const active  = !done && elapsed >= sig.doneAt - 0.15;
+              return (
+                <motion.div key={sig.id}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: done ? 1 : active ? 0.85 : 0.3, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                  style={{
+                    backgroundColor: done ? "rgba(74,222,128,0.06)" : active ? "rgba(234,88,12,0.06)" : "#141416",
+                    border: `1px solid ${done ? "rgba(74,222,128,0.2)" : active ? "rgba(234,88,12,0.2)" : "rgba(168,162,158,0.08)"}`,
+                    transition: "background-color 0.4s, border-color 0.4s",
+                  }}>
+                  <span className="text-sm flex-shrink-0">{sig.icon}</span>
+                  <span className="text-xs font-medium flex-1" style={{ color: done ? "#4ADE80" : active ? "#F5F5F4" : "#524F4C" }}>
+                    {sig.label}
+                  </span>
+                  {done ? (
+                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400 }}
+                      className="text-[10px] font-mono font-bold" style={{ color: "#4ADE80" }}>✓</motion.span>
+                  ) : active ? (
+                    <motion.div className="w-1 h-1 rounded-full" style={{ backgroundColor: "#EA580C" }}
+                      animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }} />
+                  ) : null}
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Rotating science fact */}

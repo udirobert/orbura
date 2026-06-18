@@ -17,6 +17,7 @@ import { PersonalityPicker } from "./personality-picker";
 import { DebtHistory } from "./debt-history";
 import { ScoreHeatmap } from "./score-heatmap";
 import { NotificationsToggle } from "@/components/notifications/notifications-toggle";
+import { AgentTracePanel } from "@/components/AgentTracePanel";
 import { getOrbCopy, getPersonality } from "@/lib/orbPersonality";
 import type { DebtAnalysis, ConfidenceTier, RecoverySystem } from "@/lib/types";
 
@@ -135,7 +136,7 @@ export function DashboardScreen() {
     analysis, selectedStressors, reset, isAnalyzing,
     hrvData, faceAnalysis,
     streakDays, confidenceTier,
-    orbPersonality,
+    orbPersonality, agentEvents,
   } = useBodyDebtStore();
 
   const user = useEazo((s) => s.auth.user);
@@ -196,6 +197,7 @@ export function DashboardScreen() {
       <AnalysisLoader
         hasFaceScan={!!faceAnalysis}
         hasHRV={!!hrvData}
+        agentEvents={agentEvents}
       />
     );
   }
@@ -238,6 +240,13 @@ export function DashboardScreen() {
             <span className="app-name text-sm font-bold tracking-widest uppercase" style={{ color: "#F5F5F4" }}>
               BODY DEBT
             </span>
+            {data.agentTrace && data.agentTrace.source === "qvac-local" && (
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                style={{ backgroundColor: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
+                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#4ADE80" }} />
+                <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#4ADE80" }}>Edge AI</span>
+              </span>
+            )}
             <motion.button whileTap={{ scale: 0.9 }}
               onClick={() => setPersonalityOpen(true)}
               className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
@@ -342,6 +351,16 @@ export function DashboardScreen() {
         <BarChartView items={data.stressorBreakdown} />
       </div>
 
+      {/* ── Layer 3b: Agent trace (multi-agent edge AI) ─────────────── */}
+      {data.agentTrace && <AgentTracePanel trace={data.agentTrace} />}
+
+      {/* ── Layer 3c: Recovery schedule (from Schedule Agent) ──────── */}
+      {data.schedule && data.schedule.length > 0 && (
+        <div className="relative z-10 mb-6">
+          <AgentSchedule schedule={data.schedule} />
+        </div>
+      )}
+
       {/* ── Layer 4: Patterns ────────────────────────────────────────── */}
       <PatternLayer streakDays={streakDays} />
 
@@ -417,6 +436,48 @@ export function DashboardScreen() {
         open={personalityOpen}
         onClose={() => setPersonalityOpen(false)}
       />
+    </div>
+  );
+}
+
+// ─── Agent Schedule (from Schedule Agent) ─────────────────────────────────────
+
+const SYSTEM_EMOJIS: Record<string, string> = {
+  cardiovascular: "🫀", brain: "🧠", liver: "🫁", muscular: "💪", gut: "🦠",
+  Cardiovascular: "🫀", Brain: "🧠", Liver: "🫁", Muscular: "💪", Gut: "🦠",
+};
+
+function AgentSchedule({ schedule }: { schedule: { time: string; action: string; system: string }[] }) {
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}>
+      <div className="px-4 pt-3.5 pb-2 flex items-center justify-between">
+        <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+          Recovery Schedule
+        </span>
+        <span className="text-[8px] font-mono" style={{ color: "#524F4C" }}>
+          Schedule Agent · QVAC
+        </span>
+      </div>
+      <div className="px-4 pb-3">
+        {schedule.map((block, i) => (
+          <motion.div key={i}
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.08 }}
+            className="flex items-start gap-3 py-2.5"
+            style={{ borderBottom: i < schedule.length - 1 ? "1px solid rgba(168,162,158,0.06)" : "none" }}>
+            <span className="text-xs font-mono flex-shrink-0 mt-0.5" style={{ color: "#EA580C", minWidth: 70 }}>
+              {block.time}
+            </span>
+            <span className="text-sm flex-1" style={{ color: "#F5F5F4", lineHeight: 1.4 }}>
+              {block.action}
+            </span>
+            <span className="text-sm flex-shrink-0">
+              {SYSTEM_EMOJIS[block.system] ?? "•"}
+            </span>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 }
