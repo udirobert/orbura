@@ -248,7 +248,6 @@ Respond with JSON only:
           setTimeout(() => reject(new Error("verdict_timeout")), 5000)
         ),
       ]);
-      });
       const parsed = JSON.parse(res.choices[0]?.message?.content ?? "{}");
       if (typeof parsed.verdict !== "string") throw new Error("bad shape");
       return {
