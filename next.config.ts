@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Production output: produce a self-contained `.next/standalone/`
+  // directory with only production deps + the compiled app. Used for
+  // deployment — we rsync `.next/standalone/` + `.next/static/` +
+  // `public/` + `scripts/qvac-worker.mjs` instead of the full repo.
+  // Reduces deploy footprint from ~8 GB (full node_modules + source) to
+  // ~250 MB (prod deps + compiled bundle).
+  output: "standalone",
+
   images: {
     unoptimized: true,
   },
