@@ -79,11 +79,12 @@ The complete Body Debt application (Next.js, ZK proofs on SKALE, real-time anima
 
 ## QVAC Edge AI — Multi-Agent Pipeline
 
-The Next.js app uses **QVAC SDK** for all AI inference. Three agents run sequentially on-device via Llama-3.2-1B (Q4 quantized with TurboQuant KV-cache):
+The Next.js app uses **QVAC SDK** for all AI inference. Four agents run sequentially on-device via Llama-3.2-1B (Q4 quantized with TurboQuant KV-cache):
 
 1. **Triage Agent** — analyzes the 5-system debt breakdown, identifies the priority system, secondary concern, and what to avoid
 2. **Recovery Coach Agent** — generates a 4-part prescription (Right Now / This Morning / Today / Avoid) using the triage output as context
 3. **Schedule Agent** — produces a time-blocked recovery schedule for the next 12 hours
+4. **Reflection Agent** — rewrites the Coach's prescription in the user's chosen voice (honest/gentle/scientific/sarcastic), keeping every specific action, quantity, and biological reason intact
 
 Each agent streams tokens live to the UI. The agent trace panel shows each agent's role, duration, and QVAC source badge. A real **Edge vs Cloud** performance comparison bars the on-device pipeline against a parallel cloud verdict call, with the "Nx faster" multiplier visible. Cloud AI (Eazo/deepseek) is fallback only when QVAC is unavailable, with 5s and 8s timeouts so offline mode fails fast to deterministic schedules, prescriptions, and verdicts.
 
@@ -97,7 +98,7 @@ Camera frame
   -> local verify + SKALE on-chain commit
   -> Deterministic 5-system score (instant, <5ms)
   -> Counterfactual engine (single-variable re-run, highest-leverage change)
-  -> QVAC 3-agent pipeline (Llama-3.2-1B, on-device)
+  -> QVAC 4-agent pipeline (Llama-3.2-1B, on-device)
   -> Deterministic schedule + prescription + verdict fallbacks at every layer
   -> Streaming SSE to dashboard
 ```
@@ -127,6 +128,10 @@ Requirements:
 - QVAC SDK (`@qvac/sdk` ^0.12.2)
 - OpenSSL 3 (for native lib resolution)
 
+### Evidence page for judges
+
+A single-page summary of architecture, agent pipeline, measured performance, and graceful degradation lives at [`/evidence`](https://bodydebt.app/evidence). It links back to this repo and is meant to be the first thing a hackathon judge screenshots.
+
 ---
 
-*Built for the [QVAC Hackathon I — Unleash Edge AI](https://dorahacks.io/hackathon/qvac-unleach-edge-ai-i/). Three AI agents, one local model, zero cloud calls.*
+*Built for the [QVAC Hackathon I — Unleash Edge AI](https://dorahacks.io/hackathon/qvac-unleach-edge-ai-i/). Four AI agents, one local model, zero cloud calls for the inference path.*
