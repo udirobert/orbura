@@ -140,6 +140,33 @@ A single-page summary of architecture, agent pipeline, measured performance, and
 - **Process manager:** pm2 (`bodydebt` process on port 3050, proxied via nginx with Let's Encrypt SSL)
 - **QVAC model:** Llama-3.2-1B-Instruct Q4_0 (738MB), cached at `~/.qvac/models/` after first inference
 
+### Lean deploy
+
+The server is space-constrained (38 GB disk, ~2 GB free after deploy), so we don't ship the full repo. Use `scripts/deploy.sh` instead of `git clone && bun install && bun build` on the server.
+
+```bash
+# From your local Mac — builds, trims, and rsyncs only runtime artifacts
+./scripts/deploy.sh
+
+# Override target platform (default: linux-x64)
+TRIM_PLATFORM=linux-arm64 ./scripts/deploy.sh
+
+# Override server (default: snel-bot ssh alias)
+SERVER=user@host ./scripts/deploy.sh
+```
+
+What gets shipped to the server:
+- `.next/` (compiled output)
+- `public/`
+- `node_modules/` (production deps, single-platform prebuilds)
+- `scripts/qvac-worker.mjs` + `scripts/trim-node-modules.mjs`
+- `package.json`, `next.config.ts`, `next-env.d.ts`, `ecosystem.config.cjs`
+- `.env` (only on first deploy — managed on the server thereafter)
+
+What gets stripped: `.git/`, `docs/`, `contracts/`, `hf-space/`, `models/`, `*.py`, tests, configs for tools we don't run on the server (`drizzle.config.ts`, `hardhat.config.ts`, `vitest.config.ts`).
+
+What the `@qvac/sdk` platform prebuilds situation looks like: the SDK bundles native binaries for 9 platforms (`darwin-arm64`, `darwin-x64`, `linux-arm64`, `linux-x64`, `win32-x64`, iOS sim/device, Android). On the server we keep only `linux-x64`, which drops node_modules from 7 GB to ~4 GB. The `trim-node-modules.mjs` script is platform-aware and respects `TRIM_PLATFORM` env var.
+
 ---
 
 *Built for the [QVAC Hackathon I — Unleash Edge AI](https://dorahacks.io/hackathon/qvac-unleach-edge-ai-i/). Four AI agents, one local model, zero cloud calls for the inference path.*

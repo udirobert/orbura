@@ -25,8 +25,22 @@ import { join } from "node:path";
 const ROOT = process.cwd();
 const NM = join(ROOT, "node_modules");
 
-/** Keep only darwin-arm64 platform prebuilds. */
-const OUR_PLATFORM = "darwin-arm64";
+/**
+ * Trim prebuilds in a @qvac/* package to keep only OUR_PLATFORM.
+ * Returns number of directories removed, or 0 if nothing to trim.
+ *
+ * Platform defaults to process.platform + process.arch (e.g. darwin-arm64,
+ * linux-x64). Override with TRIM_PLATFORM env var on servers where the
+ * dev machine and deploy target differ — e.g. `TRIM_PLATFORM=linux-x64
+ * bun install --production` on a Hetzner deploy that runs linux-x64.
+ */
+function detectPlatform() {
+  if (process.env.TRIM_PLATFORM) return process.env.TRIM_PLATFORM;
+  const arch = process.arch === "x64" ? "x64" : "arm64";
+  return `${process.platform}-${arch}`;
+}
+
+const OUR_PLATFORM = detectPlatform();
 
 let saved = 0;
 
