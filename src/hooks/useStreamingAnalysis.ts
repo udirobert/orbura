@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { auth } from "@eazo/sdk";
+import { auth } from "@/lib/sdk/eazo-client";
 import { startAnalysisStream } from "@/lib/api";
 import type { DebtAnalysis, AnalyzeBodyRequest, AgentTrace, ScheduleBlock, AgentStep } from "@/lib/types";
 

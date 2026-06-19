@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import type { User } from "@eazo/sdk";
+import type { User } from "@/lib/sdk/eazo-client";
 
 export function Avatar({ user, size }: { user: User; size: number }) {
   if (user.avatarUrl) {

@@ -32,12 +32,10 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
-    "@eazo/sdk": "0.19.0",
     "@ezkljs/engine": "^22.0.1",
     "@mediapipe/camera_utils": "^0.3.1632432234",
     "@mediapipe/face_mesh": "^0.4.1633559619",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@next/swc-linux-x64-gnu": "16.2.4",
     "@qvac/sdk": "^0.12.2",
     "@tailwindcss/postcss": "^4",
     "@tanstack/react-query": "^5.59.0",
@@ -50,7 +48,7 @@
     "framer-motion": "^12.38.0",
     "jiti": "^2.7.0",
     "lucide-react": "^1.8.0",
-    "next": "16.2.4",
+    "next": "^16.2.4",
     "next-themes": "^0.4.6",
     "onnxruntime-web": "^1.18.0",
     "postgres": "^3.4.9",
@@ -68,6 +66,7 @@
     "zustand": "^5.0.13"
   },
   "optionalDependencies": {
+    "@next/swc-linux-x64-gnu": "16.2.4",
     "bare-runtime-darwin-arm64": "^1.28.6",
     "bare-runtime-linux-x64": "^1.28.6",
     "lightningcss-darwin-arm64": "1.32.0"

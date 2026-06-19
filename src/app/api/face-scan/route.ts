@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ai } from "@eazo/sdk";
+import { ai } from "@/lib/sdk/eazo-client";
 import type { FaceAnalysisResult } from "@/lib/types";
 
 export const maxDuration = 30;

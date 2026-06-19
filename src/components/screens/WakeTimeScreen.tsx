@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { memory } from "@eazo/sdk";
+import { memory } from "@/lib/sdk/eazo-client";
 import { DawnParticle } from "./dawn-particle";
 import { TimeDrum } from "./time-drum";
 import { buildTimeSlots } from "@/lib/time-utils";

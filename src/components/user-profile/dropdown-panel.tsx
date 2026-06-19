@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import type { User } from "@eazo/sdk";
+import type { User } from "@/lib/sdk/eazo-client";
 import { Avatar } from "./avatar";
 import { Row } from "./form-row";
 

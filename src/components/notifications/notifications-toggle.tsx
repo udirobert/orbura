@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { notifications } from "@eazo/sdk";
-import { useEazo } from "@eazo/sdk/react";
+import { notifications } from "@/lib/sdk/eazo-client";
+import { useEazo } from "@/lib/sdk/eazo-react";
 
 import { sendTestNotification } from "@/lib/api";
 

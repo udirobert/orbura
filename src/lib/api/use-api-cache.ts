@@ -6,7 +6,7 @@ import { fetchScoreHeatmap } from "./heatmap";
 import { fetchUserProfile } from "./user-profile";
 import type { DebtHistoryItem } from "./debt-history";
 import type { HeatmapDay } from "./heatmap";
-import type { User } from "@eazo/sdk";
+import type { User } from "@/lib/sdk/eazo-client";
 
 /**
  * React Query hook for authenticated user's debt history.

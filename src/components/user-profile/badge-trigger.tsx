@@ -1,6 +1,6 @@
 "use client";
 
-import type { User } from "@eazo/sdk";
+import type { User } from "@/lib/sdk/eazo-client";
 import { Avatar } from "./avatar";
 
 export function BadgeTrigger({

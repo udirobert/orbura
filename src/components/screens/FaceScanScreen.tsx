@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Camera, AlertTriangle, ShieldCheck, Loader2 } from "lucide-react";
 import { MiniOrb } from "@/components/MiniOrb";
-import { memory } from "@eazo/sdk";
+import { memory } from "@/lib/sdk/eazo-client";
 import { ProgressBar } from "@/components/ProgressBar";
 import { PrivacyNotice } from "@/components/face-scan/PrivacyNotice";
 import {

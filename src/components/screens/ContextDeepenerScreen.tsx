@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { memory } from "@eazo/sdk";
+import { memory } from "@/lib/sdk/eazo-client";
 import type { StressorType } from "@/lib/types";
 import { MiniOrb } from "@/components/MiniOrb";
 import { ProgressBar } from "@/components/ProgressBar";

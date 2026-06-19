@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, AlertCircle } from "lucide-react";
 import { MiniOrb } from "@/components/MiniOrb";
-import { memory } from "@eazo/sdk";
+import { memory } from "@/lib/sdk/eazo-client";
 import { ProgressBar } from "@/components/ProgressBar";
 import { ManualProxy } from "@/components/hrv/ManualProxy";
 import { useTerraConnect } from "@/components/hrv/useTerraConnect";

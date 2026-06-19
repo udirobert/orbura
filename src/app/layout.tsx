@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { DM_Serif_Display, Instrument_Sans } from "next/font/google";
-import { EazoProvider } from "@eazo/sdk/react";
+import { EazoProvider } from "@/lib/sdk/eazo-react";
 import { cn } from "@/utils/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { UserSyncEffect } from "@/components/user-profile/user-sync-effect";

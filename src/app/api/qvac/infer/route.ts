@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { runHealthCoach, buildFallbackPrompt } from "@/lib/qvac";
 import type { HealthCoachInput } from "@/lib/qvac";
-import { ai } from "@eazo/sdk";
+import { ai } from "@/lib/sdk/eazo-client";
 
 export const maxDuration = 120;
 

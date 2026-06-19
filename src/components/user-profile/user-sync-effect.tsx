@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { auth } from "@eazo/sdk";
-import { useEazo } from "@eazo/sdk/react";
+import { auth } from "@/lib/sdk/eazo-client";
+import { useEazo } from "@/lib/sdk/eazo-react";
 import { fetchUserProfile } from "@/lib/api";
 
 /**

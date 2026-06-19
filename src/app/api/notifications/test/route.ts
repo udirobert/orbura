@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { notifications, EazoNotificationPublishError } from "@eazo/sdk/server";
+import { notifications, EazoNotificationPublishError } from "@/lib/sdk/eazo-server";
 import { requireAuth } from "@/lib/auth";
 
 /**

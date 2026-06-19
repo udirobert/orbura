@@ -1,4 +1,4 @@
-import { auth } from "@eazo/sdk";
+import { auth } from "@/lib/sdk/eazo-client";
 
 /**
  * Drop-in replacement for `fetch` that automatically injects `x-eazo-session`.

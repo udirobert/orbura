@@ -2,8 +2,8 @@
 
 import { useRef, useState, useEffect } from "react";
 import { LogOut, UserRound } from "lucide-react";
-import { auth } from "@eazo/sdk";
-import { useEazo } from "@eazo/sdk/react";
+import { auth } from "@/lib/sdk/eazo-client";
+import { useEazo } from "@/lib/sdk/eazo-react";
 import { BadgeTrigger } from "./badge-trigger";
 import { DropdownPanel } from "./dropdown-panel";
 

@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { createDebtSession } from "@/lib/db/queries";
 import type { AnalyzeBodyRequest, DebtAnalysis } from "@/lib/types";
 import { computeScore, deterministicPrescription, deterministicSchedule } from "../score/route";
-import { ai } from "@eazo/sdk";
+import { ai } from "@/lib/sdk/eazo-client";
 import { runMultiAgentPipeline, buildAgentTrace } from "@/lib/qvac";
 import type { MultiAgentInput } from "@/lib/qvac";
 

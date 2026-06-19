@@ -4,8 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { auth, memory, share } from "@eazo/sdk";
-import { useEazo } from "@eazo/sdk/react";
+import { auth, memory, share } from "@/lib/sdk/eazo-client";
+import { useEazo } from "@/lib/sdk/eazo-react";
 
 // ─── Score colour helpers ────────────────────────────────────────────────────
 

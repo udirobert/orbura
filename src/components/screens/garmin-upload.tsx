@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { AlertCircle, Upload } from "lucide-react";
 import { parseGarminCsv } from "@/lib/api";
-import { memory } from "@eazo/sdk";
+import { memory } from "@/lib/sdk/eazo-client";
 import type { HRVData } from "@/lib/types";
 
 export function GarminUpload({ onData, onSkip }: { onData: (d: HRVData) => void; onSkip: () => void }) {

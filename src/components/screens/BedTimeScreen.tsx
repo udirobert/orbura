@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { motion, useMotionValue, animate, PanInfo } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { memory } from "@eazo/sdk";
+import { memory } from "@/lib/sdk/eazo-client";
 import { buildBedtimeSlots, getCircadianNote } from "@/lib/time-utils";
 
 const SLOTS = buildBedtimeSlots();
