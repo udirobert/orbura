@@ -19,6 +19,7 @@ import { ScoreHeatmap } from "./score-heatmap";
 import { NotificationsToggle } from "@/components/notifications/notifications-toggle";
 import { AgentTracePanel } from "@/components/AgentTracePanel";
 import { getOrbCopy, getPersonality } from "@/lib/orbPersonality";
+import { getStrings } from "@/lib/i18n";
 import type { DebtAnalysis, ConfidenceTier, RecoverySystem } from "@/lib/types";
 
 // ─── Fallback ─────────────────────────────────────────────────────────────────
@@ -158,9 +159,10 @@ export function DashboardScreen() {
   const router = useRouter();
   const {
     analysis, selectedStressors, reset, isAnalyzing,
-    hrvData, faceAnalysis,
+    hrvData, faceAnalysis, zkProof,
     streakDays, confidenceTier,
     orbPersonality, agentEvents, agentProgress,
+    locale,
   } = useBodyDebtStore();
 
   const user = useEazo((s) => s.auth.user);
@@ -198,7 +200,8 @@ export function DashboardScreen() {
   const [personalityOpen, setPersonalityOpen] = useState(false);
   const personalityCfg = getPersonality(orbPersonality);
   const orbCopy = getOrbCopy(orbPersonality);
-  const verdictPrefix = personalityCfg.verdictPrefix;
+  const t = getStrings(locale);
+  const verdictPrefix = personalityCfg.verdictPrefix || t.verdictPrefix[orbPersonality];
   const personalityTagline = data.debtScore > 40 ? orbCopy.highDebt : orbCopy.lowDebt;
 
   // Memory report
@@ -350,6 +353,22 @@ export function DashboardScreen() {
                 <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#4ADE80" }}>Edge AI</span>
               </span>
             )}
+            {zkProof && zkProof.onChainStatus === "verified" && zkProof.txHash && (
+              <a
+                href={`https://juicy-low-small-testnet.explorer.skalenodes.com/tx/${zkProof.txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                style={{ backgroundColor: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.15)" }}
+                title={`Last verified ${zkProof.durationMs ? `${(zkProof.durationMs / 1000).toFixed(1)}s ago · on SKALE` : "on SKALE"}`}
+              >
+                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#60A5FA" }} />
+                <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#60A5FA" }}>
+                  On-chain
+                </span>
+              </a>
+            )}
             <motion.button whileTap={{ scale: 0.9 }}
               onClick={() => setPersonalityOpen(true)}
               className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
@@ -358,6 +377,18 @@ export function DashboardScreen() {
             >
               {personalityCfg.emoji}
             </motion.button>
+            <button onClick={() => {
+              const order = ["en", "es", "fr"] as const;
+              const idx = order.indexOf(locale);
+              const next = order[(idx + 1) % order.length];
+              useBodyDebtStore.getState().setLocale(next);
+            }}
+              className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono"
+              style={{ backgroundColor: "rgba(168,162,158,0.08)", color: "#A8A29E" }}
+              title={`Language: ${locale.toUpperCase()}`}
+            >
+              {locale.toUpperCase()}
+            </button>
             <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "#EA580C" }} />
           </div>
           <div className="flex items-center gap-3">
@@ -431,8 +462,31 @@ export function DashboardScreen() {
 
           {/* Recovery window */}
           <p className="mt-1 text-xs font-mono" style={{ color: "#A8A29E" }}>
-            Recovery around <span style={{ color: "#F5F5F4" }}>{data.recoveryTime}</span>
+            {t.labels.recoveryAround} <span style={{ color: "#F5F5F4" }}>{data.recoveryTime}</span>
           </p>
+
+          {/* SKALE on-chain verification anchor */}
+          {zkProof && zkProof.onChainStatus === "verified" && zkProof.txHash && (
+            <motion.a
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              href={`https://juicy-low-small-testnet.explorer.skalenodes.com/tx/${zkProof.txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+              style={{
+                backgroundColor: "rgba(96,165,250,0.06)",
+                border: "1px solid rgba(96,165,250,0.15)",
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#60A5FA" }} />
+              <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "#60A5FA" }}>
+                Last verified on SKALE
+              </span>
+              <span className="text-[8px]" style={{ color: "#60A5FA" }}>↗</span>
+            </motion.a>
+          )}
         </motion.div>
 
         {/* System icon row — tap to scroll to panels */}
@@ -528,7 +582,7 @@ export function DashboardScreen() {
           onClick={() => router.push("/prescription")}
           className="w-full font-semibold text-sm rounded-2xl"
           style={{ backgroundColor: "#EA580C", color: "#F5F5F4", fontFamily: "var(--font-body)", minHeight: 56 }}>
-          View my prescription →
+          {t.ctas.viewPrescription}
         </motion.button>
 
         {/* Secondary — share */}
@@ -536,7 +590,7 @@ export function DashboardScreen() {
           onClick={() => router.push("/share-card")}
           className="w-full font-semibold text-xs uppercase tracking-widest rounded-2xl"
           style={{ backgroundColor: "#141416", color: "#A8A29E", border: "1px solid rgba(168,162,158,0.15)", minHeight: 48 }}>
-          Share my score
+          {t.ctas.shareScore}
         </motion.button>
 
         {/* Signal nudge — only at low confidence */}
@@ -569,14 +623,14 @@ export function DashboardScreen() {
             <span className="text-base flex-shrink-0">⏳</span>
             <div>
               <p className="text-xs font-semibold mb-0.5" style={{ color: "#F5F5F4" }}>
-                Check back in the morning
+                {t.labels.checkBack}
               </p>
               <p className="text-[10px] leading-relaxed" style={{ color: "#A8A29E" }}>
-                Your systems recover on different timelines. Log tomorrow to see how much debt cleared overnight and keep your streak going.
+                {t.labels.checkBackSubtitle}
               </p>
               {streakDays > 0 && (
                 <p className="text-[9px] font-mono mt-1.5" style={{ color: "#4ADE80" }}>
-                  {streakDays}-day streak — don&apos;t break the chain
+                  {t.labels.streakChain(streakDays)}
                 </p>
               )}
             </div>
@@ -659,12 +713,12 @@ export function DashboardScreen() {
                   onClick={() => { setShowReLogConfirm(false); handleReLog(); }}
                   className="w-full font-semibold text-sm rounded-xl py-3"
                   style={{ backgroundColor: "#EA580C", color: "#F5F5F4" }}>
-                  Start fresh
+                  {t.ctas.startFresh}
                 </motion.button>
                 <button onClick={() => setShowReLogConfirm(false)}
                   className="w-full text-xs font-medium py-2.5"
                   style={{ color: "#524F4C" }}>
-                  Cancel
+                  {t.ctas.cancel}
                 </button>
               </div>
             </motion.div>

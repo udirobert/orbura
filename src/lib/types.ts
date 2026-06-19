@@ -133,7 +133,7 @@ export interface DebtAnalysis {
 // ─── Multi-agent edge AI ─────────────────────────────────────────────────────
 
 export interface AgentStep {
-  agent: "triage" | "coach" | "schedule";
+  agent: "triage" | "coach" | "schedule" | "reflection";
   label: string;
   description: string;
   status: "pending" | "active" | "done" | "error";
@@ -170,6 +170,8 @@ export interface AnalyzeBodyRequest {
   currentTime?: string;
   wakeTime?: string;
   bedTime?: string;
+  personality?: "honest" | "gentle" | "scientific" | "sarcastic";
+  locale?: "en" | "es" | "fr";
 }
 
 // ─── ZK Proof ─────────────────────────────────────────────────────────────────

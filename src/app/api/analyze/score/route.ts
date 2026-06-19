@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { AnalyzeBodyRequest, HRVData, FaceAnalysisResult, StressorType, ConfidenceTier } from "@/lib/types";
 import { computeSystemScores } from "@/lib/systemScoring";
 import { computeCounterfactual } from "@/lib/systemScoring";
+import { getStrings, type Locale } from "@/lib/i18n";
 
 /**
  * POST /api/analyze/score
@@ -115,12 +116,23 @@ function seedRecoveryArc(score: number, now: Date) {
 
 // ─── Score bands ──────────────────────────────────────────────────────────────
 
-function verdictFromScore(score: number): string {
-  if (score >= 81) return "Your body is in damage control. Listen to it.";
-  if (score >= 61) return "Significant debt. Your body is telling you something.";
-  if (score >= 41) return "Your body is working overtime right now.";
-  if (score >= 21) return "Mild debt. Nothing you can't handle.";
-  return "Your body is clear.";
+function verdictFromScore(score: number, locale: Locale = "en"): string {
+  const s = getStrings(locale);
+  if (score >= 81) {
+    return locale === "es" ? "Tu cuerpo está en control de daños. Escúchalo."
+         : locale === "fr" ? "Ton corps gère les dégâts. Écoute-le."
+         : "Your body is in damage control. Listen to it.";
+  }
+  if (score >= 61) {
+    return locale === "es" ? "Deuda significativa. Tu cuerpo te dice algo."
+         : locale === "fr" ? "Dette significative. Ton corps te dit quelque chose."
+         : "Significant debt. Your body is telling you something.";
+  }
+  if (score >= 41) return s.scoreBand.overtime === "Working overtime"
+    ? "Your body is working overtime right now."
+    : s.scoreBand.overtime;
+  if (score >= 21) return s.scoreBand.mild;
+  return s.scoreBand.clear;
 }
 
 function recoveryTimeFromArc(clearedAt: string): string {
@@ -160,7 +172,7 @@ export function computeScore(body: AnalyzeBodyRequest) {
       breakdown.push({
         stressor: w.label,
         points: pts,
-        insight: deterministicInsight(s.type, s.context),
+        insight: deterministicInsight(s.type, body.locale ?? "en", s.context),
         icon: STRESSOR_ICONS[s.type] ?? "⚡",
       });
     }
@@ -191,7 +203,7 @@ export function computeScore(body: AnalyzeBodyRequest) {
 
   const debtScore = Math.min(100, Math.max(0, rawScore));
   const recoveryArc = seedRecoveryArc(debtScore, now);
-  const verdict = verdictFromScore(debtScore);
+  const verdict = verdictFromScore(debtScore, body.locale ?? "en");
   const recoveryTime = recoveryTimeFromArc(recoveryArc.clearedAt);
 
   const confidenceLevel: "high" | "medium" | "low" =
@@ -230,22 +242,23 @@ export function computeScore(body: AnalyzeBodyRequest) {
       toScore: cf.toScore,
       leverLabel: cf.leverLabel,
     } : undefined,
-    prescription: deterministicPrescription(stressors.map(s => s.type), debtScore),
+    prescription: deterministicPrescription(stressors.map(s => s.type), debtScore, body.locale ?? "en"),
     _layer: "deterministic" as const,
   };
 }
 
 // ─── Rule-based fallback prescription ────────────────────────────────────────
 
-function deterministicInsight(type: StressorType, _context?: string): string {
+function deterministicInsight(type: StressorType, locale: Locale = "en", _context?: string): string {
     void _context;
+  const s = getStrings(locale).prescription.insights;
   const insights: Partial<Record<StressorType, string>> = {
-    alcohol:  "Liver processing peaks 4–6 hours after drinking. Cortisol remains elevated.",
-    sleep:    "Cognitive performance at 60–70% capacity. Decision quality reduced.",
-    training: "Muscle protein synthesis requires 24–72 hours to complete.",
-    stress:   "Cortisol elevation suppresses immune function and disrupts HRV.",
-    ill:      "Immune system is drawing on energy reserves. Recovery takes priority.",
-    care:     "Recovery-positive behaviour. Your nervous system is benefitting.",
+    alcohol:  s.alcohol,
+    sleep:    s.sleep,
+    training: s.training,
+    stress:   s.stress,
+    ill:      s.ill,
+    care:     s.caregiving,
   };
   return insights[type] ?? "Contributing to your overall physiological load.";
 }
@@ -308,13 +321,16 @@ function circadianPenalty(
 
 export function deterministicPrescription(
   types: StressorType[],
-  score: number
+  score: number,
+  locale: Locale = "en"
 ): { rightNow: string; thisMorning: string; today: string; avoid: string } {
   const hasAlcohol  = types.includes("alcohol");
   const hasSleep    = types.includes("sleep");
   const hasTraining = types.includes("training");
   const hasStress   = types.includes("stress");
   const hasIll      = types.includes("ill");
+
+  const s = getStrings(locale).prescription;
 
   return {
     rightNow: hasAlcohol
@@ -334,7 +350,7 @@ export function deterministicPrescription(
     today: score >= 60
       ? "Your one real focus window opens late morning. Protect 90 minutes around it."
       : score >= 40
-      ? "Expect 70–80% cognitive capacity today. Prioritise your two most important tasks."
+      ? s.todayFallback
       : "You have reasonable capacity today. Front-load your hardest work before 2pm.",
 
     avoid: hasTraining || score >= 60
@@ -343,7 +359,7 @@ export function deterministicPrescription(
       ? "Any further alcohol today. Your liver is still processing."
       : hasIll
       ? "Social commitments. Your immune system needs your energy right now."
-      : "Anything that raises cortisol further — late nights, processed food, stimulants.",
+      : s.avoidFallback,
   };
 }
 
@@ -352,17 +368,19 @@ export function deterministicPrescription(
 export function deterministicSchedule(
   systemScores: SystemScore[],
   debtScore: number,
+  locale: Locale = "en",
 ): { time: string; action: string; system: string }[] {
   const ranked = [...systemScores].sort((a, b) => b.score - a.score);
   const top = ranked[0];
   const second = ranked[1];
 
+  const t = getStrings(locale).schedule;
   const blocks: { time: string; action: string; system: string }[] = [];
 
   // Block 1: immediate (worst system)
   if (top && top.score > 20) {
     blocks.push({
-      time: "NOW-10AM",
+      time: t.nowTo10,
       action: debtScore >= 60
         ? "500ml water + electrolytes. No caffeine."
         : "Light hydration. Gentle start.",
@@ -373,7 +391,7 @@ export function deterministicSchedule(
   // Block 2: mid-morning (second worst system)
   if (second && second.score > 15) {
     blocks.push({
-      time: "10AM-12PM",
+      time: t.tenToNoon,
       action: debtScore >= 40
         ? "Light walk outside. Natural light. No intense activity."
         : "Protein-rich meal. Normal routine.",
@@ -381,7 +399,7 @@ export function deterministicSchedule(
     });
   } else {
     blocks.push({
-      time: "10AM-12PM",
+      time: t.tenToNoon,
       action: "Protein-rich meal. Protect your focus window.",
       system: "brain",
     });
@@ -389,7 +407,7 @@ export function deterministicSchedule(
 
   // Block 3: afternoon
   blocks.push({
-    time: "12PM-3PM",
+    time: t.noonTo3,
     action: debtScore >= 60
       ? "No training. Hydrate. Light tasks only."
       : "Light movement OK. Front-load harder work.",
@@ -398,7 +416,7 @@ export function deterministicSchedule(
 
   // Block 4: late afternoon / evening
   blocks.push({
-    time: "3PM-6PM",
+    time: t.threeTo6,
     action: debtScore >= 60
       ? "No alcohol, no stimulants. Prepare for early sleep."
       : "Wind down. No caffeine after 2pm.",

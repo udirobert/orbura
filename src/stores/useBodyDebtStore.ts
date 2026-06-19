@@ -11,6 +11,7 @@ import type {
   ZKProofResult,
 } from "@/lib/types";
 import type { OrbPersonality } from "@/lib/orbPersonality";
+import type { Locale } from "@/lib/i18n";
 
 // Agent event state for live multi-agent UI
 export interface AgentEventState {
@@ -85,6 +86,10 @@ interface BodyDebtState {
   // Orb personality
   orbPersonality: OrbPersonality;
   setOrbPersonality: (p: OrbPersonality) => void;
+
+  // Locale
+  locale: Locale;
+  setLocale: (l: Locale) => void;
 
   // ZK proof result (ephemeral — not persisted)
   zkProof: ZKProofResult | null;
@@ -176,6 +181,9 @@ export const useBodyDebtStore = create<BodyDebtState>()(
       orbPersonality: "honest" as OrbPersonality,
       setOrbPersonality: (p) => set({ orbPersonality: p }),
 
+      locale: "en" as Locale,
+      setLocale: (l) => set({ locale: l }),
+
       zkProof: null,
       setZkProof: (proof) => set({ zkProof: proof }),
 
@@ -252,6 +260,7 @@ export const useBodyDebtStore = create<BodyDebtState>()(
         streakDays:        state.streakDays,
         lastStreakDate:     state.lastStreakDate,
         orbPersonality:    state.orbPersonality,
+        locale:            state.locale,
       }),
       onRehydrateStorage: () => (state) => {
         if (state && isSessionExpired(state.sessionStartedAt)) {

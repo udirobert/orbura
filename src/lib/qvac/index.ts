@@ -17,12 +17,14 @@ export interface MultiAgentInput {
   faceStress?: number | null;
   currentTime?: string;
   recoveryTime?: string;
+  personality?: "honest" | "gentle" | "scientific" | "sarcastic";
 }
 
 export interface MultiAgentResult {
   triage: TriageResult | null;
   prescription: Prescription | null;
   schedule: ScheduleBlock[] | null;
+  reflection: Prescription | null;
   agentMeta: Array<{
     agent: string;
     durationMs: number;
@@ -56,12 +58,14 @@ const AGENT_LABELS: Record<string, string> = {
   triage: "Triage Agent",
   coach: "Recovery Coach Agent",
   schedule: "Schedule Agent",
+  reflection: "Reflection Agent",
 };
 
 const AGENT_DESCRIPTIONS: Record<string, string> = {
   triage: "Analyzes system scores to identify priority, secondary concern, and what to avoid.",
   coach: "Generates a personalized 4-part recovery prescription from triage context.",
   schedule: "Produces a time-blocked recovery schedule for the next 12 hours.",
+  reflection: "Rewrites the Coach's prescription in the user's chosen voice — direct, gentle, scientific, or sarcastic.",
 };
 
 /**

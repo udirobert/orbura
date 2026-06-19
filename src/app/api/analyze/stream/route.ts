@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
         faceStress:   body.faceAnalysis?.debtContribution ?? null,
         currentTime:  body.currentTime,
         recoveryTime: layer1.recoveryTime,
+        personality:  body.personality,
       };
 
       let prescriptionData: { prescription: DebtAnalysis["prescription"]; _layer: string; _agentTrace?: unknown; _schedule?: unknown };
@@ -122,12 +123,12 @@ export async function POST(request: NextRequest) {
           // QVAC unavailable — fall back to cloud AI
           prescriptionData = await fetchPrescriptionFromCloud(body, layer1);
           // Generate deterministic schedule fallback so the UI always has output
-          schedule = deterministicSchedule(layer1.systemScores ?? [], layer1.debtScore);
+          schedule = deterministicSchedule(layer1.systemScores ?? [], layer1.debtScore, body.locale ?? "en");
         }
       } catch {
         prescriptionData = await fetchPrescriptionFromCloud(body, layer1);
         // Generate deterministic schedule fallback
-        schedule = deterministicSchedule(layer1.systemScores ?? [], layer1.debtScore);
+        schedule = deterministicSchedule(layer1.systemScores ?? [], layer1.debtScore, body.locale ?? "en");
       }
 
       // Emit prescription as soon as it's ready

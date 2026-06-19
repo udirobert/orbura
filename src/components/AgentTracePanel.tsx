@@ -8,6 +8,7 @@ const AGENT_ICONS: Record<string, string> = {
   triage: "🔬",
   coach: "💊",
   schedule: "📅",
+  reflection: "🎭",
 };
 
 const SOURCE_LABELS: Record<string, string> = {

@@ -3,10 +3,11 @@
 /**
  * QVAC Edge AI worker — multi-agent health recovery pipeline.
  *
- * Three agents run sequentially through QVAC local LLM:
- *   1. Triage Agent    — ranks systems, identifies priority, calls compute_score tool
- *   2. Coach Agent     — generates the 4-part recovery prescription
- *   3. Schedule Agent  — produces a time-blocked recovery schedule for the day
+ * Four agents run sequentially through QVAC local LLM:
+ *   1. Triage Agent      — ranks systems, identifies priority
+ *   2. Coach Agent       — generates the 4-part recovery prescription
+ *   3. Schedule Agent    — produces a time-blocked recovery schedule
+ *   4. Reflection Agent  — rewrites the Coach output in the user's voice
  *
  * All inference runs on-device via @qvac/sdk (Llama-3.2-1B-Instruct Q4).
  * Falls back gracefully per-agent: if an agent fails, the next still runs
@@ -20,7 +21,7 @@
  *   {"event":"progress","data":{"status":"downloading","percent":50}}
  *   {"event":"agent_token","data":{"agent":"triage","token":"..."}}
  *   {"event":"agent_done","data":{"agent":"triage","result":{...},"durationMs":1200}}
- *   {"event":"result","data":{"triage":{...},"prescription":{...},"schedule":[...],"source":"qvac-local","model":"llama-3.2-1b-inst-q4"}}
+ *   {"event":"result","data":{"triage":{...},"prescription":{...},"schedule":[...],"reflection":{...},"source":"qvac-local","model":"llama-3.2-1b-inst-q4"}}
  */
 
 import { loadModel, completion, unloadModel, LLAMA_3_2_1B_INST_Q4_0 } from "@qvac/sdk";
@@ -96,6 +97,33 @@ NOW-10AM | 500ml water + electrolytes, no caffeine | Liver
 12PM-3PM | Protein-rich lunch, gentle movement | Muscular
 3PM-6PM | No intense activity, hydrate | Cardiovascular`,
   },
+  reflection: {
+    name: "reflection",
+    role: "Reflection Agent",
+    description: "Rewrites the Coach's prescription in the user's chosen voice — direct, gentle, scientific, or sarcastic.",
+    systemPrompt: (input, _triageResult, coachResult) => {
+      const personality = input.personality ?? "honest";
+      const voiceGuide = {
+        honest:     "Direct. Knowledgeable. No fluff. Same meaning, tighter language.",
+        gentle:     "Warmer. Supportive. Acknowledge the effort before the action. Still honest.",
+        scientific: "Data-driven. Cite the mechanism in one phrase (cortisol, HRV, glycogen, hepatic).",
+        sarcastic:  "Dry wit. Call out the obvious choice that caused this. Still useful.",
+      }[personality] ?? "Direct. No fluff.";
+      return `You are the Reflection Agent in a multi-agent health recovery system. The Recovery Coach has produced a prescription. Your job is to rewrite each line in the user's chosen voice, keeping all specific actions, quantities, and biology intact. Never invent new advice. Never soften the avoid line.
+
+User's voice: ${personality}
+Voice guide: ${voiceGuide}
+
+Original prescription:
+${coachResult || "N/A"}
+
+Output EXACTLY four lines, each starting with the label, no other text:
+RIGHT NOW: <rewritten>
+THIS MORNING: <rewritten>
+TODAY: <rewritten>
+AVOID: <rewritten>`;
+    },
+  },
 };
 
 // ─── Main pipeline ────────────────────────────────────────────────────────────
@@ -129,6 +157,7 @@ async function main() {
     triage: null,
     prescription: null,
     schedule: null,
+    reflection: null,
     agentMeta: [],
   };
 
@@ -162,6 +191,31 @@ async function main() {
         const schedDuration = Date.now() - schedStart;
         results.agentMeta.push({ agent: "schedule", durationMs: schedDuration, status: "done", model: "llama-3.2-1b-inst-q4" });
         send("agent_done", { agent: "schedule", result: results.schedule, durationMs: schedDuration, raw: schedRaw });
+
+        // ── Agent 4: Reflection (rewrites Coach output in user's voice) ─────
+        const reflectStart = Date.now();
+        send("agent_start", { agent: "reflection", description: AGENTS.reflection.description });
+        try {
+          const reflectRaw = await runAgent(
+            modelId,
+            "reflection",
+            input,
+            triageText,
+            formatPrescriptionForContext(results.prescription)
+          );
+          const reflected = parsePrescription(reflectRaw);
+          // Only adopt the reflection if it parsed cleanly; otherwise keep the coach output
+          if (reflected.rightNow && reflected.thisMorning && reflected.today && reflected.avoid) {
+            results.reflection = reflected;
+            results.prescription = reflected;
+          }
+          const reflectDuration = Date.now() - reflectStart;
+          results.agentMeta.push({ agent: "reflection", durationMs: reflectDuration, status: "done", model: "llama-3.2-1b-inst-q4" });
+          send("agent_done", { agent: "reflection", result: results.reflection ?? results.prescription, durationMs: reflectDuration, raw: reflectRaw });
+        } catch (err) {
+          results.agentMeta.push({ agent: "reflection", durationMs: Date.now() - reflectStart, status: "error", error: err.message });
+          send("agent_error", { agent: "reflection", error: err.message });
+        }
       } catch (err) {
         results.agentMeta.push({ agent: "schedule", durationMs: Date.now() - schedStart, status: "error", error: err.message });
         send("agent_error", { agent: "schedule", error: err.message });

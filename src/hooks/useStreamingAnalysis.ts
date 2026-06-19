@@ -63,6 +63,8 @@ export function useStreamingAnalysis() {
       }),
       wakeTime: useBodyDebtStore.getState().wakeTime ?? undefined,
       bedTime:  useBodyDebtStore.getState().bedTime  ?? undefined,
+      personality: useBodyDebtStore.getState().orbPersonality,
+      locale:     useBodyDebtStore.getState().locale,
     };
 
     try {

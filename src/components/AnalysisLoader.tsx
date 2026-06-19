@@ -76,12 +76,14 @@ const AGENT_ICONS: Record<string, string> = {
   triage: "🔬",
   coach: "💊",
   schedule: "📅",
+  reflection: "🎭",
 };
 
 const AGENT_LABELS: Record<string, string> = {
   triage: "Triage Agent",
   coach: "Recovery Coach",
   schedule: "Schedule Agent",
+  reflection: "Reflection Agent",
 };
 
 interface AnalysisLoaderProps {

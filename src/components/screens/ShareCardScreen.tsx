@@ -29,6 +29,23 @@ function scoreLabel(score: number): string {
   return "Body is clear";
 }
 
+function formatTimeUntilCleared(clearedAt: string): string {
+  const diff = new Date(clearedAt).getTime() - Date.now();
+  if (diff <= 0) return "Already cleared";
+  const hours = Math.floor(diff / 3600000);
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    const rh = hours % 24;
+    return rh > 0 ? `${days}d ${rh}h to cleared` : `${days}d to cleared`;
+  }
+  if (hours > 0) {
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    return minutes > 0 ? `${hours}h ${minutes}m to cleared` : `${hours}h to cleared`;
+  }
+  const minutes = Math.floor(diff / 60000);
+  return `${minutes}m to cleared`;
+}
+
 // ─── Animated score counter ───────────────────────────────────────────────────
 
 function CountUpScore({ target, color }: { target: number; color: string }) {
@@ -64,11 +81,13 @@ function ShareCardVisual({
   score,
   verdict,
   recoveryTime,
+  recoveryArc,
   revealing,
 }: {
   score: number;
   verdict: string;
   recoveryTime: string;
+  recoveryArc?: { dangerEnds: string; partialEnds: string; clearedAt: string };
   revealing: boolean;
 }) {
   const color = orbColor(score);
@@ -205,6 +224,53 @@ function ShareCardVisual({
         Cleared: {recoveryTime}
       </motion.p>
 
+      {/* Recovery arc timeline */}
+      {recoveryArc && (
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: revealing ? 0 : 1, scaleX: revealing ? 0 : 1 }}
+          transition={{ delay: 1.0, duration: 0.6, ease: "easeOut" }}
+          className="relative z-10 mt-4 w-full"
+          style={{ transformOrigin: "left" }}
+        >
+          <div className="flex items-center justify-between text-[8px] font-mono uppercase tracking-wider"
+            style={{ color: "#3a3835" }}>
+            <span>Now</span>
+            <span>Danger</span>
+            <span>Recovering</span>
+            <span>Cleared</span>
+          </div>
+          <div className="mt-1.5 h-1.5 rounded-full overflow-hidden flex"
+            style={{ backgroundColor: "rgba(168,162,158,0.08)" }}>
+            <motion.div
+              className="h-full"
+              style={{ backgroundColor: "#DC2626", width: "33%" }}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: revealing ? 0 : 1 }}
+              transition={{ delay: 1.1, duration: 0.4 }}
+            />
+            <motion.div
+              className="h-full"
+              style={{ backgroundColor: "#F59E0B", width: "33%" }}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: revealing ? 0 : 1 }}
+              transition={{ delay: 1.25, duration: 0.4 }}
+            />
+            <motion.div
+              className="h-full"
+              style={{ backgroundColor: "#4ADE80", width: "34%" }}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: revealing ? 0 : 1 }}
+              transition={{ delay: 1.4, duration: 0.4 }}
+            />
+          </div>
+          <div className="mt-1 text-[8px] font-mono text-center"
+            style={{ color: "#524F4C" }}>
+            {formatTimeUntilCleared(recoveryArc.clearedAt)}
+          </div>
+        </motion.div>
+      )}
+
       {/* Footer */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -252,7 +318,7 @@ export function ShareCardScreen() {
     setSharing(true);
     setShareError(null);
 
-    const shareText = `My body debt today: ${score}. What's yours?`;
+    const shareText = `My body debt today: ${score}. ${formatTimeUntilCleared(analysis?.recoveryArc?.clearedAt ?? new Date(Date.now() + 6 * 3600000).toISOString())} What's yours?`;
     const contextLines = [
       verdict,
       `Cleared: ${recoveryTime}`,
@@ -335,6 +401,7 @@ export function ShareCardScreen() {
           score={score}
           verdict={verdict}
           recoveryTime={recoveryTime}
+          recoveryArc={analysis?.recoveryArc}
           revealing={revealing}
         />
       </div>
