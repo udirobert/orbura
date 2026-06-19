@@ -13,8 +13,8 @@ module.exports = {
     instances: 1,
     exec_mode: 'fork',
     max_memory_restart: '2G',
-    out_file: '/var/log/bodydebt.out.log',
-    error_file: '/var/log/bodydebt.err.log',
+    out_file: '/opt/bodydebt/logs/bodydebt.out.log',
+    error_file: '/opt/bodydebt/logs/bodydebt.err.log',
     merge_logs: true,
     time: true,
   }]
