@@ -102,40 +102,49 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
 
   // Determine step statuses based on actual data from the worker
   const hasProof = !!zkProof?.proof;
-  const isCryptoVerified = zkProof?.verified === true;
-  const isCryptoFailed = hasProof && zkProof?.verified === false;
+  const verifyMode = zkProof?.verifyMode;
+  const isCryptoVerified = verifyMode === "crypto";
+  const isCryptoFailed = verifyMode === "failed";
+  const isMock = verifyMode === "mock";
   const status = onChainStatus ?? zkProof?.onChainStatus ?? "idle";
 
-  const skaleDetail =
-    status === "verified" ? "Proof verified on SKALE ✓"
-    : status === "pending" ? "Verifying on-chain..."
-    : status === "failed" ? "On-chain verification failed"
-    : status === "no-wallet" ? "Local only (no wallet)"
-    : "No wallet connected";
+  const anchorDetail =
+    status === "verified" ? "Anchored on-chain ✓"
+    : status === "pending" ? "Anchoring on-chain..."
+    : status === "failed" ? "Couldn't anchor on-chain"
+    : status === "no-wallet" ? "On-device only (no wallet connected)"
+    : "Waiting for wallet";
 
+  // Step labels are <= 14 chars so the truncation guard in
+  // ProofCircuitVisual doesn't ellipsise them. Verb-noun pairs read
+  // as a sequence the user can follow without crypto vocabulary.
   const lifecycleSteps: CircuitStep[] = [
     {
-      label: "Extract features",
-      detail: "Visible stress signals extracted",
+      label: "Read face",
+      detail: "Visible stress signals measured",
       done: true,
     },
     {
-      label: "Generate ZK proof",
-      detail: proofDuration !== "—" ? `${proofDuration} on-device` : "Running...",
+      label: "Build proof",
+      detail: isMock
+        ? "Verifier unavailable — using estimate"
+        : proofDuration !== "—" ? `${proofDuration} on this device` : "Running...",
       done: hasProof,
     },
     {
-      label: "Crypto verify",
+      label: "Check proof",
       detail: isCryptoVerified
-        ? `Verified in ${verifyDuration}`
+        ? `Checked in ${verifyDuration}`
         : isCryptoFailed
-          ? "Proof invalid ✗"
-          : hasProof ? "Verifying..." : "Waiting for proof...",
+          ? "Couldn't verify"
+          : isMock
+            ? "Skipped"
+            : hasProof ? "Checking..." : "Waiting for proof...",
       done: isCryptoVerified,
     },
     {
-      label: "SKALE verify",
-      detail: skaleDetail,
+      label: "Anchor proof",
+      detail: isMock ? "Skipped" : anchorDetail,
       done: status === "verified",
     },
   ];
@@ -154,30 +163,36 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
       {/* ── Proof Circuit Visual ──────────────────────────────────── */}
       <ProofCircuitVisual steps={lifecycleSteps} />
 
-      {/* ── Cryptographic verification status card ──────────────── */}
+      {/* ── Verification status card ────────────────────────────────
+          Three states drive the colouring:
+            • crypto verified → emerald (a real verifiable proof exists)
+            • failed / mock   → amber  (a soft warning, NOT a user error;
+                                        red is reserved for things the
+                                        user can act on, e.g. camera
+                                        blocked — see FaceScanScreen)
+            • in-flight       → amber (same hue, "working" copy)
+       */}
       <div className="flex items-start gap-3 rounded-2xl p-4"
         style={{
           backgroundColor: isCryptoVerified
             ? "rgba(16, 185, 129, 0.1)"
-            : isCryptoFailed
-              ? "rgba(220, 38, 38, 0.1)"
-              : "rgba(245, 158, 11, 0.1)",
+            : "rgba(245, 158, 11, 0.1)",
           border: isCryptoVerified
             ? "1px solid rgba(16, 185, 129, 0.3)"
-            : isCryptoFailed
-              ? "1px solid rgba(220, 38, 38, 0.3)"
-              : "1px solid rgba(245, 158, 11, 0.3)",
+            : "1px solid rgba(245, 158, 11, 0.3)",
         }}>
-        <ShieldCheck className={`w-8 h-8 flex-shrink-0 ${isCryptoVerified ? 'text-emerald-500' : isCryptoFailed ? 'text-red-500' : 'text-amber-500'}`} />
+        <ShieldCheck className={`w-8 h-8 flex-shrink-0 ${isCryptoVerified ? 'text-emerald-500' : 'text-amber-500'}`} />
         <div className="flex-1 min-w-0">
           <p className="text-[9px] font-mono uppercase tracking-widest" style={{
-            color: isCryptoVerified ? "#4ADE80" : isCryptoFailed ? "#DC2626" : "#F59E0B",
+            color: isCryptoVerified ? "#4ADE80" : "#F59E0B",
           }}>
             {isCryptoVerified
-              ? "✓ Proof cryptographically verified"
+              ? "✓ Math proof verified on your device"
               : isCryptoFailed
-                ? "✗ Proof verification failed"
-                : "◐ Proof generated — verifying locally..."}
+                ? "◐ Couldn't verify proof — analysis still continues"
+                : isMock
+                  ? "◐ Couldn't load verifier — analysis still continues"
+                  : "◐ Proof built — checking on your device..."}
           </p>
           {isCryptoVerified ? (
             <>
@@ -185,7 +200,7 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
                 Stress score: {zkProof ? `${Math.round(zkProof.stressScore * 100)}%` : "—"}
               </p>
               <p className="text-[9px] font-mono mt-0.5" style={{ color: "#A8A29E" }}>
-                EZKL verify({verifyDuration}) · VK hash committed to SKALE
+                Checked in {verifyDuration} · committed to a public log
               </p>
               <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: "#A8A29E" }}>
                 <span className="font-semibold" style={{ color: "#F5F5F4" }}>Why this matters: </span>
@@ -196,17 +211,28 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
           ) : isCryptoFailed ? (
             <>
               <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
-                Features extracted · proof not anchored
+                Stress score: {zkProof ? `${Math.round(zkProof.stressScore * 100)}%` : "—"}
               </p>
-              <p className="text-[9px] font-mono mt-1" style={{ color: "#A8A29E" }}>
-                7 stress signals were measured from your face. The ZK
-                proof didn&apos;t pass verification, so this is not
-                committed on-chain. Your analysis can still continue.
+              <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "#A8A29E" }}>
+                Your face was measured on this device, but the math
+                proof didn&apos;t check out — so nothing was committed
+                to the public log. Nothing was uploaded either.
+              </p>
+            </>
+          ) : isMock ? (
+            <>
+              <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
+                Stress score: {zkProof ? `${Math.round(zkProof.stressScore * 100)}%` : "—"}
+              </p>
+              <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "#A8A29E" }}>
+                Your face was measured on this device, but the
+                verifier didn&apos;t load this time. Nothing was
+                uploaded or stored.
               </p>
             </>
           ) : (
             <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
-              Running local verification...
+              Checking on this device...
             </p>
           )}
         </div>
@@ -427,12 +453,12 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
           style={{ backgroundColor: "#EA580C", color: "#F5F5F4", fontFamily: "var(--font-body)", minHeight: "58px" }}>
           {isCryptoVerified
             ? "Continue to HRV data"
-            : isCryptoFailed
+            : isCryptoFailed || isMock
               ? "Continue without on-chain proof"
               : "Verifying..."}
         </motion.button>
         <p className="text-[10px] text-center mt-2" style={{ color: "#524F4C" }}>
-          {isCryptoFailed
+          {isCryptoFailed || isMock
             ? "Your analysis will use intake + HRV data only."
             : "Next: connect a watch or answer a check-in."}
         </p>

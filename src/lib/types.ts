@@ -183,6 +183,18 @@ export type OnChainVerificationStatus =
   | "failed"
   | "no-wallet";
 
+/**
+ * How the proof was actually produced.
+ *  - "crypto": real EZKL Halo2 proof, locally verified ✓
+ *  - "failed": real EZKL proof produced but local verify() returned false
+ *              (genuine VK/PK/circuit mismatch — surface as a hard error)
+ *  - "mock":   the ZK system couldn't initialize (e.g. server is missing
+ *              pk.key/vk.key/srs.key/settings.json), so the worker fell
+ *              back to a deterministic app-level estimate. This is NOT a
+ *              cryptographic failure and should not be presented as one.
+ */
+export type ZKVerifyMode = "crypto" | "failed" | "mock";
+
 export interface ZKProofResult {
   proof: string;
   proofHex?: string;
@@ -192,5 +204,6 @@ export interface ZKProofResult {
   durationMs: number;
   txHash?: string;
   verified: boolean;
+  verifyMode: ZKVerifyMode;
   onChainStatus: OnChainVerificationStatus;
 }

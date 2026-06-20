@@ -14,7 +14,7 @@ import {
 } from "@/lib/blockchain";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useConnect, useSwitchChain } from "wagmi";
 import { injected } from "wagmi";
-import type { ZKProofResult, OnChainVerificationStatus } from "@/lib/types";
+import type { ZKProofResult, ZKVerifyMode, OnChainVerificationStatus } from "@/lib/types";
 import type { Hex } from "viem";
 
 export type ScanPhase =
@@ -174,6 +174,7 @@ interface ProofResultShape {
   publicInputs: string;
   verified?: boolean;
   verifyDurationMs?: number;
+  verifyMode?: ZKVerifyMode;
 }
 
 function buildZkResult(
@@ -182,6 +183,14 @@ function buildZkResult(
   txHash?: string,
 ): ZKProofResult {
   const parsed = JSON.parse(proofResult.publicInputs);
+  // Fallback inference for older worker payloads that don't yet send
+  // verifyMode: if `verified` is undefined we treat it as a mock (init
+  // failed); if it's a real boolean we map to crypto/failed.
+  const verifyMode: ZKVerifyMode =
+    proofResult.verifyMode ??
+    (proofResult.verified === true ? "crypto"
+      : proofResult.verified === false ? "failed"
+      : "mock");
   return {
     proof: proofResult.proof,
     proofHex: proofResult.proofHex,
@@ -190,7 +199,8 @@ function buildZkResult(
     isHealthy: parsed.is_healthy ?? true,
     durationMs: proofResult.verifyDurationMs ?? 0,
     txHash,
-    verified: proofResult.verified ?? false,
+    verified: verifyMode === "crypto",
+    verifyMode,
     onChainStatus,
   };
 }
@@ -457,9 +467,29 @@ export function useFaceScanPipeline() {
       setLastProof(proofResult);
       setPhase("verifying");
 
-      if (proofResult.verified !== true || !proofResult.proofHex || !proofResult.publicInstances?.length) {
+      // No real verifiable proof — three distinct outcomes:
+      //
+      //   1. verifyMode === "mock": ZK system couldn't initialize. The proof
+      //      is a deterministic app-level estimate, not a cryptographic
+      //      object. Don't try to submit it on-chain (the verifier would
+      //      reject it), but DO show the result so the user can keep going.
+      //      This is what users see when the server is missing the
+      //      pk.key/vk.key/srs.key/settings.json static assets.
+      //
+      //   2. verifyMode === "failed": a real EZKL proof was generated but
+      //      local verify() returned false. This is a genuine VK/PK/circuit
+      //      mismatch and should be surfaced as such.
+      //
+      //   3. verifyMode === "crypto" + missing proofHex/instances: defensive
+      //      guard, shouldn't happen for a real proof.
+      if (proofResult.verifyMode === "mock") {
+        setLocalResult(proofResult, "no-wallet", "ZK system unavailable — using app-level estimate");
+        return;
+      }
+      if (proofResult.verifyMode === "failed" || proofResult.verified !== true ||
+          !proofResult.proofHex || !proofResult.publicInstances?.length) {
         setOnChainStatus("failed");
-        setLocalResult(proofResult, "failed", "local proof missing verifier inputs");
+        setLocalResult(proofResult, "failed", "local proof failed cryptographic verification");
         return;
       }
 

@@ -23,13 +23,43 @@
 
 set -euo pipefail
 
-SERVER="${SERVER:-snel-bot}"
+SERVER="${SERVER:-nuncio-vultr}"
 SERVER_PORT="${SERVER_PORT:-3050}"
 DEPLOY_PATH="${DEPLOY_PATH:-/opt/bodydebt}"
 TRIM_PLATFORM="${TRIM_PLATFORM:-linux-x64}"
+BUN_PATH_REMOTE="${BUN_PATH_REMOTE:-/home/linuxuser/.bun/bin}"
 
 echo ">>> Deploy target: $SERVER ($DEPLOY_PATH)"
 echo ">>> Trim platform: $TRIM_PLATFORM (set TRIM_PLATFORM to override)"
+
+# 0. Sanity check ZK artefacts. These files are gitignored (pk.key is 138MB,
+#    srs.key is 4MB), so a fresh clone won't have them. We rsync them as part
+#    of the bundle below, but with --delete that means a missing file locally
+#    would also wipe it from the server. Abort early if any are missing — the
+#    user needs to run `python scripts/compile-circuit.py` first to generate
+#    them. Without these, the Web Worker's initEzkl() can't fetch the proving
+#    key and falls back to a mock proof, which the UI surfaces as a confusing
+#    "Proof invalid" error.
+ZK_REQUIRED=(
+  public/ezkl/compiled.ezkl
+  public/ezkl/pk.key
+  public/ezkl/srs.key
+  public/ezkl/vk.key
+  public/ezkl/vka.bytes
+  public/ezkl/settings.json
+  public/ezkl/vk-chunks.json
+  public/ezkl/vk-digest.json
+)
+for f in "${ZK_REQUIRED[@]}"; do
+  if [ ! -f "$f" ]; then
+    echo "ERROR: $f is missing. The Web Worker needs this at runtime."
+    echo "       Regenerate the ZK pipeline:"
+    echo "         python scripts/compile-circuit.py"
+    echo "         bun run zk:chunks"
+    echo "       Then re-run this script."
+    exit 1
+  fi
+done
 
 # 1. Build locally (idempotent — Next.js will skip if no changes)
 echo ">>> Building locally..."
@@ -91,6 +121,6 @@ ssh "$SERVER" "test -f $DEPLOY_PATH/.env || scp .env $SERVER:$DEPLOY_PATH/.env 2
 
 # 4. Reload on the server
 echo ">>> Reloading pm2 on $SERVER..."
-ssh "$SERVER" "cd $DEPLOY_PATH && export PATH=/home/deploy/.bun/bin:\$PATH && pm2 delete bodydebt 2>/dev/null; pm2 start ecosystem.config.cjs && pm2 save"
+ssh "$SERVER" "cd $DEPLOY_PATH && export PATH=$BUN_PATH_REMOTE:\$PATH && pm2 delete bodydebt 2>/dev/null; pm2 start ecosystem.config.cjs && pm2 save"
 
 echo ">>> Deploy complete. Live at https://bodydebt.thisyearnofear.com"

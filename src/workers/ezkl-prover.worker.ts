@@ -17,6 +17,10 @@ export interface ProofResponse {
   durationMs: number;
   verified?: boolean;
   verifyDurationMs?: number;
+  // "crypto" = real EZKL proof + verify ok
+  // "failed" = real EZKL proof, verify returned false
+  // "mock"   = ZK init failed; deterministic fallback (NOT a verify failure)
+  verifyMode?: "crypto" | "failed" | "mock";
 }
 
 let ezklInitialized = false;
@@ -144,6 +148,7 @@ async function proveWithEzkl(
     durationMs: performance.now() - startTime,
     verified,
     verifyDurationMs,
+    verifyMode: verified ? "crypto" : "failed",
   };
 }
 
@@ -194,6 +199,7 @@ function generateMockProof(
     proofHex: '0x' + mockProof.proof_data,
     publicInputs: JSON.stringify(publicInputs),
     durationMs: performance.now() - startTime,
+    verifyMode: "mock",
   };
 }
 
