@@ -48,6 +48,37 @@ export function cameraErrorCopy(kind: CameraError) {
   }
 }
 
+/**
+ * Cheap per-frame lighting estimator. Samples a 60×60 patch from the
+ * centre of the video element and computes mean luminance. Returns
+ * "dark" (under 45 — underexposed, MediaPipe will struggle),
+ * "ok" (45–200), or "bright" (over 200 — blown out highlights,
+ * washed-out features). The thresholds are conservative on purpose
+ * so the "ok" band is comfortable.
+ */
+function analyzeLighting(video: HTMLVideoElement): "dark" | "ok" | "bright" {
+  if (typeof document === "undefined") return "ok";
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 60;
+    canvas.height = 60;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "ok";
+    ctx.drawImage(video, 0, 0, 60, 60);
+    const { data } = ctx.getImageData(0, 0, 60, 60);
+    let total = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      total += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    }
+    const mean = total / (60 * 60);
+    if (mean < 45) return "dark";
+    if (mean > 200) return "bright";
+    return "ok";
+  } catch {
+    return "ok";
+  }
+}
+
 function classifyError(err: unknown): CameraError {
   if (err instanceof DOMException) {
     if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") return "denied";
@@ -100,6 +131,14 @@ export function useFaceScanPipeline() {
   // continuous-detection loop in startCamera; consumed by the
   // camera-phase UI to gate the Capture button.
   const [faceStatus, setFaceStatus] = useState<"pending" | "detected" | "not_detected">("pending");
+  // Lighting quality from the camera frame. Sampled alongside face
+  // detection in the continuous loop. Drives a one-line status hint
+  // so the user knows when the environment is the problem, not them.
+  const [lightingStatus, setLightingStatus] = useState<"pending" | "dark" | "ok" | "bright">("pending");
+  // 3-2-1 countdown shown after the user taps Capture, before the
+  // actual frame grab. Reduces motion blur and gives the user a
+  // clear "something is happening" signal.
+  const [captureCountdown, setCaptureCountdown] = useState<number | null>(null);
 
   const { isConnected, chainId } = useAccount();
   const { connectAsync } = useConnect();
@@ -212,16 +251,22 @@ export function useFaceScanPipeline() {
       faceMeshRef.current = initializeFaceMesh(() => {});
       setPhase("camera");
       setFaceStatus("pending");
+      setLightingStatus("pending");
+      setCaptureCountdown(null);
 
       // Continuous face detection at ~2 FPS — enough for live guidance,
       // light enough to not bog down the camera preview on mobile.
       // Resolves into faceStatus, which gates the Capture button.
+      // Also samples a 60×60 patch of the frame to estimate lighting
+      // so the user can be told if their environment is too dark or
+      // blown out — a leading cause of unreliable face detection.
       let cancelled = false;
       const runContinuousDetection = async () => {
         const check = async () => {
           if (cancelled) return;
           const v = videoRef.current;
           if (v && v.readyState >= 2 && faceMeshRef.current) {
+            setLightingStatus(analyzeLighting(v));
             await new Promise<void>((resolve) => {
               faceMeshRef.current!.onResults((results: { multiFaceLandmarks?: { x: number; y: number; z: number }[][] }) => {
                 const landmarks = results.multiFaceLandmarks?.[0];
@@ -265,6 +310,15 @@ export function useFaceScanPipeline() {
       });
     }
 
+    // 3-2-1 countdown so the user has time to settle. Reduces motion
+    // blur and gives a clear "something is happening" signal.
+    setCaptureCountdown(3);
+    for (let n = 3; n >= 1; n--) {
+      setCaptureCountdown(n);
+      await new Promise((r) => setTimeout(r, 700));
+    }
+    setCaptureCountdown(null);
+
     const w = video.videoWidth || 640;
     const h = video.videoHeight || 480;
     canvas.width = w;
@@ -278,8 +332,11 @@ export function useFaceScanPipeline() {
     setPhase("extracting");
 
     try {
-      // Try up to 3 frames — MediaPipe sometimes needs a second attempt
-      // if the model is still warming up or the face is in a transitional pose.
+      // Take up to 3 frames over ~1.2s, pick the first one with valid
+      // landmarks. This dramatically improves reliability vs. a single
+      // frame — the most common cause of "no face detected" is a brief
+      // detection glitch on a frame where the face was mid-pose or the
+      // model was warming up.
       const MAX_FACE_ATTEMPTS = 3;
       let features: ReturnType<typeof extractStressFeatures> = null;
       for (let attempt = 1; attempt <= MAX_FACE_ATTEMPTS && !features; attempt++) {
@@ -289,11 +346,11 @@ export function useFaceScanPipeline() {
         });
         features = extractStressFeatures(results.multiFaceLandmarks[0]);
         if (!features && attempt < MAX_FACE_ATTEMPTS) {
-          await new Promise((r) => setTimeout(r, 600));
+          await new Promise((r) => setTimeout(r, 400));
         }
       }
       if (!features) {
-        throw new Error("No face detected — center your face in the frame with good lighting and try again.");
+        throw new Error("No face detected across 3 attempts. Check the lighting note above and try again, or skip face scan.");
       }
 
       setPhase("proving");
@@ -381,6 +438,8 @@ export function useFaceScanPipeline() {
     setFaceSkipped(true);
     setFaceAnalysis(null);
     setFaceStatus("pending");
+    setLightingStatus("pending");
+    setCaptureCountdown(null);
     router.push("/hrv-pull");
   }, [router, setFaceAnalysis, setFaceSkipped]);
 
@@ -388,6 +447,8 @@ export function useFaceScanPipeline() {
     setCameraError(null);
     setAnalysisError(null);
     setFaceStatus("pending");
+    setLightingStatus("pending");
+    setCaptureCountdown(null);
     setPhase("prompt");
     startCamera();
   }, [startCamera]);
@@ -396,7 +457,7 @@ export function useFaceScanPipeline() {
     phase: effectivePhase, setPhase, scanMessageIdx, cameraError, analysisError,
     txHash, lastProof, isConfirmed,
     onChainStatus,
-    faceStatus,
+    faceStatus, lightingStatus, captureCountdown,
     videoRef, canvasRef, streamRef,
     startCamera, captureAndProve, handleSkip, retry,
   };

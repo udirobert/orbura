@@ -20,7 +20,7 @@ import { getOrbCopy } from "@/lib/orbPersonality";
 export function FaceScanScreen() {
   const {
     phase, setPhase, scanMessageIdx, cameraError, analysisError,
-    faceStatus,
+    faceStatus, lightingStatus, captureCountdown,
     txHash, isConfirmed,
     onChainStatus,
     videoRef, canvasRef, streamRef,
@@ -128,40 +128,80 @@ export function FaceScanScreen() {
                   strokeDasharray="2.5 1.8"
                 />
               </svg>
-            </div>
-            {/* Live detection status — guides the user to a successful capture */}
-            <div className="flex items-center justify-center gap-2 mb-5" style={{ minHeight: 28 }}>
-              {faceStatus === "pending" && (
-                <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#524F4C" }}>
-                  <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }}>
-                    Looking for your face…
-                  </motion.span>
-                </span>
+              {/* 3-2-1 countdown overlay while the user is being asked to hold still */}
+              {captureCountdown !== null && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <motion.div
+                    key={captureCountdown}
+                    initial={{ opacity: 0, scale: 1.4 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.25 }}
+                    className="w-20 h-20 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: "rgba(10,10,11,0.75)", border: "2px solid rgba(74,222,128,0.5)" }}
+                  >
+                    <span className="text-3xl font-bold" style={{ color: "#4ADE80", fontFamily: "var(--font-heading)" }}>
+                      {captureCountdown}
+                    </span>
+                  </motion.div>
+                </div>
               )}
-              {faceStatus === "detected" && (
+            </div>
+            {/* Live status line — face + lighting + a brief nudge. Stays at a fixed
+                height so the layout doesn't jump as the states change. */}
+            <div className="flex flex-col items-center gap-1.5 mb-5" style={{ minHeight: 44 }}>
+              {faceStatus === "detected" ? (
                 <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                   className="text-[10px] font-mono uppercase tracking-widest flex items-center gap-1.5"
                   style={{ color: "#4ADE80" }}>
                   <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#4ADE80" }} />
                   Face in position
                 </motion.span>
-              )}
-              {faceStatus === "not_detected" && (
+              ) : faceStatus === "not_detected" ? (
                 <span className="text-[10px] font-mono uppercase tracking-widest text-center px-6" style={{ color: "#F59E0B" }}>
-                  Center your face in the oval · move closer or improve lighting
+                  Center your face in the oval · move closer
+                </span>
+              ) : (
+                <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#524F4C" }}>
+                  <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }}>
+                    Looking for your face…
+                  </motion.span>
+                </span>
+              )}
+              {faceStatus !== "detected" && (
+                <span className="text-[10px] font-mono" style={{
+                  color: lightingStatus === "dark" ? "#F59E0B"
+                    : lightingStatus === "bright" ? "#F59E0B"
+                    : lightingStatus === "ok" ? "#4ADE80" : "#524F4C",
+                }}>
+                  {lightingStatus === "dark" && "Too dark — face a light source"}
+                  {lightingStatus === "bright" && "Too bright — back away from the light"}
+                  {lightingStatus === "ok" && "Lighting looks good"}
+                  {lightingStatus === "pending" && " "}
                 </span>
               )}
             </div>
             <div className="mt-auto flex flex-col gap-3 pb-10">
               <PrimaryButton
                 onClick={captureAndProve}
-                disabled={faceStatus !== "detected"}
+                disabled={faceStatus !== "detected" || captureCountdown !== null}
               >
                 <span className="inline-flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4" />
-                  {faceStatus === "detected" ? "Capture & Prove" : faceStatus === "pending" ? "Looking for face…" : "Position face to continue"}
+                  {captureCountdown !== null
+                    ? `Hold still… ${captureCountdown}`
+                    : faceStatus === "detected" ? "Capture & Prove"
+                    : faceStatus === "pending" ? "Looking for face…"
+                    : "Position face to continue"}
                 </span>
               </PrimaryButton>
+              <button
+                onClick={handleSkip}
+                className="w-full text-center text-[11px] py-2 font-medium"
+                style={{ color: "#524F4C" }}
+              >
+                Skip face scan — continue without biometric proof
+              </button>
             </div>
           </motion.div>
         )}

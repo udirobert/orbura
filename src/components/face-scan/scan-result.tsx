@@ -187,6 +187,11 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
               <p className="text-[9px] font-mono mt-0.5" style={{ color: "#A8A29E" }}>
                 EZKL verify({verifyDuration}) · VK hash committed to SKALE
               </p>
+              <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: "#A8A29E" }}>
+                <span className="font-semibold" style={{ color: "#F5F5F4" }}>Why this matters: </span>
+                if this proof leaks, attackers get a math commitment they can&apos;t reverse
+                to recover your face or measurements.
+              </p>
             </>
           ) : isCryptoFailed ? (
             <>
