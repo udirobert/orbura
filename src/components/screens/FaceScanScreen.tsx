@@ -22,7 +22,7 @@ export function FaceScanScreen() {
     phase, setPhase, scanMessageIdx, cameraError, analysisError,
     txHash, isConfirmed,
     onChainStatus,
-    canvasRef, streamRef,
+    videoRef, canvasRef, streamRef,
     startCamera, captureAndProve, handleSkip, retry,
   } = useFaceScanPipeline();
   const { orbPersonality } = useBodyDebtStore();
@@ -110,7 +110,7 @@ export function FaceScanScreen() {
           <motion.div key="camera" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="relative z-10 flex-1 flex flex-col">
             <div className="relative mx-auto w-full max-w-xs rounded-2xl overflow-hidden mb-5" style={{ aspectRatio: "4/5" }}>
-              <video ref={(el) => { if (el && streamRef.current) { el.srcObject = streamRef.current; el.play().catch(() => {}); } }}
+              <video ref={(el) => { videoRef.current = el; if (el && streamRef.current) { el.srcObject = streamRef.current; el.play().catch(() => {}); } }}
                 autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
               <canvas ref={canvasRef} className="hidden" />
               <div className="absolute inset-0 pointer-events-none">
