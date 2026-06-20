@@ -36,7 +36,7 @@ export function cameraErrorCopy(kind: CameraError) {
     case "denied": return { title: "Camera access blocked", body: "Enable camera access in your browser settings.", action: "Try again" };
     case "unavailable": return { title: "No camera found", body: "This device doesn't appear to have a camera.", action: "Continue without scan" };
     case "in_use": return { title: "Camera is in use", body: "Another app is using your camera.", action: "Try again" };
-    default: return { title: "Camera unavailable", body: "Something prevented the camera from opening.", action: "Try again" };
+    case "generic": return { title: "Camera unavailable", body: "The camera API is blocked on this connection. The page must be served over HTTPS to access the camera. Use “Continue without scan” or open the HTTPS URL.", action: "Continue without scan" };
   }
 }
 

@@ -114,9 +114,9 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
     return () => clearInterval(iv);
   }, []);
 
-  // Rotate facts every 2.2s
+  // Rotate facts every 3.5s — long enough to read, short enough to feel alive
   useEffect(() => {
-    const iv = setInterval(() => setFactIdx((i) => (i + 1) % FACTS.length), 2200);
+    const iv = setInterval(() => setFactIdx((i) => (i + 1) % FACTS.length), 3500);
     return () => clearInterval(iv);
   }, []);
 
@@ -260,40 +260,52 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
         {/* Live agent activity — replaces simulated signals when agents are running */}
         {hasLiveAgents ? (
           <div className="w-full space-y-2 mt-2">
-            {agentEvents!.map((agent, i) => (
-              <motion.div key={`${agent.agent}-${i}`}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="rounded-xl px-3 py-2.5"
-                style={{
-                  backgroundColor: agent.status === "done" ? "rgba(74,222,128,0.06)" : "rgba(234,88,12,0.06)",
-                  border: `1px solid ${agent.status === "done" ? "rgba(74,222,128,0.2)" : "rgba(234,88,12,0.2)"}`,
-                }}>
-                <div className="flex items-center gap-2.5">
-                  <span className="text-sm flex-shrink-0">{AGENT_ICONS[agent.agent] ?? "🤖"}</span>
-                  <span className="text-xs font-medium flex-1" style={{
-                    color: agent.status === "done" ? "#4ADE80" : "#F5F5F4",
+            {agentEvents!.map((agent, i) => {
+              const isActive = agent.status === "active";
+              const isDone = agent.status === "done";
+              return (
+                <motion.div key={`${agent.agent}-${i}`}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="rounded-xl px-3 py-2.5"
+                  style={{
+                    backgroundColor: isDone ? "rgba(74,222,128,0.06)" : "rgba(234,88,12,0.06)",
+                    border: `1px solid ${isDone ? "rgba(74,222,128,0.2)" : "rgba(234,88,12,0.2)"}`,
                   }}>
-                    {AGENT_LABELS[agent.agent] ?? agent.agent}
-                  </span>
-                  {agent.status === "done" ? (
-                    <span className="text-[10px] font-mono" style={{ color: "#4ADE80" }}>
-                      ✓ {((agent.durationMs ?? 0) / 1000).toFixed(1)}s
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-sm flex-shrink-0">{AGENT_ICONS[agent.agent] ?? "🤖"}</span>
+                    <span className="text-xs font-medium flex-1" style={{
+                      color: isDone ? "#4ADE80" : "#F5F5F4",
+                    }}>
+                      {AGENT_LABELS[agent.agent] ?? agent.agent}
                     </span>
-                  ) : (
-                    <motion.div className="w-1 h-1 rounded-full" style={{ backgroundColor: "#EA580C" }}
-                      animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }} />
+                    {isDone ? (
+                      <span className="text-[10px] font-mono" style={{ color: "#4ADE80" }}>
+                        ✓ {((agent.durationMs ?? 0) / 1000).toFixed(1)}s
+                      </span>
+                    ) : (
+                      <motion.div className="w-1 h-1 rounded-full" style={{ backgroundColor: "#EA580C" }}
+                        animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }} />
+                    )}
+                  </div>
+                  {/* Live token stream — expanded scrollable area for the active agent */}
+                  {isActive && agent.tokens && (
+                    <div
+                      className="mt-2 rounded-lg p-2 text-[12px] leading-relaxed overflow-y-auto"
+                      style={{
+                        color: "#A8A29E",
+                        backgroundColor: "rgba(0,0,0,0.25)",
+                        maxHeight: 96, // ~4 lines at line-height-relaxed
+                        fontFamily: "var(--font-body)",
+                      }}
+                    >
+                      {agent.tokens}
+                    </div>
                   )}
-                </div>
-                {/* Live token stream preview (truncated) */}
-                {agent.status === "active" && agent.tokens && (
-                  <p className="text-[10px] mt-1.5 font-mono truncate" style={{ color: "#524F4C" }}>
-                    {agent.tokens.slice(-80)}
-                  </p>
-                )}
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         ) : (
           /* Original simulated signal checklist */
@@ -348,7 +360,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm leading-snug font-medium" style={{ color: "#F5F5F4" }}>
+                <p className="text-[15px] leading-relaxed font-medium" style={{ color: "#F5F5F4" }}>
                   {fact.claim}
                 </p>
                 <p className="text-[9px] mt-1.5 font-mono uppercase tracking-wider" style={{ color: "#3a3835" }}>

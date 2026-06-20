@@ -241,6 +241,8 @@ async function main() {
 
 // ─── Agent runner ─────────────────────────────────────────────────────────────
 
+const AGENT_TIMEOUT_MS = 25_000;
+
 async function runAgent(modelId, agentName, input, triageContext = null, coachContext = null) {
   const agent = AGENTS[agentName];
   const systemPrompt = agent.systemPrompt(input, triageContext, coachContext);
@@ -250,11 +252,29 @@ async function runAgent(modelId, agentName, input, triageContext = null, coachCo
     modelId,
     history: [{ role: "user", content: systemPrompt }],
     stream: true,
+    max_tokens: 300,
   });
 
-  for await (const token of response.tokenStream) {
-    result += token;
-    send("agent_token", { agent: agentName, token });
+  // Race the token stream against a per-agent timeout. A 1B model with a
+  // vague task (especially the reflection agent) can otherwise loop
+  // forever without ever closing the stream.
+  const streamPromise = (async () => {
+    for await (const token of response.tokenStream) {
+      result += token;
+      send("agent_token", { agent: agentName, token });
+    }
+  })();
+
+  let timer;
+  try {
+    await Promise.race([
+      streamPromise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`agent_timeout_${AGENT_TIMEOUT_MS}ms`)), AGENT_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
   }
 
   return result;
