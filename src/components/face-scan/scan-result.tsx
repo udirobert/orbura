@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { ShieldCheck, Loader2, CloudDownload, ExternalLink, WifiOff, Zap, Container, Cpu } from "lucide-react";
 import { getQvacAdvice } from "@/lib/api";
-import { useServiceWorker } from "@/lib/hooks/useServiceWorker";
 import { ProofCircuitVisual } from "./ProofCircuitVisual";
 import type { QvacProgress } from "@/lib/api";
 import type { OnChainVerificationStatus } from "@/lib/types";
@@ -29,7 +28,6 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
   const [cloudDurationMs, setCloudDurationMs] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const qvacStartRef = useRef<number | null>(null);
-  const swState = useServiceWorker();
 
   // Track online/offline status for offline demo indicator
   useEffect(() => {
@@ -118,7 +116,7 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
   const lifecycleSteps: CircuitStep[] = [
     {
       label: "Extract features",
-      detail: "7 stress markers from 468 landmarks",
+      detail: "Visible stress signals extracted",
       done: true,
     },
     {
@@ -196,8 +194,8 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
                 Features extracted · proof not anchored
               </p>
               <p className="text-[9px] font-mono mt-1" style={{ color: "#A8A29E" }}>
-                7 stress markers computed from your landmarks. The ZK
-                proof didn't pass verification, so this is not
+                7 stress signals were measured from your face. The ZK
+                proof didn&apos;t pass verification, so this is not
                 committed on-chain. Your analysis can still continue.
               </p>
             </>
@@ -252,13 +250,6 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
               will submit when you reconnect.
             </p>
           </div>
-        </div>
-      )}
-
-      {/* ── Service worker cache indicator ────────────────────────── */}
-      {swState.registered && (
-        <div className="text-[8px] text-center font-mono" style={{ color: "#3a3835" }}>
-          {swState.cached ? "ZK artifacts cached for next visit ✓" : "Caching ZK artifacts for future use..."}
         </div>
       )}
 
@@ -406,9 +397,23 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
         </>
       )}
 
-      <p className="text-[10px] text-center" style={{ color: "#3a3835" }}>
-        Proof generated on-device · Zero data retained
-      </p>
+      {/* ── Privacy commitment footer ───────────────────────────────── */}
+      <div
+        className="rounded-xl px-3 py-2.5 text-center"
+        style={{
+          backgroundColor: "rgba(74,222,128,0.06)",
+          border: "1px solid rgba(74,222,128,0.18)",
+        }}
+      >
+        <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#4ADE80" }}>
+          Privacy
+        </p>
+        <p className="text-[11px] mt-1 leading-relaxed" style={{ color: "#F5F5F4" }}>
+          Your image was processed in your browser. The photo, the
+          measurements, and the feature vector were not stored or
+          uploaded. Only a math proof was generated.
+        </p>
+      </div>
 
       <div className="mt-auto">
         <motion.button whileTap={{ scale: 0.98 }}
