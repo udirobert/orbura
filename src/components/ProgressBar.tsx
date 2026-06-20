@@ -5,9 +5,12 @@ import { motion } from "framer-motion";
 interface ProgressBarProps {
   current: number; // 1-indexed
   total: number;
+  /** When true, the step count line reads "Step X of Y · optional" so a
+   *  numbered funnel doesn't behaviourally signal "required". */
+  optional?: boolean;
 }
 
-export function ProgressBar({ current, total }: ProgressBarProps) {
+export function ProgressBar({ current, total, optional }: ProgressBarProps) {
   const filledCount = current;
   const pct = Math.round((filledCount / total) * 100);
 
@@ -53,6 +56,12 @@ export function ProgressBar({ current, total }: ProgressBarProps) {
         style={{ color: "#524F4C" }}
       >
         Step {current} of {total}
+        {optional && (
+          <>
+            {" · "}
+            <span style={{ color: "#A8A29E" }}>optional</span>
+          </>
+        )}
       </p>
     </div>
   );

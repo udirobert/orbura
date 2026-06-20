@@ -51,7 +51,7 @@ export function FaceScanScreen() {
     <div className="relative min-h-svh flex flex-col px-5 overflow-hidden" style={{ backgroundColor: "#0A0A0B" }}>
       <ScreenHeader
         back={{ href: "/context-deepener", label: "Back" }}
-        progress={{ current: 4, total: 5 }}
+        progress={{ current: 4, total: 5, optional: true }}
         right={
           <MiniOrb
             score={phase === "result" ? 10 : 0}
@@ -98,10 +98,10 @@ export function FaceScanScreen() {
             <div className="mt-auto flex flex-col gap-3 pb-10">
               <PrimaryButton size="lg" onClick={startCamera}>
                 <div className="font-bold text-base mb-0.5">Open camera</div>
-                <div className="text-[10px] font-normal opacity-80">Zero-knowledge edge verification</div>
+                <div className="text-[10px] font-normal opacity-80">Measured on-device · nothing uploaded</div>
               </PrimaryButton>
-              <button onClick={handleSkip} className="w-full text-center text-[11px] py-2.5 font-medium" style={{ color: "#524F4C" }}>
-                Skip this step
+              <button onClick={handleSkip} className="w-full text-center text-[13px] py-2.5 font-medium" style={{ color: "#A8A29E" }}>
+                Skip — continue with intake only
               </button>
             </div>
           </motion.div>
@@ -240,10 +240,10 @@ export function FaceScanScreen() {
               </PrimaryButton>
               <button
                 onClick={handleSkip}
-                className="w-full text-center text-[11px] py-2 font-medium"
-                style={{ color: "#524F4C" }}
+                className="w-full text-center text-[13px] py-2.5 font-medium"
+                style={{ color: "#A8A29E" }}
               >
-                Skip face scan — continue without biometric proof
+                Skip face scan — continue with intake only
               </button>
             </div>
           </motion.div>

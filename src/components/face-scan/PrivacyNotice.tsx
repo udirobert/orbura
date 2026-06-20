@@ -141,8 +141,8 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
         </motion.button>
         <button
           onClick={onDecline}
-          className="w-full text-center text-[11px] py-2.5 font-medium"
-          style={{ color: "#524F4C" }}
+          className="w-full text-center text-[13px] py-2.5 font-medium"
+          style={{ color: "#A8A29E" }}
         >
           Skip face scan
         </button>

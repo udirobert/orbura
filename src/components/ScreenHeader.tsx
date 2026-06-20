@@ -20,8 +20,10 @@ interface ScreenHeaderProps {
   back: BackTarget;
   /** Right-side content. Typically a MiniOrb or live score readout. */
   right?: ReactNode;
-  /** Show a 5-step wizard progress bar below the header. */
-  progress?: { current: number; total: number };
+  /** Show a 5-step wizard progress bar below the header. Set
+   *  `optional: true` when the step itself is skippable, so the step
+   *  count reads "Step X of Y · optional". */
+  progress?: { current: number; total: number; optional?: boolean };
   /** Top padding (defaults to 12 / mt-12 for the standard nav offset). */
   topSpacing?: boolean;
 }
@@ -70,7 +72,11 @@ export function ScreenHeader({
 
       {progress && (
         <div className="relative z-10 pt-3 pb-4">
-          <ProgressBar current={progress.current} total={progress.total} />
+          <ProgressBar
+            current={progress.current}
+            total={progress.total}
+            optional={progress.optional}
+          />
         </div>
       )}
     </>

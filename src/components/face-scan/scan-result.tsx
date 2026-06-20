@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { ShieldCheck, Loader2, CloudDownload, ExternalLink, WifiOff, Zap, Container, Cpu } from "lucide-react";
+import { ShieldCheck, Loader2, CloudDownload, ExternalLink, WifiOff, Zap, Container, Cpu, ChevronDown } from "lucide-react";
 import { getQvacAdvice } from "@/lib/api";
 import { ProofCircuitVisual } from "./ProofCircuitVisual";
 import type { QvacProgress } from "@/lib/api";
@@ -160,19 +160,20 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
       exit={{ opacity: 0 }}
       className="relative z-10 flex-1 flex flex-col gap-4 pb-10"
     >
-      {/* ── Proof Circuit Visual ──────────────────────────────────── */}
-      <ProofCircuitVisual steps={lifecycleSteps} />
-
-      {/* ── Verification status card ────────────────────────────────
-          Three states drive the colouring:
+      {/* ── Unified verification + privacy + lifecycle panel ────────
+          One card replaces three earlier siblings (lifecycle visual +
+          status card + privacy footer). The ProofCircuitVisual is now
+          a collapsible <details> at the bottom for tech-savvy users
+          who want to see the steps — most users only need the human
+          summary up top. Three states drive the colouring:
             • crypto verified → emerald (a real verifiable proof exists)
-            • failed / mock   → amber  (a soft warning, NOT a user error;
+            • failed / mock   → amber  (soft warning, NOT a user error;
                                         red is reserved for things the
                                         user can act on, e.g. camera
                                         blocked — see FaceScanScreen)
             • in-flight       → amber (same hue, "working" copy)
        */}
-      <div className="flex items-start gap-3 rounded-2xl p-4"
+      <div className="rounded-2xl p-4"
         style={{
           backgroundColor: isCryptoVerified
             ? "rgba(16, 185, 129, 0.1)"
@@ -181,61 +182,81 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
             ? "1px solid rgba(16, 185, 129, 0.3)"
             : "1px solid rgba(245, 158, 11, 0.3)",
         }}>
-        <ShieldCheck className={`w-8 h-8 flex-shrink-0 ${isCryptoVerified ? 'text-emerald-500' : 'text-amber-500'}`} />
-        <div className="flex-1 min-w-0">
-          <p className="text-[9px] font-mono uppercase tracking-widest" style={{
-            color: isCryptoVerified ? "#4ADE80" : "#F59E0B",
-          }}>
-            {isCryptoVerified
-              ? "✓ Math proof verified on your device"
-              : isCryptoFailed
-                ? "◐ Couldn't verify proof — analysis still continues"
-                : isMock
-                  ? "◐ Couldn't load verifier — analysis still continues"
-                  : "◐ Proof built — checking on your device..."}
-          </p>
-          {isCryptoVerified ? (
-            <>
-              <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
-                Stress score: {zkProof ? `${Math.round(zkProof.stressScore * 100)}%` : "—"}
-              </p>
-              <p className="text-[9px] font-mono mt-0.5" style={{ color: "#A8A29E" }}>
-                Checked in {verifyDuration} · committed to a public log
-              </p>
-              <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: "#A8A29E" }}>
-                <span className="font-semibold" style={{ color: "#F5F5F4" }}>Why this matters: </span>
-                if this proof leaks, attackers get a math commitment they can&apos;t reverse
-                to recover your face or measurements.
-              </p>
-            </>
-          ) : isCryptoFailed ? (
-            <>
-              <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
-                Stress score: {zkProof ? `${Math.round(zkProof.stressScore * 100)}%` : "—"}
-              </p>
-              <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "#A8A29E" }}>
-                Your face was measured on this device, but the math
-                proof didn&apos;t check out — so nothing was committed
-                to the public log. Nothing was uploaded either.
-              </p>
-            </>
-          ) : isMock ? (
-            <>
-              <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
-                Stress score: {zkProof ? `${Math.round(zkProof.stressScore * 100)}%` : "—"}
-              </p>
-              <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "#A8A29E" }}>
-                Your face was measured on this device, but the
-                verifier didn&apos;t load this time. Nothing was
-                uploaded or stored.
-              </p>
-            </>
-          ) : (
-            <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
-              Checking on this device...
+        <div className="flex items-start gap-3">
+          <ShieldCheck className={`w-8 h-8 flex-shrink-0 ${isCryptoVerified ? 'text-emerald-500' : 'text-amber-500'}`} />
+          <div className="flex-1 min-w-0">
+            <p className="text-[9px] font-mono uppercase tracking-widest" style={{
+              color: isCryptoVerified ? "#4ADE80" : "#F59E0B",
+            }}>
+              {isCryptoVerified
+                ? "✓ Math proof verified on your device"
+                : isCryptoFailed
+                  ? "◐ Couldn't verify proof — analysis still continues"
+                  : isMock
+                    ? "◐ Couldn't load verifier — analysis still continues"
+                    : "◐ Proof built — checking on your device..."}
             </p>
-          )}
+            {isCryptoVerified ? (
+              <>
+                <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
+                  Stress score: {zkProof ? `${Math.round(zkProof.stressScore * 100)}%` : "—"}
+                </p>
+                <p className="text-[9px] font-mono mt-0.5" style={{ color: "#A8A29E" }}>
+                  Checked in {verifyDuration} · committed to a public log
+                </p>
+                <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: "#A8A29E" }}>
+                  <span className="font-semibold" style={{ color: "#F5F5F4" }}>Privacy: </span>
+                  the image and measurements never left your device —
+                  only a math proof was committed.
+                </p>
+              </>
+            ) : isCryptoFailed ? (
+              <>
+                <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
+                  Stress score: {zkProof ? `${Math.round(zkProof.stressScore * 100)}%` : "—"}
+                </p>
+                <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "#A8A29E" }}>
+                  <span className="font-semibold" style={{ color: "#F5F5F4" }}>Privacy intact: </span>
+                  your face was measured on this device, but the math
+                  proof didn&apos;t check out, so nothing was committed
+                  publicly. Nothing was uploaded either.
+                </p>
+              </>
+            ) : isMock ? (
+              <>
+                <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
+                  Stress score: {zkProof ? `${Math.round(zkProof.stressScore * 100)}%` : "—"}
+                </p>
+                <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "#A8A29E" }}>
+                  <span className="font-semibold" style={{ color: "#F5F5F4" }}>Privacy intact: </span>
+                  your face was measured on this device, but the
+                  verifier didn&apos;t load this time. Nothing was
+                  uploaded or stored.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
+                Checking on this device...
+              </p>
+            )}
+          </div>
         </div>
+
+        {/* Collapsible technical view — for users who want to see how
+            the proof was built. Closed by default so the panel reads
+            as a human summary first. <details> avoids needing state. */}
+        <details className="mt-3 group">
+          <summary
+            className="flex items-center justify-between cursor-pointer list-none text-[9px] font-mono uppercase tracking-widest py-1"
+            style={{ color: "#A8A29E" }}
+          >
+            <span>How the proof was built</span>
+            <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="mt-2">
+            <ProofCircuitVisual steps={lifecycleSteps} />
+          </div>
+        </details>
       </div>
 
       {/* ── Transaction + Gas ────────────────────────────────────── */}
@@ -427,24 +448,6 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
           )}
         </>
       )}
-
-      {/* ── Privacy commitment footer ───────────────────────────────── */}
-      <div
-        className="rounded-xl px-3 py-2.5 text-center"
-        style={{
-          backgroundColor: "rgba(74,222,128,0.06)",
-          border: "1px solid rgba(74,222,128,0.18)",
-        }}
-      >
-        <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#4ADE80" }}>
-          Privacy
-        </p>
-        <p className="text-[11px] mt-1 leading-relaxed" style={{ color: "#F5F5F4" }}>
-          Your image was processed in your browser. The photo, the
-          measurements, and the feature vector were not stored or
-          uploaded. Only a math proof was generated.
-        </p>
-      </div>
 
       <div className="mt-auto">
         <motion.button whileTap={{ scale: 0.98 }}
