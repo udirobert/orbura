@@ -26,9 +26,17 @@ export type CameraError = "denied" | "unavailable" | "in_use" | "generic";
 
 export const SCAN_MESSAGES = [
   "Extracting facial geometry locally...",
-  "Computing eye aspect ratio...",
-  "Measuring brow tension...",
-  "Running Zero-Knowledge proof circuit...",
+  "Mapping 468 landmark points...",
+  "Measuring eye aspect ratio...",
+  "Detecting brow tension patterns...",
+  "Analyzing mouth geometry...",
+  "Computing eye symmetry...",
+  "Running ZK circuit in Web Worker...",
+  "Generating Halo2 proof...",
+  "Hashing proof against model weights...",
+  "Verifying proof against verifier key...",
+  "Preparing SKALE on-chain transaction...",
+  "Committing credential to chain...",
 ];
 
 export function cameraErrorCopy(kind: CameraError) {
@@ -209,6 +217,20 @@ export function useFaceScanPipeline() {
     if (!videoRef.current || !canvasRef.current || !faceMeshRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
+
+    // Wait for the video element to actually have frames before capturing.
+    // On some devices readyState < 2 (HAVE_CURRENT_DATA) when the user taps
+    // immediately after the preview appears, which gives MediaPipe an empty
+    // frame and causes the "no face detected" failure.
+    if (video.readyState < 2) {
+      await new Promise<void>((resolve) => {
+        const onReady = () => { video.removeEventListener("loadeddata", onReady); resolve(); };
+        video.addEventListener("loadeddata", onReady);
+        // safety timeout — don't wait forever
+        setTimeout(resolve, 1500);
+      });
+    }
+
     const w = video.videoWidth || 640;
     const h = video.videoHeight || 480;
     canvas.width = w;
@@ -222,12 +244,23 @@ export function useFaceScanPipeline() {
     setPhase("extracting");
 
     try {
-      const results = await new Promise<{ multiFaceLandmarks: { x: number; y: number; z: number }[][] }>((resolve) => {
-        faceMeshRef.current!.onResults(resolve);
-        faceMeshRef.current!.send({ image: video });
-      });
-      const features = extractStressFeatures(results.multiFaceLandmarks[0]);
-      if (!features) throw new Error("Failed to extract facial features");
+      // Try up to 3 frames — MediaPipe sometimes needs a second attempt
+      // if the model is still warming up or the face is in a transitional pose.
+      const MAX_FACE_ATTEMPTS = 3;
+      let features: ReturnType<typeof extractStressFeatures> = null;
+      for (let attempt = 1; attempt <= MAX_FACE_ATTEMPTS && !features; attempt++) {
+        const results = await new Promise<{ multiFaceLandmarks: { x: number; y: number; z: number }[][] }>((resolve) => {
+          faceMeshRef.current!.onResults(resolve);
+          faceMeshRef.current!.send({ image: video });
+        });
+        features = extractStressFeatures(results.multiFaceLandmarks[0]);
+        if (!features && attempt < MAX_FACE_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, 600));
+        }
+      }
+      if (!features) {
+        throw new Error("No face detected — center your face in the frame with good lighting and try again.");
+      }
 
       setPhase("proving");
       const proofResult = await new Promise<ProofResultShape>((resolve, reject) => {

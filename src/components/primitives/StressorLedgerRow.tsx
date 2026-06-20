@@ -95,7 +95,7 @@ export function StressorLedgerRow({
               {label}
             </span>
             <span className="text-[10px] block mt-0.5" style={{ color: "#3a3835" }}>
-              {sublabel}
+              {isSelected ? "Tap to remove" : sublabel}
             </span>
           </div>
 

@@ -54,8 +54,28 @@ export function DebtIntakeScreen() {
   };
 
   const handleSubOption = (type: StressorType, field: keyof Stressor, optKey: string) => {
-    updateStressor(type, { [field]: optKey } as Partial<Stressor>);
-    showAck(optKey);
+    const current = selectedStressors.find((s) => s.type === type);
+    // Tapping a selected chip toggles it off — this is the missing
+    // deselect path users expect after picking a sub-option.
+    if (current && (current[field] as string | undefined) === optKey) {
+      updateStressor(type, { [field]: undefined } as Partial<Stressor>);
+      showAck(optKey);
+      memory.reportAction({
+        content: `User cleared ${type} context (${optKey}).`,
+        event_type: "update",
+        page: "intake",
+        metadata: { type: "clear_context", stressor: type, context: optKey },
+      }).catch(() => {});
+    } else {
+      updateStressor(type, { [field]: optKey } as Partial<Stressor>);
+      showAck(optKey);
+      memory.reportAction({
+        content: `User set ${type} context to ${optKey}.`,
+        event_type: "update",
+        page: "intake",
+        metadata: { type: "set_context", stressor: type, context: optKey },
+      }).catch(() => {});
+    }
   };
 
   const hasSelection = selectedStressors.length > 0;
