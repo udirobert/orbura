@@ -253,17 +253,20 @@ async function main() {
 // ─── Agent runner ─────────────────────────────────────────────────────────────
 
 const AGENT_TIMEOUT_MS = 40_000;
+const SCHEDULE_TIMEOUT_MS = 90_000;
+const SCHEDULE_MAX_TOKENS = 150;
 
 async function runAgent(modelId, agentName, input, triageContext = null, coachContext = null) {
   const agent = AGENTS[agentName];
   const systemPrompt = agent.systemPrompt(input, triageContext, coachContext);
 
+  const isSchedule = agentName === "schedule";
   let result = "";
   const response = completion({
     modelId,
     history: [{ role: "user", content: systemPrompt }],
     stream: true,
-    max_tokens: 300,
+    max_tokens: isSchedule ? SCHEDULE_MAX_TOKENS : 300,
   });
 
   // Race the token stream against a per-agent timeout. A 1B model with a
@@ -281,7 +284,8 @@ async function runAgent(modelId, agentName, input, triageContext = null, coachCo
     await Promise.race([
       streamPromise,
       new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`agent_timeout_${AGENT_TIMEOUT_MS}ms`)), AGENT_TIMEOUT_MS);
+        const timeoutMs = isSchedule ? SCHEDULE_TIMEOUT_MS : AGENT_TIMEOUT_MS;
+        timer = setTimeout(() => reject(new Error(`agent_timeout_${timeoutMs}ms`)), timeoutMs);
       }),
     ]);
   } finally {
