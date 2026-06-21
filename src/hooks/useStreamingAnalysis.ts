@@ -109,15 +109,16 @@ export function useStreamingAnalysis() {
               setAnalysis({ ...partial } as DebtAnalysis);
               if (data.confidenceTier) setConfidenceTier(data.confidenceTier);
 
-              // If no agent_start arrives within 5s, QVAC isn't running —
-              // fall back to immediate navigation with deterministic data.
+              // If no agent_progress or agent_start arrives within 15s,
+              // QVAC isn't running — fall back to deterministic data.
+              // 15s accounts for model loading from disk on slow CPUs.
               fallbackTimerRef.current = setTimeout(() => {
                 if (agentSteps.length === 0 && !abortRef.current?.signal.aborted && !navigatedRef.current) {
                   navigatedRef.current = true;
                   setIsAnalyzing(false);
                   router.push("/dashboard");
                 }
-              }, 5000);
+              }, 15000);
             }
 
             if (eventType === "agent_start") {
@@ -142,7 +143,12 @@ export function useStreamingAnalysis() {
             }
 
             if (eventType === "agent_progress") {
-              // Model download / loading progress from QVAC
+              // Model download / loading progress from QVAC — cancel fallback
+              // timer since QVAC is confirmed running
+              if (fallbackTimerRef.current) {
+                clearTimeout(fallbackTimerRef.current);
+                fallbackTimerRef.current = null;
+              }
               useBodyDebtStore.setState({
                 agentProgress: data as { status: string; percent?: number; loaded?: number; total?: number },
               });

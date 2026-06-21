@@ -132,6 +132,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
 
   // If we have live agent events, show them instead of the simulated signals
   const hasLiveAgents = agentEvents && agentEvents.length > 0;
+  const isLoadingModel = agentProgress && !hasLiveAgents;
 
   return (
     <div className="relative flex flex-col items-center justify-between min-h-svh px-5 py-12 overflow-hidden"
@@ -201,7 +202,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
             {percentLabel}%
           </motion.div>
           <p className="text-[10px] font-mono uppercase tracking-widest mt-1" style={{ color: "#524F4C" }}>
-            {hasLiveAgents ? "edge AI agents working" : "processing signals"}
+            {hasLiveAgents ? "edge AI agents working" : isLoadingModel ? "loading AI model" : "processing signals"}
           </p>
         </div>
 
