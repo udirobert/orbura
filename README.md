@@ -3,53 +3,49 @@ title: Body Debt
 emoji: 🫀
 colorFrom: red
 colorTo: yellow
-sdk: gradio
-sdk_version: 6.18.0
-app_file: app.py
-pinned: true
 license: mit
 tags:
-  - build-small
-  - backyard-ai
-  - tiny-titan
-  - best-agent
-  - off-brand
-  - openai-codex
+  - qvac
+  - edge-ai
+  - on-device-llm
+  - multi-agent
+  - health
 models:
-  - HuggingFaceTB/SmolLM2-360M-Instruct
+  - unsloth/Llama-3.2-1B-Instruct-GGUF
 ---
 
-# 🫀 Body Debt
+# 🫀 Body Debt — QVAC Edge AI
 
-**Quantify your physiological debt. Get AI-backed recovery prescriptions.**
+**Quantify your physiological debt. Get AI-backed recovery prescriptions from 4 on-device agents.**
 
-Body Debt calculates the precise recovery cost of last night's choices — alcohol, training, poor sleep, stress, illness — across five biological systems, then generates personalized recovery advice using a **1-billion parameter local LLM**.
+Body Debt calculates the precise recovery cost of last night's choices — alcohol, training, poor sleep, stress, illness — across five biological systems, then generates personalized recovery advice using **Llama-3.2-1B-Instruct running locally via the QVAC SDK**.
 
 ## What it does
 
 1. **Log stressors** — tap what happened (drank, trained, slept badly, stressed, ill, or took care)
 2. **Face scan** (optional) — webcam capture analyzed by MediaPipe FaceMesh to detect fatigue markers (eye aspect ratio, brow tension, eye symmetry)
 3. **Deterministic scoring** — five biological systems (Cardiovascular, Brain, Liver, Muscular/CNS, Gut) scored with physiological weights and circadian penalties
-4. **Local AI recovery coach** — Llama-3.2-1B generates a personalized prescription (Right Now / This Morning / Today / Avoid)
+4. **QVAC 4-agent pipeline** — Llama-3.2-1B runs 4 agents on-device: Triage → Coach → Schedule → Reflection
 
 ## The model
 
-**SmolLM2-360M-Instruct** (360M parameters) — runs entirely on CPU via HuggingFace Transformers. No external API calls, no cloud inference. Your health data stays on-device.
+**Llama-3.2-1B-Instruct** (Q4_0 quantized, 738MB) — runs entirely on-device via the **QVAC SDK** (`@qvac/sdk` v0.12.2) using the Bare runtime. No external API calls, no cloud inference for the primary path. Your health data stays on-device.
 
 The face scan stress classifier is a custom 7→16→8→1 MLP (~2KB ONNX) that converts facial geometry features into a fatigue score.
 
 ## Tech
 
-- **LLM**: SmolLM2-360M-Instruct (360M params) via HuggingFace Transformers
+- **LLM**: Llama-3.2-1B-Instruct (Q4) via QVAC SDK (`@qvac/sdk`), Bare runtime, llamacpp-completion plugin
 - **Face analysis**: MediaPipe FaceMesh → 7 stress features → ONNX MLP
 - **Scoring**: Deterministic 5-system engine with physiological weights, drink-type modifiers, training CNS load, circadian alignment penalties
-- **UI**: Gradio 6 with custom dark theme
+- **ZK privacy**: EZKL Halo2 proofs on SKALE Europa testnet
+- **UI**: Next.js 16, React 19, Tailwind CSS v4, shadcn/ui, framer-motion
 
 ## Privacy
 
 - Face scan runs via MediaPipe on-device — no images are transmitted
-- LLM inference is local — no API calls to external services
-- No data persistence — nothing is stored between sessions
+- LLM inference is local via QVAC — no API calls to external services
+- ZK proofs verify face scan results without revealing raw data
 
 ## Demo
 
@@ -59,23 +55,34 @@ The face scan stress classifier is a custom 7→16→8→1 MLP (~2KB ONNX) that 
 
 [Social media post link]
 
-## Try it locally
+## Quick start
 
 ```bash
-pip install -r requirements.txt
-python generate_model.py  # creates the ONNX stress model
-python app.py
+bun install
+bun dev
 ```
 
-## OpenAI Codex Track
+The QVAC worker spawns automatically via `bare scripts/qvac-worker.mjs`. The model downloads on first inference (~738MB) and caches at `~/.qvac/models/` for subsequent runs.
 
-This Space was built with OpenAI Codex as the coding agent. The public source repository, including Codex-attributed commits, is here:
+Requirements:
+- Node.js 20+ / Bun
+- `bare` runtime (install: `npm install -g bare`)
+- QVAC SDK (`@qvac/sdk` ^0.12.2) — included in dependencies
+- OpenSSL 3 (for native lib resolution)
 
-**Repository:** [github.com/udirobert/bodydebt](https://github.com/udirobert/bodydebt)
+## Auditable log
 
-## Full product
+An auditable inference log capturing model loads/unloads and per-agent performance is at `qvac-audit/qvac-audit-log.jsonl`. Generate it with:
 
-The complete Body Debt application (Next.js, ZK proofs on SKALE, real-time animated dashboard) is at: [github.com/udirobert/bodydebt](https://github.com/udirobert/bodydebt)
+```bash
+node scripts/generate-qvac-audit-log.mjs
+```
+
+Output includes per-agent: prompt, tokens generated, TTFT, tokens/sec, duration, and status.
+
+## HuggingFace Space
+
+A lighter Gradio demo using SmolLM2-360M via HuggingFace Transformers is in `hf-space/`. The main app uses QVAC SDK as required by the hackathon.
 
 ## QVAC Edge AI — Multi-Agent Pipeline
 

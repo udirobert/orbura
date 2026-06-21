@@ -1,0 +1,4 @@
+runId,event,agent,model,tokensGenerated,ttftMs,tokensPerSec,durationMs,status
+bad_night_spirits_2026-06-21T19:04:35.903Z,inference_call,triage,Llama-3.2-1B-Instruct-Q4,29,0,1.71,16986,done
+bad_night_spirits_2026-06-21T19:04:35.903Z,inference_call,coach,Llama-3.2-1B-Instruct-Q4,93,0,4.56,20373,done
+bad_night_spirits_2026-06-21T19:04:35.903Z,inference_call,schedule,Llama-3.2-1B-Instruct-Q4,0,,0,0,error

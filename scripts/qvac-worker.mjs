@@ -24,10 +24,22 @@
  *   {"event":"result","data":{"triage":{...},"prescription":{...},"schedule":[...],"reflection":{...},"source":"qvac-local","model":"llama-3.2-1b-inst-q4"}}
  */
 
-import { loadModel, completion, unloadModel, LLAMA_3_2_1B_INST_Q4_0 } from "@qvac/sdk";
+import { plugins, LLAMA_3_2_1B_INST_Q4_0 } from "@qvac/sdk";
+import { llmPlugin } from "@qvac/sdk/llamacpp-completion/plugin";
+
+const isBare = typeof Bare !== "undefined";
+const argv = isBare ? Bare.argv : process.argv;
+
+// Register the llamacpp plugin before any SDK calls (required by bare runtime)
+const { loadModel, completion, unloadModel } = plugins([llmPlugin]);
 
 function send(event, data) {
-  process.stdout.write(JSON.stringify({ event, data }) + "\n");
+  const line = JSON.stringify({ event, data });
+  if (isBare) {
+    console.log(line);
+  } else {
+    process.stdout.write(line + "\n");
+  }
 }
 
 // ─── Tool definitions (simulated tool-calling for small models) ──────────────
@@ -43,41 +55,41 @@ const AGENTS = {
     name: "triage",
     role: "Triage Agent",
     description: "Analyzes the 5-system breakdown and identifies the priority system, secondary concern, and what to avoid.",
-    systemPrompt: (input) => `You are the Triage Agent in a multi-agent health recovery system. Your job is to analyze physiological debt data and produce a structured triage assessment.
+    systemPrompt: (input) => `You are a health triage assistant. A person's body has physiological stress from poor sleep, alcohol, training, or illness. This is NOT financial debt — it is body health debt.
 
-You have access to these tools (already computed):
-- compute_score: debt score = ${input.debtScore}/100
-- get_system_scores: ${JSON.stringify(input.systemScores?.map(s => ({ system: s.system, label: s.label, score: s.score, clearedAt: s.clearedAt })) ?? [])}
+Their body debt score: ${input.debtScore}/100 (higher = more recovery needed)
+Body systems affected:
+${JSON.stringify(input.systemScores?.map(s => ({ system: s.system, label: s.label, score: s.score, clearedAt: s.clearedAt })) ?? [])}
 
-Based on the data above, output EXACTLY three lines, no other text:
-PRIORITY: <system name> <score> — <one specific reason in 8 words>
-SECONDARY: <system name> <score> — <one specific reason in 8 words>
-AVOID: <one specific thing to avoid today, with biological reason, 12 words max>`,
+Output EXACTLY three lines, no other text:
+PRIORITY: <body system name> <score> — <health reason in 8 words>
+SECONDARY: <body system name> <score> — <health reason in 8 words>
+AVOID: <one health thing to avoid + biological reason, 12 words max>`,
   },
   coach: {
     name: "coach",
     role: "Recovery Coach Agent",
     description: "Generates a personalized 4-part recovery prescription using the triage assessment as context.",
-    systemPrompt: (input, triageResult) => `You are the Recovery Coach Agent in a multi-agent health recovery system. The Triage Agent has identified priorities. Your job is to produce a specific, actionable recovery prescription.
+    systemPrompt: (input, triageResult) => `You are a health recovery coach. A person has body debt from poor sleep, alcohol, training, or stress. This is about physical health, NOT money or finances.
 
-Triage assessment:
+Triage:
 ${triageResult || "No triage available — use the system scores directly."}
 
-Body debt score: ${input.debtScore}/100
+Body debt score: ${input.debtScore}/100 (higher = more tired, more recovery needed)
 Stressors: ${(input.stressors ?? []).join(", ") || "None reported"}
 ${input.faceStress !== null && input.faceStress !== undefined ? `Face scan stress: ${input.faceStress}/100` : ""}
 
-Output EXACTLY four lines, each starting with the label, no other text:
-RIGHT NOW: <one specific action with quantity, 12-18 words>
-THIS MORNING: <one specific action for next 2-3 hours, 12-18 words>
-TODAY: <one key insight about today's capacity, 12-18 words>
-AVOID: <one specific thing to avoid + biological reason, 12-18 words>`,
+Write a health recovery prescription. Output EXACTLY four lines:
+RIGHT NOW: <one specific health action with quantity, 12-18 words>
+THIS MORNING: <one specific health action for next 2-3 hours, 12-18 words>
+TODAY: <one key insight about physical capacity today, 12-18 words>
+AVOID: <one thing to avoid + biological reason, 12-18 words>`,
   },
   schedule: {
     name: "schedule",
     role: "Schedule Agent",
     description: "Produces a time-blocked recovery schedule for the next 12 hours.",
-    systemPrompt: (input, triageResult, coachResult) => `You are the Schedule Agent in a multi-agent health recovery system. Using the triage and prescription from the other agents, create a time-blocked recovery schedule.
+    systemPrompt: (input, triageResult, coachResult) => `You are a health schedule planner. Create a recovery schedule for a person with body debt from sleep loss, alcohol, or training. This is about physical health, NOT finances.
 
 Triage:
 ${triageResult || "N/A"}
@@ -88,10 +100,9 @@ ${coachResult || "N/A"}
 Current time: ${input.currentTime ?? "morning"}
 Recovery window: ${input.recoveryTime ?? "later today"}
 
-Output EXACTLY 4 schedule blocks, one per line, no other text. Each line:
-<time range> | <action> | <which system it helps>
+Output EXACTLY 4 schedule blocks, one per line. Format:
+<time range> | <health action> | <body system>
 
-Example format:
 NOW-10AM | 500ml water + electrolytes, no caffeine | Liver
 10AM-12PM | Light walk outside, natural light | Brain
 12PM-3PM | Protein-rich lunch, gentle movement | Muscular
@@ -129,7 +140,7 @@ AVOID: <rewritten>`;
 // ─── Main pipeline ────────────────────────────────────────────────────────────
 
 async function main() {
-  const input = JSON.parse(process.argv[2]);
+  const input = JSON.parse(argv[2]);
 
   send("progress", { status: "downloading", loaded: 0, total: 0, percent: 0 });
 
@@ -241,7 +252,7 @@ async function main() {
 
 // ─── Agent runner ─────────────────────────────────────────────────────────────
 
-const AGENT_TIMEOUT_MS = 25_000;
+const AGENT_TIMEOUT_MS = 40_000;
 
 async function runAgent(modelId, agentName, input, triageContext = null, coachContext = null) {
   const agent = AGENTS[agentName];
@@ -351,8 +362,8 @@ AVOID: ${rx.avoid ?? "N/A"}`;
 }
 
 main()
-  .then(() => process.exit(0))
+  .then(() => { if (!isBare) process.exit(0); })
   .catch((err) => {
     send("error", { message: err.message });
-    process.exit(1);
+    if (!isBare) process.exit(1);
   });

@@ -82,9 +82,20 @@ export async function runMultiAgentPipeline(
   const cpModule = "node:child_process";
   const cp = await import(/* webpackIgnore: true */ cpModule);
 
+  const workerArg = JSON.stringify(input);
+  const isBareAvailable = await import("node:child_process").then(cp => {
+    try {
+      cp.execSync("which bare", { stdio: "ignore" });
+      return true;
+    } catch {
+      return false;
+    }
+  }).catch(() => false);
+
   let child;
   try {
-    child = cp.spawn(process.execPath, [workerPath, JSON.stringify(input)], {
+    const runtime = isBareAvailable ? "bare" : process.execPath;
+    child = cp.spawn(runtime, [workerPath, workerArg], {
       stdio: ["pipe", "pipe", "pipe"],
       env: {
         ...process.env,
