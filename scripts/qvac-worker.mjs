@@ -180,7 +180,7 @@ async function main() {
     results.triage = parseTriage(triageRaw);
     const triageText = formatTriageForContext(results.triage);
     const triageDuration = Date.now() - triageStart;
-    results.agentMeta.push({ agent: "triage", durationMs: triageDuration, status: "done", model: "llama-3.2-1b-inst-q4" });
+    results.agentMeta.push({ agent: "triage", durationMs: triageDuration, status: "done", model: "llama-3.2-1b-inst-q4", raw: triageRaw });
     send("agent_done", { agent: "triage", result: results.triage, durationMs: triageDuration, raw: triageRaw });
 
     // ── Agent 2: Coach (uses triage output) ──────────────────────────────
@@ -190,7 +190,7 @@ async function main() {
       const coachRaw = await runAgent(modelId, "coach", input, triageText);
       results.prescription = parsePrescription(coachRaw);
       const coachDuration = Date.now() - coachStart;
-      results.agentMeta.push({ agent: "coach", durationMs: coachDuration, status: "done", model: "llama-3.2-1b-inst-q4" });
+      results.agentMeta.push({ agent: "coach", durationMs: coachDuration, status: "done", model: "llama-3.2-1b-inst-q4", raw: coachRaw });
       send("agent_done", { agent: "coach", result: results.prescription, durationMs: coachDuration, raw: coachRaw });
 
       // ── Agent 3: Schedule (uses triage + coach output) ──────────────────
@@ -200,7 +200,7 @@ async function main() {
         const schedRaw = await runAgent(modelId, "schedule", input, triageText, formatPrescriptionForContext(results.prescription));
         results.schedule = parseSchedule(schedRaw);
         const schedDuration = Date.now() - schedStart;
-        results.agentMeta.push({ agent: "schedule", durationMs: schedDuration, status: "done", model: "llama-3.2-1b-inst-q4" });
+        results.agentMeta.push({ agent: "schedule", durationMs: schedDuration, status: "done", model: "llama-3.2-1b-inst-q4", raw: schedRaw });
         send("agent_done", { agent: "schedule", result: results.schedule, durationMs: schedDuration, raw: schedRaw });
 
         // ── Agent 4: Reflection (rewrites Coach output in user's voice) ─────
@@ -221,7 +221,7 @@ async function main() {
             results.prescription = reflected;
           }
           const reflectDuration = Date.now() - reflectStart;
-          results.agentMeta.push({ agent: "reflection", durationMs: reflectDuration, status: "done", model: "llama-3.2-1b-inst-q4" });
+          results.agentMeta.push({ agent: "reflection", durationMs: reflectDuration, status: "done", model: "llama-3.2-1b-inst-q4", raw: reflectRaw });
           send("agent_done", { agent: "reflection", result: results.reflection ?? results.prescription, durationMs: reflectDuration, raw: reflectRaw });
         } catch (err) {
           results.agentMeta.push({ agent: "reflection", durationMs: Date.now() - reflectStart, status: "error", error: err.message });

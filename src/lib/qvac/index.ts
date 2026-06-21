@@ -31,6 +31,7 @@ export interface MultiAgentResult {
     status: string;
     model?: string;
     error?: string;
+    raw?: string;
   }>;
   source: "qvac-local" | "eazo-cloud" | "deterministic";
   model?: string;
@@ -184,6 +185,7 @@ export function buildAgentTrace(result: MultiAgentResult): AgentTrace {
     durationMs: m.durationMs,
     source: result.source === "qvac-local" ? "qvac-local" : "eazo-cloud",
     model: m.model ?? result.model,
+    raw: m.raw,
   }));
 
   return {

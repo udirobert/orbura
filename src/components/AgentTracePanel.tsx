@@ -152,6 +152,11 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                           </>
                         )}
                       </div>
+
+                      {/* Raw LLM output — collapsible */}
+                      {step.raw && step.status === "done" && (
+                        <RawOutput raw={step.raw} agent={step.agent} />
+                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -247,6 +252,44 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
           )}
         </AnimatePresence>
       </motion.div>
+    </div>
+  );
+}
+
+function RawOutput({ raw, agent }: { raw: string; agent: string }) {
+  const [open, setOpen] = useState(false);
+  const preview = raw.slice(0, 80).trim();
+  return (
+    <div className="mt-1.5">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        className="flex items-center gap-1 text-[8px] font-mono uppercase tracking-wider"
+        style={{ color: "#524F4C" }}
+      >
+        <span>{open ? "▾" : "▸"}</span>
+        <span>raw output</span>
+      </button>
+      {open && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          className="mt-1.5 rounded-lg p-2 overflow-y-auto"
+          style={{
+            backgroundColor: "rgba(0,0,0,0.3)",
+            border: "1px solid rgba(168,162,158,0.06)",
+            maxHeight: 120,
+          }}
+        >
+          <pre className="text-[10px] leading-relaxed whitespace-pre-wrap font-mono" style={{ color: "#A8A29E", margin: 0 }}>
+            {raw.trim()}
+          </pre>
+        </motion.div>
+      )}
+      {!open && preview && (
+        <p className="text-[9px] mt-0.5 truncate font-mono" style={{ color: "#3a3835" }}>
+          {preview}...
+        </p>
+      )}
     </div>
   );
 }

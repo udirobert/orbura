@@ -140,6 +140,7 @@ export interface AgentStep {
   durationMs?: number;
   source: "qvac-local" | "eazo-cloud" | "deterministic";
   model?: string;
+  raw?: string;
 }
 
 export interface TriageResult {

@@ -100,7 +100,8 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
   const [socialIdx] = useState(() => Math.floor(Math.random() * SOCIAL_COUNTS.length));
   const [orbScore, setOrbScore] = useState(0);     // orb heats up as signals process
 
-  // Simulate progress over ~5 seconds — feels like the AI is doing work
+  // Simulate progress over ~5 seconds for the initial signal-processing phase.
+  // Once live agents are running, progress is driven by agent completion.
   useEffect(() => {
     const DURATION = 5000;
     const start = Date.now();
@@ -127,12 +128,18 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
     return true;
   });
 
-  const orbColor = bandMeta(orbScore).color;
-  const percentLabel = Math.round(elapsed * 100);
-
   // If we have live agent events, show them instead of the simulated signals
   const hasLiveAgents = agentEvents && agentEvents.length > 0;
   const isLoadingModel = agentProgress && !hasLiveAgents;
+
+  // Drive progress from real agent state when agents are live.
+  // Each agent contributes equally: triage 25%, coach 50%, schedule 75%, reflection 100%.
+  const agentProgressPct = hasLiveAgents && agentEvents
+    ? Math.round((agentEvents.filter(a => a.status === "done").length / agentEvents.length) * 100)
+    : null;
+
+  const orbColor = bandMeta(orbScore).color;
+  const percentLabel = agentProgressPct ?? Math.round(elapsed * 100);
 
   return (
     <div className="relative flex flex-col items-center justify-between min-h-svh px-5 py-12 overflow-hidden"
