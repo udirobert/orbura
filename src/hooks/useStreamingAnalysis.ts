@@ -22,6 +22,8 @@ import type { DebtAnalysis, AnalyzeBodyRequest, AgentTrace, ScheduleBlock, Agent
 export function useStreamingAnalysis() {
   const router   = useRouter();
   const abortRef = useRef<AbortController | null>(null);
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navigatedRef = useRef(false);
   const {
     selectedStressors,
     faceAnalysis,
@@ -42,6 +44,8 @@ export function useStreamingAnalysis() {
     // Cancel any in-flight request
     abortRef.current?.abort();
     abortRef.current = new AbortController();
+    if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
+    navigatedRef.current = false;
     setAgentEvents([]);
     useBodyDebtStore.setState({ agentProgress: null });
 
@@ -107,8 +111,9 @@ export function useStreamingAnalysis() {
 
               // If no agent_start arrives within 5s, QVAC isn't running —
               // fall back to immediate navigation with deterministic data.
-              setTimeout(() => {
-                if (agentSteps.length === 0 && !abortRef.current?.signal.aborted) {
+              fallbackTimerRef.current = setTimeout(() => {
+                if (agentSteps.length === 0 && !abortRef.current?.signal.aborted && !navigatedRef.current) {
+                  navigatedRef.current = true;
                   setIsAnalyzing(false);
                   router.push("/dashboard");
                 }
@@ -116,7 +121,11 @@ export function useStreamingAnalysis() {
             }
 
             if (eventType === "agent_start") {
-              // An edge AI agent has started
+              // An edge AI agent has started — cancel the fallback timer
+              if (fallbackTimerRef.current) {
+                clearTimeout(fallbackTimerRef.current);
+                fallbackTimerRef.current = null;
+              }
               useBodyDebtStore.setState((state) => ({
                 agentEvents: [
                   ...state.agentEvents,
@@ -203,8 +212,11 @@ export function useStreamingAnalysis() {
             if (eventType === "done") {
               // Canonical final result — overwrite with authoritative merge
               setAnalysis(data as DebtAnalysis);
-              setIsAnalyzing(false);
-              router.push("/dashboard");
+              if (!navigatedRef.current) {
+                navigatedRef.current = true;
+                setIsAnalyzing(false);
+                router.push("/dashboard");
+              }
             }
 
             if (eventType === "error") {
