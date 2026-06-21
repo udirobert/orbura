@@ -41,11 +41,13 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Self-hosted MediaPipe assets. `application/wasm` is already
+        // Next.js's default MIME for .wasm (mime-db), so we only set
+        // cache headers here. Setting Content-Type here would also
+        // catch the .js loader scripts and break them — browsers
+        // refuse to execute a <script> served as application/wasm.
         source: "/mediapipe/:path*",
         headers: [
-          // MediaPipe's JS wrapper loads .wasm via instantiateStreaming,
-          // which requires this exact MIME or it silently falls through.
-          { key: "Content-Type", value: "application/wasm" },
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
