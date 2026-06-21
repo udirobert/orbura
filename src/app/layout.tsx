@@ -36,9 +36,13 @@ export const metadata: Metadata = {
   ...(SITE_URL ? { metadataBase: new URL(SITE_URL) } : {}),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
-  icons: {
-    icon: "/favicon.ico",
-  },
+  // Favicon chain — all file-based metadata so Next.js auto-emits
+  // the <link> tags:
+  //   • src/app/icon.svg     → <link rel="icon" type="image/svg+xml">
+  //                            for Chrome, Firefox, Edge.
+  //   • src/app/apple-icon.png → <link rel="apple-touch-icon"> for iOS.
+  //   • public/favicon.ico   → Safari + legacy browsers fetch
+  //                            /favicon.ico directly.
   // Social preview cards (Open Graph + Twitter). Most platforms (X,
   // Facebook, LinkedIn, Slack, Discord, WeChat, iMessage) read these
   // tags directly. For the preview image, drop a 1200×630 PNG/JPG at
