@@ -58,11 +58,11 @@ const SIGNALS = [
   { id: "rx",        label: "Generating prescription",icon: "💊", doneAt: 0.92 },
 ];
 
-// Social proof — rotate a few credible-sounding variants
+// Honest status text — no fabricated metrics
 const SOCIAL_COUNTS = [
-  "1,247 scores calculated today",
-  "94% found the prescription actionable",
-  "Average debt score: 58 — you're not alone",
+  "QVAC edge AI · running on-device",
+  "Llama-3.2-1B · Q4 quantized · local inference",
+  "4-agent pipeline · zero cloud calls",
 ];
 
 export interface AgentEventState {
