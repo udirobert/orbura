@@ -62,7 +62,7 @@ export function ScreenHeader({
         <button
           onClick={handleBack}
           className="flex items-center gap-2 text-[11px] font-medium"
-          style={{ color: "#A8A29E", minHeight: "44px" }}
+          style={{ color: "var(--color-text-secondary)", minHeight: "44px" }}
         >
           <ChevronLeft className="w-4 h-4" />
           {back.label}

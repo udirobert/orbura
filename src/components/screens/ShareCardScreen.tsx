@@ -91,7 +91,7 @@ function ShareCardVisual({
         // Instagram Stories 9:16 proportion — 360×640 reference
         aspectRatio: "9/16",
         maxWidth: 360,
-        backgroundColor: "#0A0A0B",
+        backgroundColor: "var(--color-bg-base)",
         border: "1px solid rgba(168,162,158,0.12)",
         padding: "40px 28px 36px",
       }}
@@ -113,7 +113,7 @@ function ShareCardVisual({
       >
         <span
           className="text-[9px] uppercase tracking-[0.22em] font-semibold"
-          style={{ color: "#524F4C" }}
+          style={{ color: "var(--color-text-faint)" }}
         >
           BODY DEBT
         </span>
@@ -197,7 +197,7 @@ function ShareCardVisual({
         style={{
           fontFamily: "var(--font-heading)",
           fontSize: "clamp(1rem, 4.5vw, 1.25rem)",
-          color: "#F5F5F4",
+          color: "var(--color-text-primary)",
           maxWidth: "88%",
         }}
       >
@@ -210,7 +210,7 @@ function ShareCardVisual({
         animate={{ opacity: revealing ? 0 : 1 }}
         transition={{ delay: 0.9, duration: 0.4 }}
         className="relative z-10 mt-3 text-[10px] font-mono uppercase tracking-widest"
-        style={{ color: "#524F4C" }}
+        style={{ color: "var(--color-text-faint)" }}
       >
         Cleared: {recoveryTime}
       </motion.p>
@@ -225,7 +225,7 @@ function ShareCardVisual({
           style={{ transformOrigin: "left" }}
         >
           <div className="flex items-center justify-between text-[8px] font-mono uppercase tracking-wider"
-            style={{ color: "#3a3835" }}>
+            style={{ color: "var(--color-text-disabled)" }}>
             <span>Now</span>
             <span>Danger</span>
             <span>Recovering</span>
@@ -235,28 +235,28 @@ function ShareCardVisual({
             style={{ backgroundColor: "rgba(168,162,158,0.08)" }}>
             <motion.div
               className="h-full"
-              style={{ backgroundColor: "#DC2626", width: "33%" }}
+              style={{ backgroundColor: "var(--color-states-error)", width: "33%" }}
               initial={{ scaleX: 0 }}
               animate={{ scaleX: revealing ? 0 : 1 }}
               transition={{ delay: 1.1, duration: 0.4 }}
             />
             <motion.div
               className="h-full"
-              style={{ backgroundColor: "#F59E0B", width: "33%" }}
+              style={{ backgroundColor: "var(--color-states-warning)", width: "33%" }}
               initial={{ scaleX: 0 }}
               animate={{ scaleX: revealing ? 0 : 1 }}
               transition={{ delay: 1.25, duration: 0.4 }}
             />
             <motion.div
               className="h-full"
-              style={{ backgroundColor: "#4ADE80", width: "34%" }}
+              style={{ backgroundColor: "var(--color-states-success)", width: "34%" }}
               initial={{ scaleX: 0 }}
               animate={{ scaleX: revealing ? 0 : 1 }}
               transition={{ delay: 1.4, duration: 0.4 }}
             />
           </div>
           <div className="mt-1 text-[8px] font-mono text-center"
-            style={{ color: "#524F4C" }}>
+            style={{ color: "var(--color-text-faint)" }}>
             {formatTimeUntilCleared(recoveryArc.clearedAt)}
           </div>
         </motion.div>
@@ -269,10 +269,10 @@ function ShareCardVisual({
         transition={{ delay: 1.05, duration: 0.5 }}
         className="relative z-10 mt-auto pt-5 flex items-center justify-between w-full"
       >
-        <span className="text-[8px] uppercase tracking-[0.2em] font-semibold" style={{ color: "#3a3835" }}>
+        <span className="text-[8px] uppercase tracking-[0.2em] font-semibold" style={{ color: "var(--color-text-disabled)" }}>
           bodydebt.app
         </span>
-        <span className="text-[8px] uppercase tracking-[0.2em] font-semibold" style={{ color: "#3a3835" }}>
+        <span className="text-[8px] uppercase tracking-[0.2em] font-semibold" style={{ color: "var(--color-text-disabled)" }}>
           What&apos;s yours?
         </span>
       </motion.div>
@@ -364,7 +364,7 @@ export function ShareCardScreen() {
   return (
     <div
       className="relative min-h-svh flex flex-col items-center px-5 overflow-hidden"
-      style={{ backgroundColor: "#0A0A0B" }}
+      style={{ backgroundColor: "var(--color-bg-base)" }}
     >
       {/* Background bloom */}
       <div
@@ -378,7 +378,7 @@ export function ShareCardScreen() {
       <div className="relative z-10 w-full flex justify-end pt-12 pb-4">
         <button
           onClick={() => router.back()}
-          style={{ color: "#524F4C", minHeight: 44, minWidth: 44 }}
+          style={{ color: "var(--color-text-faint)", minHeight: 44, minWidth: 44 }}
           className="flex items-center justify-end"
           aria-label="Close"
         >
@@ -407,7 +407,7 @@ export function ShareCardScreen() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.2, duration: 0.4 }}
               className="text-center text-[11px]"
-              style={{ color: "#524F4C" }}
+              style={{ color: "var(--color-text-faint)" }}
             >
               {streakDays > 0
                 ? `${streakDays} day${streakDays !== 1 ? "s" : ""} under 20. Keep the streak alive.`
@@ -427,7 +427,7 @@ export function ShareCardScreen() {
           className="w-full font-semibold rounded-2xl flex items-center justify-center gap-2"
           style={{
             backgroundColor: shareDone ? "rgba(74,222,128,0.15)" : color,
-            color: shareDone ? "#4ADE80" : "#F5F5F4",
+            color: shareDone ? "var(--color-states-success)" : "var(--color-text-primary)",
             border: shareDone ? "1.5px solid rgba(74,222,128,0.4)" : "none",
             fontFamily: "var(--font-body)",
             minHeight: "62px",
@@ -458,7 +458,7 @@ export function ShareCardScreen() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="text-center text-xs"
-              style={{ color: "#DC2626" }}
+              style={{ color: "var(--color-states-error)" }}
             >
               {shareError}
             </motion.p>
@@ -480,7 +480,7 @@ export function ShareCardScreen() {
         <button
           onClick={() => router.push("/dashboard")}
           className="w-full text-center text-[10px] uppercase tracking-widest py-2 font-medium"
-          style={{ color: "#3a3835" }}
+          style={{ color: "var(--color-text-disabled)" }}
         >
           Back to dashboard
         </button>

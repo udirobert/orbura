@@ -34,12 +34,12 @@ export function RecoveryTimeline({ arc }: { arc: RecoveryArc }) {
   return (
     <motion.div
       className="rounded-2xl p-4"
-      style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.1)" }}
+      style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.1)" }}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <p className="text-[9px] font-mono uppercase tracking-widest font-semibold mb-3" style={{ color: "#524F4C" }}>
+      <p className="text-[9px] font-mono uppercase tracking-widest font-semibold mb-3" style={{ color: "var(--color-text-faint)" }}>
         Recovery Timeline
       </p>
 
@@ -47,21 +47,21 @@ export function RecoveryTimeline({ arc }: { arc: RecoveryArc }) {
       <div className="relative h-3 rounded-full overflow-hidden flex" style={{ backgroundColor: "rgba(168,162,158,0.06)" }}>
         <motion.div
           className="h-full"
-          style={{ width: `${dangerPct}%`, background: "linear-gradient(90deg, #DC2626, #EA580C)" }}
+          style={{ width: `${dangerPct}%`, background: "linear-gradient(90deg, var(--color-states-error), var(--color-brand-primary))" }}
           initial={{ width: 0 }}
           animate={{ width: `${dangerPct}%` }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         />
         <motion.div
           className="h-full"
-          style={{ width: `${partialPct}%`, background: "linear-gradient(90deg, #EA580C, #F59E0B)" }}
+          style={{ width: `${partialPct}%`, background: "linear-gradient(90deg, var(--color-brand-primary), var(--color-states-warning))" }}
           initial={{ width: 0 }}
           animate={{ width: `${partialPct}%` }}
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
         />
         <motion.div
           className="h-full"
-          style={{ width: `${clearedPct}%`, background: "linear-gradient(90deg, #F59E0B, #4ADE80)" }}
+          style={{ width: `${clearedPct}%`, background: "linear-gradient(90deg, var(--color-states-warning), var(--color-states-success))" }}
           initial={{ width: 0 }}
           animate={{ width: `${clearedPct}%` }}
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.4 }}
@@ -69,12 +69,12 @@ export function RecoveryTimeline({ arc }: { arc: RecoveryArc }) {
       </div>
 
       {/* Labels */}
-      <div className="flex justify-between mt-2 text-[9px] font-mono" style={{ color: "#524F4C" }}>
+      <div className="flex justify-between mt-2 text-[9px] font-mono" style={{ color: "var(--color-text-faint)" }}>
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          style={{ color: "#DC2626" }}
+          style={{ color: "var(--color-states-error)" }}
         >
           🔴 {formatTime(arc.dangerEnds)}
         </motion.span>
@@ -82,7 +82,7 @@ export function RecoveryTimeline({ arc }: { arc: RecoveryArc }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
-          style={{ color: "#F59E0B" }}
+          style={{ color: "var(--color-states-warning)" }}
         >
           🟡 {formatTime(arc.partialEnds)}
         </motion.span>
@@ -90,14 +90,14 @@ export function RecoveryTimeline({ arc }: { arc: RecoveryArc }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.9 }}
-          style={{ color: "#4ADE80" }}
+          style={{ color: "var(--color-states-success)" }}
         >
           🟢 {formatTime(arc.clearedAt)}
         </motion.span>
       </div>
 
       {/* Phase labels */}
-      <div className="flex justify-between mt-1 text-[8px] uppercase tracking-wider" style={{ color: "#3a3835" }}>
+      <div className="flex justify-between mt-1 text-[8px] uppercase tracking-wider" style={{ color: "var(--color-text-disabled)" }}>
         <span>Danger zone</span>
         <span>Recovering</span>
         <span>Cleared</span>

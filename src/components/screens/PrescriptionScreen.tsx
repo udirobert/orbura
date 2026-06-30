@@ -21,10 +21,10 @@ import { AgentTracePanel } from "@/components/AgentTracePanel";
 // ─── Config ────────────────────────────────────────────────────────────────────
 
 const COMMAND_BLOCKS = [
-  { key: "rightNow"    as const, label: "RIGHT NOW",    icon: "💧", labelColor: "#DC2626" },
-  { key: "thisMorning" as const, label: "THIS MORNING", icon: "☕", labelColor: "#EA580C" },
-  { key: "today"       as const, label: "TODAY",        icon: "🎯", labelColor: "#F59E0B" },
-  { key: "avoid"       as const, label: "AVOID TODAY",  icon: "🚫", labelColor: "#DC2626" },
+  { key: "rightNow"    as const, label: "RIGHT NOW",    icon: "💧", labelColor: "var(--color-states-error)" },
+  { key: "thisMorning" as const, label: "THIS MORNING", icon: "☕", labelColor: "var(--color-brand-primary)" },
+  { key: "today"       as const, label: "TODAY",        icon: "🎯", labelColor: "var(--color-states-warning)" },
+  { key: "avoid"       as const, label: "AVOID TODAY",  icon: "🚫", labelColor: "var(--color-states-error)" },
 ];
 
 const FALLBACK_PRESCRIPTION = {
@@ -62,14 +62,14 @@ export function PrescriptionScreen() {
 
   return (
     <div className="relative min-h-svh flex flex-col px-5 overflow-hidden"
-      style={{ backgroundColor: "#0A0A0B" }}>
+      style={{ backgroundColor: "var(--color-bg-base)" }}>
 
       {/* Nav */}
       <div className="relative z-10 flex items-center justify-between mt-12">
         <button
           onClick={() => router.push("/dashboard")}
           className="flex items-center gap-2 text-[11px] font-medium"
-          style={{ color: "#A8A29E", minHeight: "44px" }}
+          style={{ color: "var(--color-text-secondary)", minHeight: "44px" }}
         >
           <ChevronLeft className="w-4 h-4" />
           Score
@@ -85,18 +85,18 @@ export function PrescriptionScreen() {
       >
         <div className="flex items-center gap-2">
           <h1 className="font-black uppercase tracking-widest"
-            style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.1rem,5vw,1.4rem)", color: "#F5F5F4", letterSpacing: "0.08em" }}>
+            style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.1rem,5vw,1.4rem)", color: "var(--color-text-primary)", letterSpacing: "0.08em" }}>
             {personalityCopy.prescriptionHeader}
           </h1>
           {analysis?.agentTrace?.source === "qvac-local" && (
             <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
               style={{ backgroundColor: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
-              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#4ADE80" }} />
-              <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#4ADE80" }}>Edge AI</span>
+              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "var(--color-states-success)" }} />
+              <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>Edge AI</span>
             </span>
           )}
         </div>
-        <p className="text-xs mt-1" style={{ color: "#524F4C" }}>
+        <p className="text-xs mt-1" style={{ color: "var(--color-text-faint)" }}>
           {analysis?.agentTrace?.source === "qvac-local"
             ? "Generated on your device by 3 QVAC AI agents. No cloud calls."
             : "Based on your current body state. Specific. Actionable."}
@@ -128,7 +128,7 @@ export function PrescriptionScreen() {
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 + i * 0.08 }}
             className="rounded-2xl overflow-hidden"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}
+            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}
           >
             <div className="flex items-center gap-3 px-4 pt-3.5 pb-1">
               <span className="text-base flex-shrink-0">{icon}</span>
@@ -136,7 +136,7 @@ export function PrescriptionScreen() {
                 {label}
               </span>
             </div>
-            <p className="px-4 pb-4 text-sm leading-relaxed font-medium" style={{ color: "#F5F5F4" }}>
+            <p className="px-4 pb-4 text-sm leading-relaxed font-medium" style={{ color: "var(--color-text-primary)" }}>
               {rx[key]}
             </p>
           </motion.div>
@@ -146,21 +146,21 @@ export function PrescriptionScreen() {
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
           className="rounded-2xl px-4 py-4 text-center"
-          style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.12)" }}
+          style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.12)" }}
         >
           <div className="flex items-center justify-center gap-1.5 mb-2">
-            <Clock className="w-3 h-3" style={{ color: "#F59E0B" }} />
+            <Clock className="w-3 h-3" style={{ color: "var(--color-states-warning)" }} />
             <span
               className="text-[9px] font-mono uppercase tracking-widest font-semibold"
-              style={{ color: "#F59E0B" }}
+              style={{ color: "var(--color-states-warning)" }}
             >
               Coming soon
             </span>
           </div>
-          <p className="text-xs font-semibold mb-1" style={{ color: "#F5F5F4" }}>
+          <p className="text-xs font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>
             Reminders need a backend
           </p>
-          <p className="text-[10px]" style={{ color: "#A8A29E" }}>
+          <p className="text-[10px]" style={{ color: "var(--color-text-secondary)" }}>
             Push notifications and calendar invites require
             server-side infrastructure (Zapier-style integration).
             Until then, use the prescription as-is.

@@ -18,10 +18,10 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
   const data = payload[0].payload;
   return (
-    <div className="rounded-xl px-3 py-2 text-xs" style={{ backgroundColor: "#1C1C1E", border: "1px solid rgba(168,162,158,0.15)" }}>
-      <p className="font-semibold" style={{ color: "#F5F5F4" }}>{data.stressor}</p>
-      <p className="font-mono mt-0.5" style={{ color: "#EA580C" }}>+{data.points} pts</p>
-      {data.insight && <p className="text-[10px] mt-1 max-w-[200px]" style={{ color: "#A8A29E" }}>{data.insight}</p>}
+    <div className="rounded-xl px-3 py-2 text-xs" style={{ backgroundColor: "var(--color-bg-elevated)", border: "1px solid rgba(168,162,158,0.15)" }}>
+      <p className="font-semibold" style={{ color: "var(--color-text-primary)" }}>{data.stressor}</p>
+      <p className="font-mono mt-0.5" style={{ color: "var(--color-brand-primary)" }}>+{data.points} pts</p>
+      {data.insight && <p className="text-[10px] mt-1 max-w-[200px]" style={{ color: "var(--color-text-secondary)" }}>{data.insight}</p>}
     </div>
   );
 }
@@ -35,7 +35,7 @@ export function DonutChart({ items }: { items: BreakdownItem[] }) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <p className="text-[9px] font-mono uppercase tracking-widest font-semibold mb-2" style={{ color: "#524F4C" }}>
+      <p className="text-[9px] font-mono uppercase tracking-widest font-semibold mb-2" style={{ color: "var(--color-text-faint)" }}>
         Debt Breakdown
       </p>
       <div className="flex items-center gap-4">
@@ -63,13 +63,13 @@ export function DonutChart({ items }: { items: BreakdownItem[] }) {
           {items.map((item, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="text-xs">{item.icon}</span>
-              <span className="text-[10px] font-medium min-w-[60px]" style={{ color: "#F5F5F4" }}>{item.stressor}</span>
+              <span className="text-[10px] font-medium min-w-[60px]" style={{ color: "var(--color-text-primary)" }}>{item.stressor}</span>
               <span className="text-[9px] font-mono" style={{ color: DONUT_COLORS[i % DONUT_COLORS.length] }}>+{item.points}</span>
             </div>
           ))}
           <div className="flex items-center gap-2 pt-1" style={{ borderTop: "1px solid rgba(168,162,158,0.08)" }}>
-            <span className="text-[10px] font-semibold" style={{ color: "#A8A29E" }}>Total</span>
-            <span className="text-[10px] font-mono font-bold" style={{ color: "#EA580C" }}>+{total}</span>
+            <span className="text-[10px] font-semibold" style={{ color: "var(--color-text-secondary)" }}>Total</span>
+            <span className="text-[10px] font-mono font-bold" style={{ color: "var(--color-brand-primary)" }}>+{total}</span>
           </div>
         </div>
       </div>
@@ -86,7 +86,7 @@ export function BarChartView({ items }: { items: BreakdownItem[] }) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5, delay: 0.2 }}
     >
-      <p className="text-[9px] font-mono uppercase tracking-widest font-semibold mb-2" style={{ color: "#524F4C" }}>
+      <p className="text-[9px] font-mono uppercase tracking-widest font-semibold mb-2" style={{ color: "var(--color-text-faint)" }}>
         Impact by stressor
       </p>
       <div style={{ height: Math.max(120, sorted.length * 32) }}>

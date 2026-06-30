@@ -69,7 +69,7 @@ export function TimeDrum({ slots, selectedIdx, onSelect }: {
 
       {/* Fade masks */}
       <div className="absolute inset-0 pointer-events-none z-20" style={{
-        background: "linear-gradient(to bottom, #0A0A0B 0%, transparent 28%, transparent 72%, #0A0A0B 100%)",
+        background: "linear-gradient(to bottom, var(--color-bg-base) 0%, transparent 28%, transparent 72%, var(--color-bg-base) 100%)",
       }} />
 
       {/* Draggable drum */}
@@ -99,7 +99,7 @@ export function TimeDrum({ slots, selectedIdx, onSelect }: {
                 height: ITEM_H,
                 fontFamily: "var(--font-heading)",
                 fontSize: isSelected ? "3rem" : dist === 1 ? "1.65rem" : "1.1rem",
-                color: isSelected ? "#F5F5F4" : "#A8A29E",
+                color: isSelected ? "var(--color-text-primary)" : "var(--color-text-secondary)",
                 letterSpacing: isSelected ? "-0.025em" : "0",
                 WebkitTapHighlightColor: "transparent",
               }}

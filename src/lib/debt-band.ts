@@ -30,10 +30,10 @@ export const DEBT_BAND_META: Record<
   DebtBand,
   Omit<DebtBandMeta, "band" | "isCritical" | "isElevated">
 > = {
-  clear:    { color: "#4ADE80", colorSecondary: "#4ADE80", glow: "rgba(74,222,128,0.25)" },
-  mild:     { color: "#F59E0B", colorSecondary: "#F59E0B", glow: "rgba(245,158,11,0.25)" },
-  elevated: { color: "#EA580C", colorSecondary: "#F59E0B", glow: "rgba(234,88,12,0.3)"  },
-  critical: { color: "#DC2626", colorSecondary: "#EA580C", glow: "rgba(220,38,38,0.35)" },
+  clear:    { color: "var(--color-states-success)", colorSecondary: "var(--color-states-success)", glow: "rgba(74,222,128,0.25)" },
+  mild:     { color: "var(--color-states-warning)", colorSecondary: "var(--color-states-warning)", glow: "rgba(245,158,11,0.25)" },
+  elevated: { color: "var(--color-brand-primary)",  colorSecondary: "var(--color-states-warning)", glow: "rgba(234,88,12,0.3)"  },
+  critical: { color: "var(--color-states-error)",   colorSecondary: "var(--color-brand-primary)",  glow: "rgba(220,38,38,0.35)" },
 };
 
 export function debtBand(score: number): DebtBand {

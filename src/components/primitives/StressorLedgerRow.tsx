@@ -55,7 +55,7 @@ export function StressorLedgerRow({
   isCare = false,
   children,
 }: StressorLedgerRowProps) {
-  const accent = isCare ? "#4ADE80" : "#EA580C";
+  const accent = isCare ? "var(--color-states-success)" : "var(--color-brand-primary)";
   const accentSoft = isCare ? "rgba(74,222,128,0.18)" : "rgba(234,88,12,0.18)";
 
   return (
@@ -63,7 +63,7 @@ export function StressorLedgerRow({
       variants={fadeUp}
       className="rounded-2xl overflow-hidden"
       style={{
-        backgroundColor: isSelected ? accentSoft : "#141416",
+        backgroundColor: isSelected ? accentSoft : "var(--color-bg-surface)",
         border: `1.5px solid ${
           isSelected
             ? (isCare ? "rgba(74,222,128,0.35)" : "rgba(234,88,12,0.35)")
@@ -90,11 +90,11 @@ export function StressorLedgerRow({
           <div className="flex-1 min-w-0">
             <span
               className="text-sm font-semibold block"
-              style={{ color: isSelected ? "#F5F5F4" : "#A8A29E" }}
+              style={{ color: isSelected ? "var(--color-text-primary)" : "var(--color-text-secondary)" }}
             >
               {label}
             </span>
-            <span className="text-[10px] block mt-0.5" style={{ color: "#3a3835" }}>
+            <span className="text-[10px] block mt-0.5" style={{ color: "var(--color-text-disabled)" }}>
               {isSelected ? "Tap to remove" : sublabel}
             </span>
           </div>
@@ -123,7 +123,7 @@ export function StressorLedgerRow({
               onToggleExpansion?.();
             }}
             className="pr-4 pl-2 py-4 flex-shrink-0"
-            style={{ color: isSelected ? accent : "#524F4C" }}
+            style={{ color: isSelected ? accent : "var(--color-text-faint)" }}
             aria-label={expanded ? "Collapse" : "Add detail"}
           >
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}

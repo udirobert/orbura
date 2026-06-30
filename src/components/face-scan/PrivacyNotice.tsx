@@ -33,7 +33,7 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
       <div className="text-center space-y-1.5 pt-1">
         <p
           className="text-[10px] font-mono uppercase tracking-widest"
-          style={{ color: "#EA580C" }}
+          style={{ color: "var(--color-brand-primary)" }}
         >
           Face scan
         </p>
@@ -42,12 +42,12 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
           style={{
             fontFamily: "var(--font-heading)",
             fontSize: "1.5rem",
-            color: "#F5F5F4",
+            color: "var(--color-text-primary)",
           }}
         >
           On-device. Nothing uploaded.
         </h3>
-        <p className="text-[12px] mt-1" style={{ color: "#A8A29E" }}>
+        <p className="text-[12px] mt-1" style={{ color: "var(--color-text-secondary)" }}>
           Your image never leaves this browser.
         </p>
       </div>
@@ -56,8 +56,8 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
       <div
         className="rounded-2xl px-4 py-4"
         style={{
-          backgroundColor: "#141416",
-          border: "1px solid rgba(168,162,158,0.1)",
+          backgroundColor: "var(--color-bg-surface)",
+          border: "1px solid var(--color-border-subtle)",
         }}
       >
         <div className="flex items-center justify-between gap-1">
@@ -73,11 +73,11 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
                 className="w-9 h-9 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: "rgba(234,88,12,0.12)" }}
               >
-                <step.icon className="w-4 h-4" style={{ color: "#EA580C" }} />
+                <step.icon className="w-4 h-4" style={{ color: "var(--color-brand-primary)" }} />
               </div>
               <span
                 className="text-[9px] font-mono uppercase tracking-widest"
-                style={{ color: "#A8A29E" }}
+                style={{ color: "var(--color-text-secondary)" }}
               >
                 {step.label}
               </span>
@@ -88,10 +88,10 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
           className="mt-3 pt-3 text-center"
           style={{ borderTop: "1px solid rgba(168,162,158,0.08)" }}
         >
-          <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#4ADE80" }}>
+          <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-states-success)" }}>
             Stays on device
           </p>
-          <p className="text-[11px] mt-1" style={{ color: "#A8A29E" }}>
+          <p className="text-[11px] mt-1" style={{ color: "var(--color-text-secondary)" }}>
             Frame is discarded once the proof is generated.
           </p>
         </div>
@@ -99,12 +99,12 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
 
       {/* Two-line specifics — replaces the 4 cards */}
       <ul className="space-y-1.5 px-1">
-        <li className="flex gap-2 text-[12px] leading-relaxed" style={{ color: "#A8A29E" }}>
-          <span style={{ color: "#EA580C" }}>·</span>
+        <li className="flex gap-2 text-[12px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+          <span style={{ color: "var(--color-brand-primary)" }}>·</span>
           Measures geometry only — not identity, not expression.
         </li>
-        <li className="flex gap-2 text-[12px] leading-relaxed" style={{ color: "#A8A29E" }}>
-          <span style={{ color: "#EA580C" }}>·</span>
+        <li className="flex gap-2 text-[12px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+          <span style={{ color: "var(--color-brand-primary)" }}>·</span>
           On-chain proof only if you connect a wallet. Otherwise local.
         </li>
       </ul>
@@ -117,13 +117,13 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
         <button
           onClick={onDecline}
           className="w-full text-center text-[12px] py-2.5 font-medium"
-          style={{ color: "#A8A29E" }}
+          style={{ color: "var(--color-text-secondary)" }}
         >
           Skip — score without face scan
         </button>
         <p
           className="text-[10px] text-center mt-1 font-mono uppercase tracking-widest"
-          style={{ color: "#524F4C" }}
+          style={{ color: "var(--color-text-faint)" }}
         >
           Optional · no penalty
         </p>

@@ -8,6 +8,8 @@
  */
 
 import type { Stressor, SystemScore, RecoverySystem } from "@/lib/types";
+import { STRESSORS } from "./catalog";
+import type { CounterfactualResult } from "./types";
 
 // ─── System metadata ──────────────────────────────────────────────────────────
 
@@ -43,7 +45,7 @@ const TRAINING_CNS: Record<string, number> = {
   hiit:      0.8,
   cardio:    0.6,
   upper:     0.5,
-  mobility:  -0.5, // recovery positive
+  mobility:  -0.5,
 };
 
 const TRAINING_CARDIO: Record<string, number> = {
@@ -109,7 +111,6 @@ export function computeSystemScores(
   wakeTime?: string | null,
   bedTime?: string | null
 ): SystemScore[] {
-  // Raw accumulator per system (0–100 scale)
   const raw: Record<RecoverySystem, number> = {
     cardiovascular: 0,
     brain:          0,
@@ -122,7 +123,7 @@ export function computeSystemScores(
     if (s.type === "alcohol") {
       const drinkMod  = DRINK_TYPE_MOD[s.alcoholType ?? "beer"] ?? DRINK_TYPE_MOD.beer;
       const countMod  = DRINK_COUNT_MOD[s.alcoholCount ?? "3-4"] ?? 0.8;
-      const base      = 30; // base alcohol points
+      const base      = 30;
 
       raw.liver          += base * drinkMod.liver  * countMod;
       raw.brain          += base * drinkMod.brain  * countMod;
@@ -143,7 +144,7 @@ export function computeSystemScores(
     if (s.type === "sleep") {
       const brainHit = SLEEP_BRAIN[s.sleepHours ?? "4-6"] ?? 0.75;
       raw.brain += 35 * brainHit;
-      raw.gut   += 15 * brainHit; // poor sleep disrupts gut
+      raw.gut   += 15 * brainHit;
     }
 
     if (s.type === "stress") {
@@ -161,15 +162,12 @@ export function computeSystemScores(
     }
 
     if (s.type === "care") {
-      // Recovery positive — reduces all systems
       raw.brain          -= 8;
       raw.cardiovascular -= 8;
       raw.liver          -= 5;
       raw.muscular       -= 5;
       raw.gut            -= 5;
     }
-
-    // ── Football-specific stressors ────────────────────────────────────────
 
     if (s.type === "match_minutes") {
       const mins = s.matchMinutesPlayed ?? "60-90";
@@ -183,7 +181,7 @@ export function computeSystemScores(
     if (s.type === "card_stress") {
       const brainHit = CARD_STRESS_BRAIN[s.cardType ?? "yellow"] ?? 0.4;
       raw.brain          += 20 * brainHit;
-      raw.cardiovascular += 10 * brainHit; // cortisol elevation
+      raw.cardiovascular += 10 * brainHit;
     }
 
     if (s.type === "travel_timezone") {
@@ -195,18 +193,16 @@ export function computeSystemScores(
 
     if (s.type === "concussion_check") {
       const brainHit = CONCUSSION_BRAIN[s.concussionSeverity ?? "minor"] ?? 0.8;
-      raw.brain += 50 * brainHit; // always critical — brain system dominates
+      raw.brain += 50 * brainHit;
     }
   }
 
-  // Circadian alignment penalty from bedTime → brain + cardiovascular
   if (bedTime && wakeTime) {
     const penalty = circadianPenaltyBrain(bedTime, wakeTime);
     raw.brain          += penalty.brainPts;
     raw.cardiovascular += penalty.cardioPts;
   }
 
-  // Build SystemScore objects
   return (Object.keys(SYSTEM_META) as RecoverySystem[]).map((system) => {
     const meta  = SYSTEM_META[system];
     const score = Math.max(0, Math.min(100, Math.round(raw[system])));
@@ -311,8 +307,6 @@ function buildCauseText(system: RecoverySystem, stressors: Stressor[]): string {
   }
 }
 
-// ─── Recovery action text ─────────────────────────────────────────────────────
-
 function buildActionText(system: RecoverySystem, stressors: Stressor[]): string {
   const alcohol  = stressors.find((s) => s.type === "alcohol");
   const training = stressors.find((s) => s.type === "training");
@@ -380,10 +374,6 @@ export function formatClearanceTime(isoString: string): string {
 
 // ─── Circadian alignment ──────────────────────────────────────────────────────
 
-/**
- * Parse a "HH:MM AM/PM" or "HH:MM" string into hours (0–23.99).
- * Returns null if parsing fails.
- */
 function parseHourOfDay(timeStr: string): number | null {
   const clean = timeStr.trim().toUpperCase();
   const match = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/);
@@ -397,15 +387,15 @@ function parseHourOfDay(timeStr: string): number | null {
 }
 
 /**
- * Calculate brain and cardiovascular debt points from circadian misalignment.
+ * Brain + cardiovascular debt from circadian misalignment.
  *
- *  Bedtime before midnight       → aligned      → 0 pts
+ *  Bedtime before midnight       → aligned       → 0 pts
  *  Bedtime 12am–2am              → mild mismatch → +10 brain, +5 cardio
  *  Bedtime 2am–4am               → significant   → +22 brain, +10 cardio
  *  Bedtime after 4am             → severe        → +32 brain, +16 cardio
  *
- * Also checks total sleep duration — under 6hrs adds extra brain debt
- * regardless of timing.
+ * Adds an extra brain debt stack when total sleep is under 6 hrs regardless
+ * of bed timing (4 pts per missing hour).
  */
 export function circadianPenaltyBrain(
   bedTime: string,
@@ -418,17 +408,12 @@ export function circadianPenaltyBrain(
     return { brainPts: 0, cardioPts: 0, label: "unknown" };
   }
 
-  // Normalise bedtime to 0–23.99 where after midnight wraps correctly
-  // e.g. 1am = 1, 2am = 2, 11pm = 23
-  // Sleep duration: if bed > wake → wrapped overnight
   const sleepHrs = bed > wake ? (24 - bed) + wake : wake - bed;
 
-  // Circadian alignment: bed hour 22–23 = ideal, midnight onwards = penalty
   let brainPts  = 0;
   let cardioPts = 0;
   let label     = "aligned";
 
-  // Bedtime after midnight
   if (bed >= 0 && bed < 2) {
     brainPts  = 10; cardioPts = 5;  label = "mild misalignment";
   } else if (bed >= 2 && bed < 4) {
@@ -436,22 +421,15 @@ export function circadianPenaltyBrain(
   } else if (bed >= 4 && bed < 6) {
     brainPts  = 32; cardioPts = 16; label = "severe misalignment";
   }
-  // Late evening wrap — if bed > 22 it's aligned, no penalty
-  // (bed 22–24 is fine; 0–6 is penalised above)
 
-  // Short sleep penalty — under 6hrs adds brain debt regardless of timing
   if (sleepHrs > 0 && sleepHrs < 6) {
-    brainPts += Math.round((6 - sleepHrs) * 4); // 4pts per missing hour
+    brainPts += Math.round((6 - sleepHrs) * 4);
   }
 
   return { brainPts, cardioPts, label };
 }
 
 // ─── Counterfactual engine ───────────────────────────────────────────────────
-//
-// "If you had slept 7+ hours, Brain debt would drop from 67 to 22."
-//
-// Finds the highest-leverage single change the user could have made.
 
 const COUNTERFACTUAL_FLIPS: Record<string, { field: keyof Stressor; fromTo: Record<string, string>; label: string }> = {
   sleep:             { field: "sleepHours",          fromTo: { under_4: "6-7", "4-6": "6-7", "6-7": "6-7" }, label: "slept 7+ hours" },
@@ -473,14 +451,7 @@ const SYSTEM_LABEL_NICE: Record<RecoverySystem, string> = {
   gut: "Gut",
 };
 
-export interface CounterfactualResult {
-  system: RecoverySystem;
-  systemLabel: string;
-  fromScore: number;
-  toScore: number;
-  drop: number;
-  leverLabel: string;
-}
+export type { CounterfactualResult } from "./types";
 
 export function computeCounterfactual(
   stressors: Stressor[],
@@ -488,7 +459,6 @@ export function computeCounterfactual(
   wakeTime?: string | null,
   bedTime?: string | null,
 ): CounterfactualResult | null {
-  // Find the worst non-cleared system
   const ranked = [...currentSystemScores].sort((a, b) => b.score - a.score);
   const target = ranked.find((s) => s.score > 20);
   if (!target) return null;
@@ -506,7 +476,6 @@ export function computeCounterfactual(
     const targetVal = flip.fromTo[currentVal];
     if (!targetVal || targetVal === currentVal) continue;
 
-    // Build modified stressors with the flipped value
     const modified: Stressor[] = stressors.map((s2) =>
       s2 === s ? { ...s2, [field]: targetVal } : s2
     );
@@ -533,4 +502,21 @@ export function computeCounterfactual(
   }
 
   return best;
+}
+
+// ─── Live score (intake-time) ────────────────────────────────────────────────
+
+export function computeLiveScore(stressors: Stressor[]): number {
+  let score = 0;
+  for (const s of stressors) {
+    const def = STRESSORS.find((d) => d.type === s.type);
+    if (!def) continue;
+    score += def.basePoints;
+    if (s.type === "training" && s.trainingArea === "mobility") score -= def.basePoints * 1.5;
+    if (s.type === "training" && s.trainingIntensity === "destroyed") score += 8;
+    if (s.type === "alcohol" && s.alcoholType === "spirits") score += 6;
+    if (s.type === "alcohol" && s.alcoholCount === "5+") score += 8;
+    if (s.type === "alcohol" && s.alcoholCount === "lost_count") score += 12;
+  }
+  return Math.max(0, Math.min(100, score));
 }

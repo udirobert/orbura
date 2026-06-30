@@ -18,9 +18,9 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const SOURCE_COLORS: Record<string, string> = {
-  "qvac-local": "#4ADE80",
-  "eazo-cloud": "#F59E0B",
-  "deterministic": "#A8A29E",
+  "qvac-local": "var(--color-states-success)",
+  "eazo-cloud": "var(--color-states-warning)",
+  "deterministic": "var(--color-text-secondary)",
 };
 
 /**
@@ -35,7 +35,7 @@ const SOURCE_COLORS: Record<string, string> = {
  */
 export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
   const [expanded, setExpanded] = useState(false);
-  const sourceColor = SOURCE_COLORS[trace.source] ?? "#A8A29E";
+  const sourceColor = SOURCE_COLORS[trace.source] ?? "var(--color-text-secondary)";
   const sourceLabel = SOURCE_LABELS[trace.source] ?? trace.source;
 
   const allDone = trace.steps.length > 0 && trace.steps.every((s) => s.status === "done");
@@ -47,7 +47,7 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
         layout
         className="rounded-2xl overflow-hidden cursor-pointer"
         style={{
-          backgroundColor: "#141416",
+          backgroundColor: "var(--color-bg-surface)",
           border: `1px solid ${expanded ? "rgba(74,222,128,0.2)" : "rgba(168,162,158,0.08)"}`,
         }}
         onClick={() => setExpanded((e) => !e)}
@@ -59,7 +59,7 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
           </span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold" style={{ color: "#F5F5F4" }}>
+              <span className="text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>
                 Multi-Agent Pipeline
               </span>
               <span className="text-[9px] font-mono flex-shrink-0" style={{ color: sourceColor }}>
@@ -74,7 +74,7 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
               </span>
             </div>
           </div>
-          <motion.span animate={{ rotate: expanded ? 180 : 0 }} className="text-[10px]" style={{ color: "#524F4C" }}>
+          <motion.span animate={{ rotate: expanded ? 180 : 0 }} className="text-[10px]" style={{ color: "var(--color-text-faint)" }}>
             ▼
           </motion.span>
         </div>
@@ -110,43 +110,43 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-medium" style={{
-                          color: step.status === "done" ? "#F5F5F4" : step.status === "error" ? "#DC2626" : "#A8A29E",
+                          color: step.status === "done" ? "var(--color-text-primary)" : step.status === "error" ? "var(--color-states-error)" : "var(--color-text-secondary)",
                         }}>
                           {step.label}
                         </span>
                         {step.durationMs && (
-                          <span className="text-[9px] font-mono" style={{ color: "#524F4C" }}>
+                          <span className="text-[9px] font-mono" style={{ color: "var(--color-text-faint)" }}>
                             {(step.durationMs / 1000).toFixed(1)}s
                           </span>
                         )}
                       </div>
                       {/* Description */}
-                      <p className="text-[10px] mt-0.5" style={{ color: "#524F4C", lineHeight: 1.4 }}>
+                      <p className="text-[10px] mt-0.5" style={{ color: "var(--color-text-faint)", lineHeight: 1.4 }}>
                         {step.description}
                       </p>
                       {/* Status indicator */}
                       <div className="flex items-center gap-1.5 mt-1">
                         {step.status === "done" && (
                           <>
-                            <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#4ADE80" }} />
-                            <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#4ADE80" }}>
+                            <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "var(--color-states-success)" }} />
+                            <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>
                               {step.source === "qvac-local" ? "QVAC local" : step.source}
                             </span>
                           </>
                         )}
                         {step.status === "error" && (
                           <>
-                            <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#DC2626" }} />
-                            <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#DC2626" }}>
+                            <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "var(--color-states-error)" }} />
+                            <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-error)" }}>
                               Failed — fell back
                             </span>
                           </>
                         )}
                         {step.status === "active" && (
                           <>
-                            <motion.span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#EA580C" }}
+                            <motion.span className="w-1 h-1 rounded-full" style={{ backgroundColor: "var(--color-brand-primary)" }}
                               animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }} />
-                            <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#EA580C" }}>
+                            <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-brand-primary)" }}>
                               Running on device...
                             </span>
                           </>
@@ -164,23 +164,23 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                 {/* Triage result preview */}
                 {trace.triage && (
                   <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: "rgba(234,88,12,0.04)", border: "1px solid rgba(234,88,12,0.1)" }}>
-                    <span className="text-[8px] font-mono uppercase tracking-widest" style={{ color: "#524F4C" }}>
+                    <span className="text-[8px] font-mono uppercase tracking-widest" style={{ color: "var(--color-text-faint)" }}>
                       Triage Output
                     </span>
                     <div className="mt-1.5 space-y-1">
                       {trace.triage.priority && (
-                        <p className="text-[10px]" style={{ color: "#A8A29E" }}>
-                          <span style={{ color: "#DC2626", fontWeight: 700 }}>PRIORITY:</span> {trace.triage.priority}
+                        <p className="text-[10px]" style={{ color: "var(--color-text-secondary)" }}>
+                          <span style={{ color: "var(--color-states-error)", fontWeight: 700 }}>PRIORITY:</span> {trace.triage.priority}
                         </p>
                       )}
                       {trace.triage.secondary && (
-                        <p className="text-[10px]" style={{ color: "#A8A29E" }}>
-                          <span style={{ color: "#EA580C", fontWeight: 700 }}>SECONDARY:</span> {trace.triage.secondary}
+                        <p className="text-[10px]" style={{ color: "var(--color-text-secondary)" }}>
+                          <span style={{ color: "var(--color-brand-primary)", fontWeight: 700 }}>SECONDARY:</span> {trace.triage.secondary}
                         </p>
                       )}
                       {trace.triage.avoid && (
-                        <p className="text-[10px]" style={{ color: "#A8A29E" }}>
-                          <span style={{ color: "#A78BFA", fontWeight: 700 }}>AVOID:</span> {trace.triage.avoid}
+                        <p className="text-[10px]" style={{ color: "var(--color-text-secondary)" }}>
+                          <span style={{ color: "var(--color-system-muscular)", fontWeight: 700 }}>AVOID:</span> {trace.triage.avoid}
                         </p>
                       )}
                     </div>
@@ -192,11 +192,11 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                   <div className="mt-3 rounded-xl p-3"
                     style={{ backgroundColor: "rgba(74,222,128,0.04)", border: "1px solid rgba(74,222,128,0.1)" }}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[8px] font-mono uppercase tracking-widest font-semibold" style={{ color: "#4ADE80" }}>
+                      <span className="text-[8px] font-mono uppercase tracking-widest font-semibold" style={{ color: "var(--color-states-success)" }}>
                         Performance
                       </span>
                       {trace.cloudDurationMs != null && trace.cloudDurationMs > 0 && trace.totalDurationMs > 0 && (
-                        <span className="text-[8px] font-mono" style={{ color: "#4ADE80" }}>
+                        <span className="text-[8px] font-mono" style={{ color: "var(--color-states-success)" }}>
                           {Math.round(trace.cloudDurationMs / trace.totalDurationMs)}x faster
                         </span>
                       )}
@@ -205,14 +205,14 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                       {/* Edge bar */}
                       <div className="flex-1">
                         <div className="flex justify-between text-[8px] font-mono mb-0.5">
-                          <span style={{ color: "#4ADE80" }}>Edge (on-device)</span>
-                          <span style={{ color: "#F5F5F4" }}>{(trace.totalDurationMs / 1000).toFixed(1)}s</span>
+                          <span style={{ color: "var(--color-states-success)" }}>Edge (on-device)</span>
+                          <span style={{ color: "var(--color-text-primary)" }}>{(trace.totalDurationMs / 1000).toFixed(1)}s</span>
                         </div>
-                        <div className="relative h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(168,162,158,0.1)" }}>
+                        <div className="relative h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--color-border-subtle)" }}>
                           <motion.div
                             className="absolute inset-y-0 left-0 rounded-full"
                             style={{
-                              backgroundColor: "#4ADE80",
+                              backgroundColor: "var(--color-states-success)",
                               width: trace.cloudDurationMs != null && trace.cloudDurationMs > 0
                                 ? `${Math.min(100, (trace.totalDurationMs / trace.cloudDurationMs) * 100)}%`
                                 : "50%",
@@ -231,16 +231,16 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                       {trace.cloudDurationMs != null && trace.cloudDurationMs > 0 && (
                         <div className="flex-1">
                           <div className="flex justify-between text-[8px] font-mono mb-0.5">
-                            <span style={{ color: "#DC2626" }}>Cloud (parallel)</span>
-                            <span style={{ color: "#A8A29E" }}>{(trace.cloudDurationMs / 1000).toFixed(1)}s</span>
+                            <span style={{ color: "var(--color-states-error)" }}>Cloud (parallel)</span>
+                            <span style={{ color: "var(--color-text-secondary)" }}>{(trace.cloudDurationMs / 1000).toFixed(1)}s</span>
                           </div>
-                          <div className="relative h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(168,162,158,0.1)" }}>
-                            <div className="absolute inset-y-0 left-0 rounded-full" style={{ backgroundColor: "#DC2626", width: "100%" }} />
+                          <div className="relative h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--color-border-subtle)" }}>
+                            <div className="absolute inset-y-0 left-0 rounded-full" style={{ backgroundColor: "var(--color-states-error)", width: "100%" }} />
                           </div>
                         </div>
                       )}
                     </div>
-                    <p className="text-[8px] font-mono mt-1.5 text-center" style={{ color: "#524F4C" }}>
+                    <p className="text-[8px] font-mono mt-1.5 text-center" style={{ color: "var(--color-text-faint)" }}>
                       Edge AI ran {trace.cloudDurationMs != null && trace.cloudDurationMs > trace.totalDurationMs
                         ? `${Math.round(trace.cloudDurationMs / trace.totalDurationMs)}x faster than cloud`
                         : "on-device with zero data leaving"}
@@ -264,7 +264,7 @@ function RawOutput({ raw, agent }: { raw: string; agent: string }) {
       <button
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
         className="flex items-center gap-1 text-[8px] font-mono uppercase tracking-wider"
-        style={{ color: "#524F4C" }}
+        style={{ color: "var(--color-text-faint)" }}
       >
         <span>{open ? "▾" : "▸"}</span>
         <span>raw output</span>
@@ -280,13 +280,13 @@ function RawOutput({ raw, agent }: { raw: string; agent: string }) {
             maxHeight: 120,
           }}
         >
-          <pre className="text-[10px] leading-relaxed whitespace-pre-wrap font-mono" style={{ color: "#A8A29E", margin: 0 }}>
+          <pre className="text-[10px] leading-relaxed whitespace-pre-wrap font-mono" style={{ color: "var(--color-text-secondary)", margin: 0 }}>
             {raw.trim()}
           </pre>
         </motion.div>
       )}
       {!open && preview && (
-        <p className="text-[9px] mt-0.5 truncate font-mono" style={{ color: "#3a3835" }}>
+        <p className="text-[9px] mt-0.5 truncate font-mono" style={{ color: "var(--color-text-disabled)" }}>
           {preview}...
         </p>
       )}

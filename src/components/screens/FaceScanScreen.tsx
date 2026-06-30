@@ -48,7 +48,7 @@ export function FaceScanScreen() {
   }, [phase, isConfirmed, txHash]);
 
   return (
-    <div className="relative min-h-svh flex flex-col px-5 overflow-hidden" style={{ backgroundColor: "#0A0A0B" }}>
+    <div className="relative min-h-svh flex flex-col px-5 overflow-hidden" style={{ backgroundColor: "var(--color-bg-base)" }}>
       <ScreenHeader
         back={{ href: "/context-deepener", label: "Back" }}
         progress={{ current: 4, total: 5, optional: true }}
@@ -81,18 +81,18 @@ export function FaceScanScreen() {
           <motion.div key="prompt" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className="relative z-10 flex-1 flex flex-col">
             <div className="text-center px-4 mb-6">
-              <h2 className="font-normal leading-snug" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.4rem, 5.5vw, 1.75rem)", color: "#F5F5F4" }}>
+              <h2 className="font-normal leading-snug" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.4rem, 5.5vw, 1.75rem)", color: "var(--color-text-primary)" }}>
                 {personalityCopy.scanPrompt}
               </h2>
-              <p className="text-xs mt-1.5 flex items-center justify-center gap-1.5" style={{ color: "#524F4C" }}>
+              <p className="text-xs mt-1.5 flex items-center justify-center gap-1.5" style={{ color: "var(--color-text-faint)" }}>
                 <ShieldCheck className="w-3 h-3 text-emerald-500" /> Processed entirely on your device
               </p>
             </div>
             <div className="mx-auto w-full max-w-xs rounded-2xl flex items-center justify-center mb-6"
-              style={{ aspectRatio: "4/5", backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.12)" }}>
+              style={{ aspectRatio: "4/5", backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.12)" }}>
               <div className="flex flex-col items-center gap-3">
-                <Camera className="w-10 h-10 opacity-20" style={{ color: "#A8A29E" }} />
-                <p className="text-xs" style={{ color: "#3a3835" }}>Camera will open here</p>
+                <Camera className="w-10 h-10 opacity-20" style={{ color: "var(--color-text-secondary)" }} />
+                <p className="text-xs" style={{ color: "var(--color-text-disabled)" }}>Camera will open here</p>
               </div>
             </div>
             <div className="mt-auto flex flex-col gap-3 pb-10">
@@ -100,7 +100,7 @@ export function FaceScanScreen() {
                 <div className="font-bold text-base mb-0.5">Open camera</div>
                 <div className="text-[10px] font-normal opacity-80">Measured on-device · nothing uploaded</div>
               </PrimaryButton>
-              <button onClick={handleSkip} className="w-full text-center text-[13px] py-2.5 font-medium" style={{ color: "#A8A29E" }}>
+              <button onClick={handleSkip} className="w-full text-center text-[13px] py-2.5 font-medium" style={{ color: "var(--color-text-secondary)" }}>
                 Skip — continue with intake only
               </button>
             </div>
@@ -140,7 +140,7 @@ export function FaceScanScreen() {
                     className="w-20 h-20 rounded-full flex items-center justify-center"
                     style={{ backgroundColor: "rgba(10,10,11,0.75)", border: "2px solid rgba(74,222,128,0.5)" }}
                   >
-                    <span className="text-3xl font-bold" style={{ color: "#4ADE80", fontFamily: "var(--font-heading)" }}>
+                    <span className="text-3xl font-bold" style={{ color: "var(--color-states-success)", fontFamily: "var(--font-heading)" }}>
                       {captureCountdown}
                     </span>
                   </motion.div>
@@ -156,7 +156,7 @@ export function FaceScanScreen() {
                 return (
                   <span
                     className="text-[10px] font-mono uppercase tracking-widest text-center px-6"
-                    style={{ color: "#F59E0B", minHeight: 28 }}
+                    style={{ color: "var(--color-states-warning)", minHeight: 28 }}
                   >
                     <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }}>
                       Center your face in the oval
@@ -166,35 +166,35 @@ export function FaceScanScreen() {
               }
               if (distanceStatus === "too_far") {
                 return (
-                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-states-warning)" }}>
                     Move closer to the camera
                   </span>
                 );
               }
               if (distanceStatus === "too_close") {
                 return (
-                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-states-warning)" }}>
                     Move back from the camera
                   </span>
                 );
               }
               if (lightingStatus === "dark") {
                 return (
-                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-states-warning)" }}>
                     Too dark — face a light source
                   </span>
                 );
               }
               if (lightingStatus === "bright") {
                 return (
-                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-states-warning)" }}>
                     Too bright — back away from the light
                   </span>
                 );
               }
               if (blurStatus === "blurry") {
                 return (
-                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-states-warning)" }}>
                     Hold camera stiller
                   </span>
                 );
@@ -204,9 +204,9 @@ export function FaceScanScreen() {
                 <motion.span
                   initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                   className="text-[10px] font-mono uppercase tracking-widest flex items-center gap-1.5"
-                  style={{ color: "#4ADE80" }}
+                  style={{ color: "var(--color-states-success)" }}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#4ADE80" }} />
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--color-states-success)" }} />
                   Face in position · ready to capture
                 </motion.span>
               );
@@ -241,7 +241,7 @@ export function FaceScanScreen() {
               <button
                 onClick={handleSkip}
                 className="w-full text-center text-[13px] py-2.5 font-medium"
-                style={{ color: "#A8A29E" }}
+                style={{ color: "var(--color-text-secondary)" }}
               >
                 Skip face scan — continue with intake only
               </button>
@@ -257,12 +257,12 @@ export function FaceScanScreen() {
               <div className="flex items-center gap-3 justify-center">
                 <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
                 <motion.p key={scanMessageIdx} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                  className="text-center text-xs font-mono" style={{ color: "#A8A29E" }}>
+                  className="text-center text-xs font-mono" style={{ color: "var(--color-text-secondary)" }}>
                   {SCAN_MESSAGES[scanMessageIdx]}
                 </motion.p>
               </div>
-              <div className="rounded-2xl p-4 w-full" style={{ backgroundColor: "#141416", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
-                <p className="text-[10px] text-center flex items-center justify-center gap-1.5" style={{ color: "#10B981" }}>
+              <div className="rounded-2xl p-4 w-full" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
+                <p className="text-[10px] text-center flex items-center justify-center gap-1.5" style={{ color: "var(--color-states-success)" }}>
                   <ShieldCheck className="w-3 h-3" /> Raw biometric data never leaves this device
                 </p>
               </div>
@@ -279,10 +279,10 @@ export function FaceScanScreen() {
             className="relative z-10 flex-1 flex flex-col gap-4 pb-10">
             <div className="rounded-2xl p-5" style={{ backgroundColor: "rgba(127,29,29,0.12)", border: "1.5px solid rgba(220,38,38,0.28)" }}>
               <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "#DC2626" }} />
+                <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "var(--color-states-error)" }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold" style={{ color: "#fca5a5" }}>{errorCopy?.title ?? analysisError ?? "Something went wrong"}</p>
-                  <p className="text-xs mt-1 leading-relaxed" style={{ color: "#A8A29E" }}>{errorCopy?.body ?? "An unexpected error occurred."}</p>
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>{errorCopy?.body ?? "An unexpected error occurred."}</p>
                 </div>
               </div>
             </div>
@@ -290,7 +290,7 @@ export function FaceScanScreen() {
               {!isFinalError && (
                 <motion.button whileTap={{ scale: 0.98 }} onClick={retry}
                   className="w-full font-semibold text-sm rounded-2xl"
-                  style={{ backgroundColor: "#141416", color: "#F5F5F4", border: "1px solid rgba(168,162,158,0.2)", minHeight: "52px" }}>
+                  style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-primary)", border: "1px solid rgba(168,162,158,0.2)", minHeight: "52px" }}>
                   {errorCopy?.action ?? "Try again"}
                 </motion.button>
               )}

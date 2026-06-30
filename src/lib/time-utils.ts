@@ -41,10 +41,10 @@ export function getCircadianNote(slot: string): { label: string; color: string; 
   if (isPM && h !== 12) h += 12;
   if (isAM && h === 12) h = 0;
 
-  if (h >= 22 || h === 21) return { label: "Aligned. Good circadian timing.", color: "#4ADE80", penalty: "none" };
-  if (h >= 20) return { label: "Slightly early — still aligned.", color: "#4ADE80", penalty: "none" };
-  if (h >= 18) return { label: "Very early. Light sleep debt possible.", color: "#F59E0B", penalty: "mild" };
-  if (h >= 0 && h <= 1) return { label: "Mildly misaligned. Brain recovery affected.", color: "#F59E0B", penalty: "mild" };
-  if (h >= 2 && h <= 4) return { label: "Significant circadian misalignment. Debt elevated.", color: "#DC2626", penalty: "significant" };
-  return { label: "Aligned. Optimal recovery window.", color: "#4ADE80", penalty: "none" };
+  if (h >= 22 || h === 21) return { label: "Aligned. Good circadian timing.", color: "var(--color-states-success)", penalty: "none" };
+  if (h >= 20) return { label: "Slightly early — still aligned.", color: "var(--color-states-success)", penalty: "none" };
+  if (h >= 18) return { label: "Very early. Light sleep debt possible.", color: "var(--color-states-warning)", penalty: "mild" };
+  if (h >= 0 && h <= 1) return { label: "Mildly misaligned. Brain recovery affected.", color: "var(--color-states-warning)", penalty: "mild" };
+  if (h >= 2 && h <= 4) return { label: "Significant circadian misalignment. Debt elevated.", color: "var(--color-states-error)", penalty: "significant" };
+  return { label: "Aligned. Optimal recovery window.", color: "var(--color-states-success)", penalty: "none" };
 }

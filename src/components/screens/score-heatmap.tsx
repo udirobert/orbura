@@ -72,14 +72,14 @@ export function ScoreHeatmap() {
         onClick={handleToggle}
         className="flex items-center gap-2 w-full text-left mb-2"
       >
-        <CalendarDays className="w-3 h-3" style={{ color: "#524F4C" }} />
+        <CalendarDays className="w-3 h-3" style={{ color: "var(--color-text-faint)" }} />
         <span
           className="text-[9px] uppercase tracking-widest font-semibold"
-          style={{ color: "#524F4C" }}
+          style={{ color: "var(--color-text-faint)" }}
         >
           Heatmap
         </span>
-        <span className="text-[9px] ml-auto" style={{ color: "#524F4C" }}>
+        <span className="text-[9px] ml-auto" style={{ color: "var(--color-text-faint)" }}>
           {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </span>
       </button>
@@ -95,7 +95,7 @@ export function ScoreHeatmap() {
           >
             {loading ? (
               <div className="rounded-2xl px-4 py-5 space-y-2"
-                style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}>
+                style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
                 <div className="grid grid-cols-10 gap-1.5">
                   {Array.from({ length: 30 }).map((_, i) => (
                     <motion.div key={i}
@@ -110,16 +110,16 @@ export function ScoreHeatmap() {
             ) : cells.length === 0 ? (
               <div
                 className="rounded-2xl px-4 py-5 text-center"
-                style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}
+                style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}
               >
-                <p className="text-[10px]" style={{ color: "#524F4C" }}>
+                <p className="text-[10px]" style={{ color: "var(--color-text-faint)" }}>
                   No data yet — complete an assessment to seed the heatmap.
                 </p>
               </div>
             ) : (
               <div
                 className="rounded-2xl p-4"
-                style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}
+                style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}
               >
                 {/* Weekday labels + grid */}
                 <div className="flex gap-[2px]">
@@ -129,7 +129,7 @@ export function ScoreHeatmap() {
                       <div
                         key={d}
                         className="text-[7px] font-mono uppercase tracking-wider leading-none flex items-center justify-end"
-                        style={{ color: "#524F4C", width: 18, height: 14 }}
+                        style={{ color: "var(--color-text-faint)", width: 18, height: 14 }}
                       >
                         {d}
                       </div>
@@ -162,8 +162,8 @@ export function ScoreHeatmap() {
                                 <div
                                   className="rounded-lg px-2 py-1 text-[9px] font-semibold whitespace-nowrap shadow-lg"
                                   style={{
-                                    backgroundColor: "#1C1C1E",
-                                    color: "#F5F5F4",
+                                    backgroundColor: "var(--color-bg-elevated)",
+                                    color: "var(--color-text-primary)",
                                     border: "1px solid rgba(168,162,158,0.15)",
                                   }}
                                 >
@@ -182,7 +182,7 @@ export function ScoreHeatmap() {
 
                 {/* Legend */}
                 <div className="flex items-center justify-end gap-2 mt-3">
-                  <span className="text-[7px] font-mono uppercase" style={{ color: "#524F4C" }}>Clear</span>
+                  <span className="text-[7px] font-mono uppercase" style={{ color: "var(--color-text-faint)" }}>Clear</span>
                   {[0, 20, 40, 60].map((threshold) => (
                     <div
                       key={threshold}
@@ -196,7 +196,7 @@ export function ScoreHeatmap() {
                       }}
                     />
                   ))}
-                  <span className="text-[7px] font-mono uppercase" style={{ color: "#524F4C" }}>High</span>
+                  <span className="text-[7px] font-mono uppercase" style={{ color: "var(--color-text-faint)" }}>High</span>
                 </div>
               </div>
             )}

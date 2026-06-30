@@ -9,7 +9,7 @@ export default function NotFound() {
   return (
     <div
       className="min-h-svh flex flex-col items-center justify-center px-6 text-center"
-      style={{ backgroundColor: "#0A0A0B" }}
+      style={{ backgroundColor: "var(--color-bg-base)" }}
     >
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
@@ -23,11 +23,11 @@ export default function NotFound() {
       />
       <h2
         className="text-xl font-normal mb-2"
-        style={{ fontFamily: "var(--font-heading)", color: "#F5F5F4" }}
+        style={{ fontFamily: "var(--font-heading)", color: "var(--color-text-primary)" }}
       >
         This page doesn&apos;t exist
       </h2>
-      <p className="text-sm mb-8" style={{ color: "#A8A29E" }}>
+      <p className="text-sm mb-8" style={{ color: "var(--color-text-secondary)" }}>
         But your body still keeps the score.
       </p>
       <motion.button
@@ -35,8 +35,8 @@ export default function NotFound() {
         onClick={() => router.push("/")}
         className="w-full max-w-xs font-semibold rounded-2xl"
         style={{
-          backgroundColor: "#EA580C",
-          color: "#F5F5F4",
+          backgroundColor: "var(--color-brand-primary)",
+          color: "var(--color-text-primary)",
           minHeight: 58,
           fontFamily: "var(--font-body)",
         }}

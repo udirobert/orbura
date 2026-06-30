@@ -35,16 +35,16 @@ export function SignalUpsellCard({
       transition={{ delay }}
       className="rounded-2xl p-4 text-center"
       style={{
-        backgroundColor: "#141416",
+        backgroundColor: "var(--color-bg-surface)",
         border: isPrimary
           ? "1px solid rgba(234,88,12,0.2)"
           : "1px solid rgba(168,162,158,0.08)",
       }}
     >
-      <p className="text-xs mb-1" style={{ color: "#A8A29E" }}>
+      <p className="text-xs mb-1" style={{ color: "var(--color-text-secondary)" }}>
         {isPrimary ? "I can see more if you let me." : "\u201CI can see more if you let me.\u201D"}
       </p>
-      <p className="text-[10px] mb-3" style={{ color: "#524F4C" }}>
+      <p className="text-[10px] mb-3" style={{ color: "var(--color-text-faint)" }}>
         {subtitle ?? (isPrimary
           ? "Connect your watch and camera for a full picture."
           : "Face scan + wearable data makes this prescription 3\u00D7 more precise.")}
@@ -54,10 +54,10 @@ export function SignalUpsellCard({
         onClick={() => router.push("/face-scan")}
         className="text-xs font-semibold uppercase tracking-wider px-4 py-2.5 rounded-xl"
         style={isPrimary
-          ? { backgroundColor: "#EA580C", color: "#F5F5F4" }
+          ? { backgroundColor: "var(--color-brand-primary)", color: "var(--color-text-primary)" }
           : {
               backgroundColor: "rgba(234,88,12,0.15)",
-              color: "#EA580C",
+              color: "var(--color-brand-primary)",
               border: "1px solid rgba(234,88,12,0.3)",
             }}
       >

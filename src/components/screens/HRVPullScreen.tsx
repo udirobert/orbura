@@ -130,7 +130,7 @@ export function HRVPullScreen() {
   }, []);
 
   return (
-    <div className="relative min-h-svh flex flex-col px-5 overflow-hidden" style={{ backgroundColor: "#0A0A0B" }}>
+    <div className="relative min-h-svh flex flex-col px-5 overflow-hidden" style={{ backgroundColor: "var(--color-bg-base)" }}>
 
       <ScreenHeader
         back={
@@ -155,10 +155,10 @@ export function HRVPullScreen() {
           <motion.div key="picker" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className="relative z-10 flex-1 flex flex-col gap-4 pb-10">
             <div className="mb-1">
-              <h2 className="font-normal leading-snug" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.4rem,5.5vw,1.75rem)", color: "#F5F5F4" }}>
+              <h2 className="font-normal leading-snug" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.4rem,5.5vw,1.75rem)", color: "var(--color-text-primary)" }}>
                 Your watch knows things I don&apos;t.
               </h2>
-              <p className="text-xs mt-1.5" style={{ color: "#524F4C" }}>
+              <p className="text-xs mt-1.5" style={{ color: "var(--color-text-faint)" }}>
                 Connect for a more accurate score — or answer a quick check-in
               </p>
             </div>
@@ -170,21 +170,21 @@ export function HRVPullScreen() {
                   whileTap={{ scale: 0.975 }}
                   onClick={() => handleDeviceSelect(opt)}
                   className="relative w-full rounded-2xl flex items-center text-left"
-                  style={{ minHeight: "64px", padding: "14px 16px", backgroundColor: "#141416", border: "1.5px solid rgba(168,162,158,0.12)" }}>
+                  style={{ minHeight: "64px", padding: "14px 16px", backgroundColor: "var(--color-bg-surface)", border: "1.5px solid rgba(168,162,158,0.12)" }}>
                   <span className="text-xl mr-3.5 flex-shrink-0">{opt.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-semibold block" style={{ color: "#F5F5F4" }}>{opt.name}</span>
-                    <span className="text-[11px] block mt-0.5" style={{ color: opt.note ? "#524F4C" : "#3a3835" }}>
+                    <span className="text-sm font-semibold block" style={{ color: "var(--color-text-primary)" }}>{opt.name}</span>
+                    <span className="text-[11px] block mt-0.5" style={{ color: opt.note ? "var(--color-text-faint)" : "var(--color-text-disabled)" }}>
                       {opt.note ?? opt.sub}
                     </span>
                   </div>
-                  <ChevronLeft className="w-4 h-4 rotate-180 flex-shrink-0" style={{ color: "#3a3835" }} />
+                  <ChevronLeft className="w-4 h-4 rotate-180 flex-shrink-0" style={{ color: "var(--color-text-disabled)" }} />
                 </motion.button>
               ))}
             </div>
 
             <button onClick={() => handleRunAnalysis(null, true)}
-              className="w-full text-center text-[11px] py-2.5 font-medium" style={{ color: "#524F4C" }}>
+              className="w-full text-center text-[11px] py-2.5 font-medium" style={{ color: "var(--color-text-faint)" }}>
               Skip all — use fewer data points
             </button>
           </motion.div>
@@ -213,10 +213,10 @@ export function HRVPullScreen() {
             {analysisError && (
               <div className="rounded-2xl p-4 mb-4 flex items-start gap-3"
                 style={{ backgroundColor: "rgba(127,29,29,0.18)", border: "1.5px solid rgba(220,38,38,0.3)" }}>
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#DC2626" }} />
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "var(--color-states-error)" }} />
                 <div>
                   <p className="text-xs" style={{ color: "#fca5a5" }}>{analysisError}</p>
-                  <button onClick={() => setAnalysisError(null)} className="text-[10px] mt-1 font-semibold" style={{ color: "#DC2626" }}>Dismiss</button>
+                  <button onClick={() => setAnalysisError(null)} className="text-[10px] mt-1 font-semibold" style={{ color: "var(--color-states-error)" }}>Dismiss</button>
                 </div>
               </div>
             )}

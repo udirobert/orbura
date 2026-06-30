@@ -62,15 +62,15 @@ function formatMs(ms: number): string {
   return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
 }
 
-function MetricCard({ label, value, sub, color = "#4ADE80" }: {
+function MetricCard({ label, value, sub, color = "var(--color-states-success)" }: {
   label: string; value: string; sub?: string; color?: string;
 }) {
   return (
     <div className="rounded-2xl p-4 flex flex-col gap-1"
-      style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}>
-      <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: "#524F4C" }}>{label}</span>
+      style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
+      <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: "var(--color-text-faint)" }}>{label}</span>
       <span className="font-black leading-none" style={{ fontFamily: "var(--font-heading)", fontSize: "1.75rem", color }}>{value}</span>
-      {sub && <span className="text-[10px]" style={{ color: "#A8A29E" }}>{sub}</span>}
+      {sub && <span className="text-[10px]" style={{ color: "var(--color-text-secondary)" }}>{sub}</span>}
     </div>
   );
 }
@@ -78,7 +78,7 @@ function MetricCard({ label, value, sub, color = "#4ADE80" }: {
 export function EvidencePage() {
   return (
     <div className="min-h-svh px-5 py-10 overflow-x-hidden"
-      style={{ backgroundColor: "#0A0A0B", color: "#F5F5F4" }}>
+      style={{ backgroundColor: "var(--color-bg-base)", color: "var(--color-text-primary)" }}>
 
       <div className="max-w-3xl mx-auto space-y-10">
 
@@ -86,13 +86,13 @@ export function EvidencePage() {
         <header className="space-y-3">
           <div className="flex items-center gap-2">
             <span className="text-xl">🫀</span>
-            <span className="app-name text-sm font-bold tracking-widest uppercase" style={{ color: "#F5F5F4" }}>
+            <span className="app-name text-sm font-bold tracking-widest uppercase" style={{ color: "var(--color-text-primary)" }}>
               BODY DEBT
             </span>
             <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
               style={{ backgroundColor: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
-              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#4ADE80" }} />
-              <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#4ADE80" }}>
+              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "var(--color-states-success)" }} />
+              <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>
                 Edge AI · 4 agents
               </span>
             </span>
@@ -100,22 +100,22 @@ export function EvidencePage() {
           <h1 className="text-3xl font-normal leading-tight" style={{ fontFamily: "var(--font-heading)" }}>
             Evidence bundle for QVAC Hackathon judges
           </h1>
-          <p className="text-sm" style={{ color: "#A8A29E" }}>
+          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
             Single-page summary of architecture, agent pipeline, measured performance, and graceful degradation.
             Everything below is reproducible from the source code and live demo.
           </p>
           <div className="flex flex-wrap gap-2 pt-2">
             <Link href="/" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-wider"
-              style={{ backgroundColor: "#EA580C", color: "#F5F5F4" }}>
+              style={{ backgroundColor: "var(--color-brand-primary)", color: "var(--color-text-primary)" }}>
               Open live app →
             </Link>
             <Link href="/dashboard" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-wider"
-              style={{ backgroundColor: "#141416", color: "#A8A29E", border: "1px solid rgba(168,162,158,0.15)" }}>
+              style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-secondary)", border: "1px solid rgba(168,162,158,0.15)" }}>
               View dashboard
             </Link>
             <a href="https://github.com/udirobert/bodydebt" target="_blank" rel="noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-wider"
-              style={{ backgroundColor: "#141416", color: "#A8A29E", border: "1px solid rgba(168,162,158,0.15)" }}>
+              style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-secondary)", border: "1px solid rgba(168,162,158,0.15)" }}>
               Source code ↗
             </a>
           </div>
@@ -123,28 +123,28 @@ export function EvidencePage() {
 
         {/* Headline metrics */}
         <section>
-          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "#524F4C" }}>
+          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "var(--color-text-faint)" }}>
             Measured on-device performance
           </h2>
           <div className="grid grid-cols-2 gap-2">
             <MetricCard label="Edge pipeline (4 agents)" value={formatMs(SAMPLE_BENCHMARK.edgeTotalMs)}
               sub={`${SAMPLE_BENCHMARK.model}`} />
             <MetricCard label="Cloud verdict (parallel)" value={formatMs(SAMPLE_BENCHMARK.cloudVerdictMs)}
-              sub="Anthropic Claude 3.5 Haiku" color="#DC2626" />
+              sub="Anthropic Claude 3.5 Haiku" color="var(--color-states-error)" />
             <MetricCard label="Edge outputs vs cloud" value="4×"
-              sub="Verdict + Rx + Schedule + Reflection vs single verdict" color="#F59E0B" />
+              sub="Verdict + Rx + Schedule + Reflection vs single verdict" color="var(--color-states-warning)" />
             <MetricCard label="Data leaving device" value="0 bytes"
-              sub="Pipeline runs entirely on-device" color="#A78BFA" />
+              sub="Pipeline runs entirely on-device" color="var(--color-system-muscular)" />
           </div>
         </section>
 
         {/* Architecture diagram */}
         <section>
-          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "#524F4C" }}>
+          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "var(--color-text-faint)" }}>
             End-to-end architecture
           </h2>
           <div className="rounded-2xl p-4 space-y-2"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}>
+            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
             {ARCHITECTURE_STEPS.map((step, i) => (
               <motion.div key={step.id}
                 initial={{ opacity: 0, x: -8 }}
@@ -153,15 +153,15 @@ export function EvidencePage() {
                 className="flex items-center gap-3">
                 <span className="text-sm flex-shrink-0 w-6 text-center">{step.icon}</span>
                 <div className="flex-1 flex items-center gap-2">
-                  <span className="text-[10px] font-mono" style={{ color: "#524F4C", minWidth: 16 }}>
+                  <span className="text-[10px] font-mono" style={{ color: "var(--color-text-faint)", minWidth: 16 }}>
                     {i + 1}
                   </span>
-                  <span className="text-xs" style={{ color: "#F5F5F4" }}>
+                  <span className="text-xs" style={{ color: "var(--color-text-primary)" }}>
                     {step.label}
                   </span>
                 </div>
                 {i < ARCHITECTURE_STEPS.length - 1 && (
-                  <span className="text-[10px]" style={{ color: "#3a3835" }}>↓</span>
+                  <span className="text-[10px]" style={{ color: "var(--color-text-disabled)" }}>↓</span>
                 )}
               </motion.div>
             ))}
@@ -170,17 +170,17 @@ export function EvidencePage() {
 
         {/* Agent trace */}
         <section>
-          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "#524F4C" }}>
+          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "var(--color-text-faint)" }}>
             4-agent QVAC pipeline (recorded run)
           </h2>
           <div className="rounded-2xl p-4 space-y-3"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(74,222,128,0.15)" }}>
+            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(74,222,128,0.15)" }}>
             <div className="flex items-center justify-between pb-2"
               style={{ borderBottom: "1px solid rgba(168,162,158,0.06)" }}>
-              <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "#4ADE80" }}>
+              <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>
                 Input: {SAMPLE_BENCHMARK.input}
               </span>
-              <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "#4ADE80" }}>
+              <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>
                 Personality: {SAMPLE_BENCHMARK.personality}
               </span>
             </div>
@@ -191,23 +191,23 @@ export function EvidencePage() {
                 </span>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium capitalize" style={{ color: "#F5F5F4" }}>
+                    <span className="text-xs font-medium capitalize" style={{ color: "var(--color-text-primary)" }}>
                       {a.agent} agent
                     </span>
-                    <span className="text-[10px] font-mono" style={{ color: "#4ADE80" }}>
+                    <span className="text-[10px] font-mono" style={{ color: "var(--color-states-success)" }}>
                       ✓ {formatMs(a.durationMs)}
                     </span>
                   </div>
-                  <p className="text-[10px] mt-0.5" style={{ color: "#A8A29E" }}>{a.role}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>{a.role}</p>
                 </div>
               </div>
             ))}
             <div className="flex items-center justify-between pt-2"
               style={{ borderTop: "1px solid rgba(168,162,158,0.06)" }}>
-              <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "#524F4C" }}>
+              <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "var(--color-text-faint)" }}>
                 Total pipeline
               </span>
-              <span className="text-xs font-bold" style={{ color: "#4ADE80" }}>
+              <span className="text-xs font-bold" style={{ color: "var(--color-states-success)" }}>
                 {formatMs(SAMPLE_BENCHMARK.edgeTotalMs)} · on-device
               </span>
             </div>
@@ -216,18 +216,18 @@ export function EvidencePage() {
 
         {/* Edge vs Cloud bars */}
         <section>
-          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "#524F4C" }}>
+          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "var(--color-text-faint)" }}>
             Edge vs Cloud — real measured timings
           </h2>
           <div className="rounded-2xl p-4 space-y-3"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}>
+            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
             <div>
               <div className="flex justify-between text-[10px] font-mono mb-1">
-                <span style={{ color: "#4ADE80" }}>Edge (on-device, 4 agents)</span>
-                <span style={{ color: "#F5F5F4" }}>{formatMs(SAMPLE_BENCHMARK.edgeTotalMs)}</span>
+                <span style={{ color: "var(--color-states-success)" }}>Edge (on-device, 4 agents)</span>
+                <span style={{ color: "var(--color-text-primary)" }}>{formatMs(SAMPLE_BENCHMARK.edgeTotalMs)}</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(168,162,158,0.1)" }}>
-                <motion.div className="h-full rounded-full" style={{ backgroundColor: "#4ADE80" }}
+                <motion.div className="h-full rounded-full" style={{ backgroundColor: "var(--color-states-success)" }}
                   initial={{ width: "0%" }}
                   animate={{ width: `${(SAMPLE_BENCHMARK.edgeTotalMs / SAMPLE_BENCHMARK.cloudVerdictMs) * 100}%` }}
                   transition={{ duration: 1, ease: "easeOut" }} />
@@ -235,14 +235,14 @@ export function EvidencePage() {
             </div>
             <div>
               <div className="flex justify-between text-[10px] font-mono mb-1">
-                <span style={{ color: "#DC2626" }}>Cloud (parallel verdict)</span>
-                <span style={{ color: "#A8A29E" }}>{formatMs(SAMPLE_BENCHMARK.cloudVerdictMs)}</span>
+                <span style={{ color: "var(--color-states-error)" }}>Cloud (parallel verdict)</span>
+                <span style={{ color: "var(--color-text-secondary)" }}>{formatMs(SAMPLE_BENCHMARK.cloudVerdictMs)}</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(168,162,158,0.1)" }}>
-                <div className="h-full rounded-full" style={{ backgroundColor: "#DC2626", width: "100%" }} />
+                <div className="h-full rounded-full" style={{ backgroundColor: "var(--color-states-error)", width: "100%" }} />
               </div>
             </div>
-            <p className="text-[10px] text-center font-mono pt-1" style={{ color: "#F5F5F4" }}>
+            <p className="text-[10px] text-center font-mono pt-1" style={{ color: "var(--color-text-primary)" }}>
               4× the outputs in similar latency — and zero biometric data left the device
             </p>
           </div>
@@ -250,26 +250,26 @@ export function EvidencePage() {
 
         {/* Counterfactual */}
         <section>
-          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "#524F4C" }}>
+          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "var(--color-text-faint)" }}>
             Counterfactual — the highest-leverage line in the UI
           </h2>
           <div className="rounded-2xl p-5"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(245,158,11,0.25)", borderLeft: "3px solid #F59E0B" }}>
-            <span className="text-[9px] font-mono font-bold uppercase tracking-widest block mb-2" style={{ color: "#F59E0B" }}>
+            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(245,158,11,0.25)", borderLeft: "3px solid var(--color-states-warning)" }}>
+            <span className="text-[9px] font-mono font-bold uppercase tracking-widest block mb-2" style={{ color: "var(--color-states-warning)" }}>
               What would change this
             </span>
-            <p className="text-sm leading-relaxed" style={{ color: "#A8A29E" }}>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
               If you had{" "}
-              <strong style={{ color: "#F5F5F4" }}>{SAMPLE_COUNTERFACTUAL.leverLabel}</strong>,{" "}
-              <strong style={{ color: "#F59E0B" }}>{SAMPLE_COUNTERFACTUAL.systemLabel}</strong>{" "}
+              <strong style={{ color: "var(--color-text-primary)" }}>{SAMPLE_COUNTERFACTUAL.leverLabel}</strong>,{" "}
+              <strong style={{ color: "var(--color-states-warning)" }}>{SAMPLE_COUNTERFACTUAL.systemLabel}</strong>{" "}
               debt would drop from{" "}
-              <strong style={{ color: "#F5F5F4" }}>{SAMPLE_COUNTERFACTUAL.fromScore}</strong> to{" "}
-              <strong style={{ color: "#4ADE80" }}>{SAMPLE_COUNTERFACTUAL.toScore}</strong>{" "}
-              <span style={{ color: "#4ADE80" }}>
+              <strong style={{ color: "var(--color-text-primary)" }}>{SAMPLE_COUNTERFACTUAL.fromScore}</strong> to{" "}
+              <strong style={{ color: "var(--color-states-success)" }}>{SAMPLE_COUNTERFACTUAL.toScore}</strong>{" "}
+              <span style={{ color: "var(--color-states-success)" }}>
                 (−{SAMPLE_COUNTERFACTUAL.delta} points)
               </span>.
             </p>
-            <p className="text-[9px] font-mono mt-3" style={{ color: "#524F4C" }}>
+            <p className="text-[9px] font-mono mt-3" style={{ color: "var(--color-text-faint)" }}>
               Deterministic engine. Single-variable re-run. Not an LLM. ~3ms.
             </p>
           </div>
@@ -277,13 +277,13 @@ export function EvidencePage() {
 
         {/* Fallback chain */}
         <section>
-          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "#524F4C" }}>
+          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "var(--color-text-faint)" }}>
             Graceful degradation — every layer has a fallback
           </h2>
           <div className="rounded-2xl overflow-hidden"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}>
+            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
             <div className="grid grid-cols-3 px-4 py-2 text-[9px] font-mono uppercase tracking-wider"
-              style={{ backgroundColor: "rgba(168,162,158,0.04)", color: "#524F4C", borderBottom: "1px solid rgba(168,162,158,0.06)" }}>
+              style={{ backgroundColor: "rgba(168,162,158,0.04)", color: "var(--color-text-faint)", borderBottom: "1px solid rgba(168,162,158,0.06)" }}>
               <span>Layer</span>
               <span>Primary</span>
               <span>Fallback</span>
@@ -292,41 +292,41 @@ export function EvidencePage() {
               <div key={row.layer}
                 className="grid grid-cols-3 px-4 py-2.5 text-[11px]"
                 style={{ borderBottom: i < FALLBACK_CHAIN.length - 1 ? "1px solid rgba(168,162,158,0.04)" : "none" }}>
-                <span style={{ color: "#F5F5F4" }}>{row.layer}</span>
-                <span style={{ color: "#4ADE80" }}>{row.primary}</span>
-                <span style={{ color: "#A8A29E" }}>{row.fallback}</span>
+                <span style={{ color: "var(--color-text-primary)" }}>{row.layer}</span>
+                <span style={{ color: "var(--color-states-success)" }}>{row.primary}</span>
+                <span style={{ color: "var(--color-text-secondary)" }}>{row.fallback}</span>
               </div>
             ))}
           </div>
-          <p className="text-[10px] mt-2 font-mono" style={{ color: "#524F4C" }}>
+          <p className="text-[10px] mt-2 font-mono" style={{ color: "var(--color-text-faint)" }}>
             Cloud calls have 5s and 8s timeouts. After first inference, the QVAC model is cached locally — subsequent runs work fully offline.
           </p>
         </section>
 
         {/* Privacy story */}
         <section>
-          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "#524F4C" }}>
+          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "var(--color-text-faint)" }}>
             Privacy story — ZK proof as the verification layer
           </h2>
           <div className="rounded-2xl p-4 space-y-2"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}>
-            <p className="text-xs leading-relaxed" style={{ color: "#A8A29E" }}>
+            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
+            <p className="text-xs leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
               The face scan produces a 7-dimensional feature vector. A zero-knowledge proof circuit
               runs in a Web Worker to prove the score was computed from real biometric data — without
               exposing that data. The proof is verified locally, then committed on-chain to{" "}
               <a href="https://juicy-low-small-testnet.explorer.skalenodes.com/"
                 target="_blank" rel="noreferrer"
-                className="underline" style={{ color: "#4ADE80" }}>
+                className="underline" style={{ color: "var(--color-states-success)" }}>
                 SKALE Europa testnet
               </a>{" "}
               via{" "}
               <code className="px-1 rounded font-mono text-[10px]"
-                style={{ backgroundColor: "rgba(168,162,158,0.08)", color: "#F5F5F4" }}>
+                style={{ backgroundColor: "rgba(168,162,158,0.08)", color: "var(--color-text-primary)" }}>
                 HealthCredentialVerifier.verifyAndLogCredential
               </code>
               .
             </p>
-            <p className="text-[10px] font-mono" style={{ color: "#524F4C" }}>
+            <p className="text-[10px] font-mono" style={{ color: "var(--color-text-faint)" }}>
               Biometric data never leaves the device. The on-chain anchor is a verifiable commitment
               that the score came from a real face — not a screenshot.
             </p>
@@ -335,10 +335,10 @@ export function EvidencePage() {
 
         {/* Footer */}
         <footer className="text-center pt-6 pb-2 space-y-2">
-          <p className="text-[10px] font-mono" style={{ color: "#3a3835" }}>
+          <p className="text-[10px] font-mono" style={{ color: "var(--color-text-disabled)" }}>
             Built for the QVAC Hackathon I — Unleash Edge AI · DoraHacks · June 2026
           </p>
-          <p className="text-[10px] font-mono" style={{ color: "#3a3835" }}>
+          <p className="text-[10px] font-mono" style={{ color: "var(--color-text-disabled)" }}>
             Three AI agents, one local model, zero cloud calls for the inference path.
           </p>
         </footer>

@@ -1,10 +1,10 @@
 export const SOURCE_META: Record<string, { label: string; opacity: number; color: string }> = {
-  terra:         { label: "Live from your wearable",       opacity: 1.0, color: "#4ADE80" },
-  healthkit:     { label: "From your Apple Watch",         opacity: 1.0, color: "#4ADE80" },
-  google_fit:    { label: "From your Android data",        opacity: 0.95, color: "#4ADE80" },
-  garmin_export: { label: "From your Garmin export",       opacity: 0.90, color: "#F59E0B" },
-  manual_proxy:  { label: "Based on how you reported feeling", opacity: 0.80, color: "#A8A29E" },
-  demo:          { label: "Simulated Garmin data",         opacity: 1.0, color: "#4ADE80" },
+  terra:         { label: "Live from your wearable",       opacity: 1.0, color: "var(--color-states-success)" },
+  healthkit:     { label: "From your Apple Watch",         opacity: 1.0, color: "var(--color-states-success)" },
+  google_fit:    { label: "From your Android data",        opacity: 0.95, color: "var(--color-states-success)" },
+  garmin_export: { label: "From your Garmin export",       opacity: 0.90, color: "var(--color-states-warning)" },
+  manual_proxy:  { label: "Based on how you reported feeling", opacity: 0.80, color: "var(--color-text-secondary)" },
+  demo:          { label: "Simulated Garmin data",         opacity: 1.0, color: "var(--color-states-success)" },
 };
 
 export interface DeviceOption {

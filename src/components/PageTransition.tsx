@@ -13,7 +13,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.98 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        style={{ minHeight: "100svh", backgroundColor: "#0A0A0B" }}
+        style={{ minHeight: "100svh", backgroundColor: "var(--color-bg-base)" }}
         className="max-w-sm mx-auto w-full"
       >
         {/* Mobile-first container — centred on desktop, full-width on mobile */}

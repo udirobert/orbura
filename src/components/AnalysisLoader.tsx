@@ -4,50 +4,6 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { bandMeta } from "@/lib/debt-band";
 
-// ─── Science facts shown during analysis ─────────────────────────────────────
-const FACTS = [
-  {
-    stat: "28%",
-    claim: "HRV drops an average of 28% after just one night of poor sleep.",
-    source: "Journal of Sleep Research, 2021",
-  },
-  {
-    stat: "4–6hrs",
-    claim: "Cognitive performance after 4–6 hours of sleep matches being legally drunk.",
-    source: "University of Pennsylvania Sleep Lab",
-  },
-  {
-    stat: "72hrs",
-    claim: "Full muscle recovery from intense training takes up to 72 hours.",
-    source: "Sports Medicine, 2019",
-  },
-  {
-    stat: "3×",
-    claim: "Alcohol triples cortisol output the morning after — even moderate drinking.",
-    source: "Alcohol & Alcoholism Journal",
-  },
-  {
-    stat: "11pm",
-    claim: "Your nervous system begins its deepest repair cycle between 11pm and 2am.",
-    source: "Circadian Biology Research",
-  },
-  {
-    stat: "200ms",
-    claim: "Reaction time slows by 200ms when HRV is more than 20% below your baseline.",
-    source: "Applied Physiology Research",
-  },
-  {
-    stat: "60%",
-    claim: "Decision quality drops 60% when your body is in active recovery mode.",
-    source: "Cognitive Neuroscience Letters",
-  },
-  {
-    stat: "1.8×",
-    claim: "Stress hormones take 1.8× longer to clear the body after poor sleep.",
-    source: "Endocrinology & Metabolism",
-  },
-];
-
 // ─── Signals being "processed" — animate through these ───────────────────────
 const SIGNALS = [
   { id: "stressors", label: "Stressor intake",     icon: "📋", doneAt: 0.12 },
@@ -56,13 +12,6 @@ const SIGNALS = [
   { id: "hrv",       label: "Autonomic signals",     icon: "❤️", doneAt: 0.62 },
   { id: "timeline",  label: "Recovery arc",          icon: "📈", doneAt: 0.78 },
   { id: "rx",        label: "Generating prescription",icon: "💊", doneAt: 0.92 },
-];
-
-// Honest status text — no fabricated metrics
-const SOCIAL_COUNTS = [
-  "QVAC edge AI · running on-device",
-  "Llama-3.2-1B · Q4 quantized · local inference",
-  "4-agent pipeline · zero cloud calls",
 ];
 
 export interface AgentEventState {
@@ -96,8 +45,6 @@ interface AnalysisLoaderProps {
 
 export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress }: AnalysisLoaderProps) {
   const [elapsed, setElapsed] = useState(0);       // 0–1 simulated progress
-  const [factIdx, setFactIdx] = useState(0);
-  const [socialIdx] = useState(() => Math.floor(Math.random() * SOCIAL_COUNTS.length));
   const [orbScore, setOrbScore] = useState(0);     // orb heats up as signals process
 
   // Simulate progress over ~5 seconds for the initial signal-processing phase.
@@ -115,13 +62,6 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
     return () => clearInterval(iv);
   }, []);
 
-  // Rotate facts every 3.5s — long enough to read, short enough to feel alive
-  useEffect(() => {
-    const iv = setInterval(() => setFactIdx((i) => (i + 1) % FACTS.length), 3500);
-    return () => clearInterval(iv);
-  }, []);
-
-  const fact = FACTS[factIdx];
   const activeSignals = SIGNALS.filter((s) => {
     if (s.id === "face" && !hasFaceScan) return false;
     if (s.id === "hrv"  && !hasHRV)     return false;
@@ -145,14 +85,12 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
     : null;
 
   const orbColor = bandMeta(orbScore).color;
-  // Only show a numeric percentage when agents are delivering inference.
-  // Before that, show a pulsing dot — no fake percentage.
   const showPercent = hasLiveAgents;
   const percentLabel = agentPct ?? 0;
 
   return (
-    <div className="relative flex flex-col items-center justify-between min-h-svh px-5 py-12 overflow-hidden"
-      style={{ backgroundColor: "#0A0A0B" }}>
+    <div className="relative flex flex-col items-center min-h-svh px-5 pt-8 pb-6 overflow-hidden"
+      style={{ backgroundColor: "var(--color-bg-base)" }}>
 
       {/* Ambient glow that intensifies with progress */}
       <motion.div className="absolute pointer-events-none"
@@ -165,21 +103,12 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
         }}
       />
 
-      {/* Top — social proof chip */}
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-        className="relative z-10 px-3 py-1.5 rounded-full"
-        style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.12)" }}>
-        <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: "#524F4C" }}>
-          {SOCIAL_COUNTS[socialIdx]}
-        </span>
-      </motion.div>
-
       {/* Orb — heats up as signals are processed */}
-      <div className="relative z-10 flex flex-col items-center gap-5 flex-1 justify-center">
+      <div className="relative z-10 flex flex-col items-center gap-4 flex-1 justify-center">
         <motion.div
           animate={{ scale: [1, 1.03, 1] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          style={{ width: 120, height: 120, position: "relative" }}
+          style={{ width: 104, height: 104, position: "relative" }}
         >
           {/* Outer breathing ring */}
           <motion.div className="absolute inset-0 rounded-full"
@@ -188,7 +117,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
           {/* Secondary ring */}
           <motion.div className="absolute rounded-full"
-            style={{ inset: "-10px", border: `1px solid ${orbColor}20` }}
+            style={{ inset: "-8px", border: `1px solid ${orbColor}20` }}
             animate={{ scale: [1, 1.08, 1], opacity: [0.2, 0.5, 0.2] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }} />
           {/* Orb body */}
@@ -210,11 +139,11 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
         </motion.div>
 
         {/* Progress — pulsing indicator until agents start, then real percentage */}
-        <div className="text-center">
+        <div className="text-center" aria-live="polite" aria-atomic="true">
           {showPercent ? (
             <motion.div
               className="font-normal leading-none"
-              style={{ fontFamily: "var(--font-heading)", fontSize: "3.5rem", color: orbColor, letterSpacing: "-0.03em" }}
+              style={{ fontFamily: "var(--font-heading)", fontSize: "3rem", color: orbColor, letterSpacing: "-0.03em" }}
               key={percentLabel}
               initial={{ opacity: 0.5, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
@@ -225,7 +154,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
           ) : (
             <motion.div
               className="flex items-center justify-center gap-1.5"
-              style={{ height: "3.5rem" }}
+              style={{ height: "3rem" }}
             >
               {[0, 1, 2].map((i) => (
                 <motion.span
@@ -238,7 +167,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
               ))}
             </motion.div>
           )}
-          <p className="text-[10px] font-mono uppercase tracking-widest mt-1" style={{ color: "#524F4C" }}>
+          <p className="text-[10px] font-mono uppercase tracking-widest mt-1" style={{ color: "var(--color-text-faint)" }}>
             {hasLiveAgents ? "edge AI agents working" : isLoadingModel ? "loading AI model" : "processing signals"}
           </p>
         </div>
@@ -253,11 +182,11 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
           >
             <motion.span
               className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: "#4ADE80" }}
+              style={{ backgroundColor: "var(--color-states-success)" }}
               animate={{ opacity: [1, 0.3, 1] }}
               transition={{ duration: 1.5, repeat: Infinity }}
             />
-            <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "#4ADE80" }}>
+            <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>
               QVAC · Llama-3.2-1B · on-device
             </span>
           </motion.div>
@@ -265,25 +194,25 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
 
         {/* Model download progress bar */}
         {agentProgress && agentProgress.status === "downloading" && (
-          <div className="w-full rounded-xl px-3 py-2.5"
+          <div className="w-full max-w-sm rounded-xl px-3 py-2.5"
             style={{ backgroundColor: "rgba(234,88,12,0.06)", border: "1px solid rgba(234,88,12,0.15)" }}>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "#EA580C" }}>
+              <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "var(--color-brand-primary)" }}>
                 Loading Llama-3.2-1B
               </span>
-              <span className="text-[9px] font-mono" style={{ color: "#A8A29E" }}>
+              <span className="text-[9px] font-mono" style={{ color: "var(--color-text-secondary)" }}>
                 {agentProgress.percent != null ? `${agentProgress.percent}%` : "..."}
               </span>
             </div>
             <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(168,162,158,0.1)" }}>
               <motion.div className="h-full rounded-full"
-                style={{ backgroundColor: "#EA580C" }}
+                style={{ backgroundColor: "var(--color-brand-primary)" }}
                 animate={{ width: `${agentProgress.percent ?? 50}%` }}
                 transition={{ duration: 0.3 }}
               />
             </div>
             {agentProgress.loaded != null && agentProgress.total != null && (
-              <p className="text-[8px] font-mono mt-1" style={{ color: "#524F4C" }}>
+              <p className="text-[8px] font-mono mt-1" style={{ color: "var(--color-text-faint)" }}>
                 {Math.round(agentProgress.loaded / 1024 / 1024)}MB / {Math.round(agentProgress.total / 1024 / 1024)}MB
               </p>
             )}
@@ -292,7 +221,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
 
         {/* Live agent activity — replaces simulated signals when agents are running */}
         {hasLiveAgents ? (
-          <div className="w-full space-y-2 mt-2">
+          <div className="w-full space-y-1.5 mt-1">
             {agentEvents!.map((agent, i) => {
               const isActive = agent.status === "active";
               const isDone = agent.status === "done";
@@ -301,7 +230,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  className="rounded-xl px-3 py-2.5"
+                  className="rounded-xl px-3 py-2"
                   style={{
                     backgroundColor: isDone ? "rgba(74,222,128,0.06)" : "rgba(234,88,12,0.06)",
                     border: `1px solid ${isDone ? "rgba(74,222,128,0.2)" : "rgba(234,88,12,0.2)"}`,
@@ -309,27 +238,27 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
                   <div className="flex items-center gap-2.5">
                     <span className="text-sm flex-shrink-0">{AGENT_ICONS[agent.agent] ?? "🤖"}</span>
                     <span className="text-xs font-medium flex-1" style={{
-                      color: isDone ? "#4ADE80" : "#F5F5F4",
+                      color: isDone ? "var(--color-states-success)" : "var(--color-text-primary)",
                     }}>
                       {AGENT_LABELS[agent.agent] ?? agent.agent}
                     </span>
                     {isDone ? (
-                      <span className="text-[10px] font-mono" style={{ color: "#4ADE80" }}>
+                      <span className="text-[10px] font-mono" style={{ color: "var(--color-states-success)" }}>
                         ✓ {((agent.durationMs ?? 0) / 1000).toFixed(1)}s
                       </span>
                     ) : (
-                      <motion.div className="w-1 h-1 rounded-full" style={{ backgroundColor: "#EA580C" }}
+                      <motion.div className="w-1 h-1 rounded-full" style={{ backgroundColor: "var(--color-brand-primary)" }}
                         animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }} />
                     )}
                   </div>
                   {/* Live token stream — expanded scrollable area for the active agent */}
                   {isActive && agent.tokens && (
                     <div
-                      className="mt-2 rounded-lg p-2 text-[12px] leading-relaxed overflow-y-auto"
+                      className="mt-1.5 rounded-lg p-2 text-[11px] leading-relaxed overflow-y-auto"
                       style={{
-                        color: "#A8A29E",
+                        color: "var(--color-text-secondary)",
                         backgroundColor: "rgba(0,0,0,0.25)",
-                        maxHeight: 96, // ~4 lines at line-height-relaxed
+                        maxHeight: 80,
                         fontFamily: "var(--font-body)",
                       }}
                     >
@@ -341,8 +270,8 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
             })}
           </div>
         ) : (
-          /* Original simulated signal checklist */
-          <div className="w-full space-y-2 mt-2">
+          /* Simulated signal checklist — trimmed spacing */
+          <div className="w-full space-y-1.5 mt-1">
             {activeSignals.map((sig) => {
               const done    = elapsed >= sig.doneAt;
               const active  = !done && elapsed >= sig.doneAt - 0.15;
@@ -351,21 +280,21 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: done ? 1 : active ? 0.85 : 0.3, x: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2"
                   style={{
-                    backgroundColor: done ? "rgba(74,222,128,0.06)" : active ? "rgba(234,88,12,0.06)" : "#141416",
+                    backgroundColor: done ? "rgba(74,222,128,0.06)" : active ? "rgba(234,88,12,0.06)" : "var(--color-bg-surface)",
                     border: `1px solid ${done ? "rgba(74,222,128,0.2)" : active ? "rgba(234,88,12,0.2)" : "rgba(168,162,158,0.08)"}`,
                     transition: "background-color 0.4s, border-color 0.4s",
                   }}>
                   <span className="text-sm flex-shrink-0">{sig.icon}</span>
-                  <span className="text-xs font-medium flex-1" style={{ color: done ? "#4ADE80" : active ? "#F5F5F4" : "#524F4C" }}>
+                  <span className="text-xs font-medium flex-1" style={{ color: done ? "var(--color-states-success)" : active ? "var(--color-text-primary)" : "var(--color-text-faint)" }}>
                     {sig.label}
                   </span>
                   {done ? (
                     <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400 }}
-                      className="text-[10px] font-mono font-bold" style={{ color: "#4ADE80" }}>✓</motion.span>
+                      className="text-[10px] font-mono font-bold" style={{ color: "var(--color-states-success)" }}>✓</motion.span>
                   ) : active ? (
-                    <motion.div className="w-1 h-1 rounded-full" style={{ backgroundColor: "#EA580C" }}
+                    <motion.div className="w-1 h-1 rounded-full" style={{ backgroundColor: "var(--color-brand-primary)" }}
                       animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }} />
                   ) : null}
                 </motion.div>
@@ -373,36 +302,6 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
             })}
           </div>
         )}
-      </div>
-
-      {/* Rotating science fact */}
-      <div className="relative z-10 w-full">
-        <AnimatePresence mode="wait">
-          <motion.div key={factIdx}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.4 }}
-            className="rounded-2xl p-4"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.1)" }}>
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 rounded-xl flex items-center justify-center"
-                style={{ width: 44, height: 44, backgroundColor: "rgba(234,88,12,0.1)", border: "1px solid rgba(234,88,12,0.2)" }}>
-                <span className="font-bold" style={{ fontFamily: "var(--font-heading)", fontSize: "0.95rem", color: "#EA580C" }}>
-                  {fact.stat}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[15px] leading-relaxed font-medium" style={{ color: "#F5F5F4" }}>
-                  {fact.claim}
-                </p>
-                <p className="text-[9px] mt-1.5 font-mono uppercase tracking-wider" style={{ color: "#3a3835" }}>
-                  {fact.source}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
       </div>
     </div>
   );

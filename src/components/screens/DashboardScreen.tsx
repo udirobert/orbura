@@ -21,7 +21,7 @@ import { AgentTracePanel } from "@/components/AgentTracePanel";
 import { getOrbCopy, getPersonality } from "@/lib/orbPersonality";
 import { getStrings } from "@/lib/i18n";
 import { bandMeta } from "@/lib/debt-band";
-import { getContextConfig } from "@/lib/contexts";
+import { useRecoveryContext } from "@/lib/contexts/RecoveryContext";
 import { ModeToggle } from "@/components/ModeToggle";
 import { SquadPanel } from "./SquadScreen";
 import { GuestAuthCard } from "@/components/GuestAuthCard";
@@ -54,11 +54,11 @@ const FALLBACK_ANALYSIS: DebtAnalysis = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const CONFIDENCE_CONFIG: Record<string, { dot: string; label: string; color: string; explanation: string }> = {
-  estimated: { dot: "◐", label: "Estimated",       color: "#524F4C", explanation: "Based on your reported stressors only. No biometric data used." },
-  partial:   { dot: "◑", label: "Partial picture", color: "#A8A29E", explanation: "Some biometric signal received. Connecting a wearable or doing a face scan would improve accuracy." },
-  good:      { dot: "◕", label: "Good read",        color: "#F59E0B", explanation: "Face scan or HRV data is included. Confidence is high enough to act on." },
-  accurate:  { dot: "●", label: "Accurate",         color: "#EA580C", explanation: "Multiple biometric signals verified. Your score reflects real physiology." },
-  precise:   { dot: "●", label: "Precise",          color: "#4ADE80", explanation: "Full signal coverage: stressors, face scan, and HRV. Maximum confidence." },
+  estimated: { dot: "◐", label: "Estimated",       color: "var(--color-text-faint)", explanation: "Based on your reported stressors only. No biometric data used." },
+  partial:   { dot: "◑", label: "Partial picture", color: "var(--color-text-secondary)", explanation: "Some biometric signal received. Connecting a wearable or doing a face scan would improve accuracy." },
+  good:      { dot: "◕", label: "Good read",        color: "var(--color-states-warning)", explanation: "Face scan or HRV data is included. Confidence is high enough to act on." },
+  accurate:  { dot: "●", label: "Accurate",         color: "var(--color-brand-primary)", explanation: "Multiple biometric signals verified. Your score reflects real physiology." },
+  precise:   { dot: "●", label: "Precise",          color: "var(--color-states-success)", explanation: "Full signal coverage: stressors, face scan, and HRV. Maximum confidence." },
 };
 
 function ConfidenceSignal({ tier }: { tier?: ConfidenceTier }) {
@@ -70,6 +70,8 @@ function ConfidenceSignal({ tier }: { tier?: ConfidenceTier }) {
       <motion.button
         initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        aria-controls="confidence-explanation"
         className="flex items-center justify-center gap-1.5 mt-1"
       >
         <span className="text-sm" style={{ color: cfg.color }}>{cfg.dot}</span>
@@ -83,13 +85,16 @@ function ConfidenceSignal({ tier }: { tier?: ConfidenceTier }) {
       <AnimatePresence>
         {expanded && (
           <motion.div
+            id="confidence-explanation"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
+            role="region"
+            aria-label="Confidence explanation"
           >
-            <p className="text-[9px] text-center px-8 mt-1.5 leading-relaxed" style={{ color: "#524F4C" }}>
+            <p className="text-[9px] text-center px-8 mt-1.5 leading-relaxed" style={{ color: "var(--color-text-faint)" }}>
               {cfg.explanation}
             </p>
           </motion.div>
@@ -115,7 +120,7 @@ function SystemIconRow({ systems, onTap }: {
     <div className="flex items-center justify-center gap-5 mt-4">
       {SYSTEM_ORDER.map((sys) => {
         const score = systems.find(s => s.system === sys)?.score ?? 0;
-        const color = score >= 70 ? "#DC2626" : score >= 40 ? "#EA580C" : score >= 15 ? "#F59E0B" : "#4ADE80";
+        const color = score >= 70 ? "var(--color-states-error)" : score >= 40 ? "var(--color-brand-primary)" : score >= 15 ? "var(--color-states-warning)" : "var(--color-states-success)";
         return (
           <motion.button key={sys} whileTap={{ scale: 0.85 }}
             onClick={onTap}
@@ -139,13 +144,13 @@ function PatternLayer({ streakDays }: { streakDays: number }) {
   return (
     <div className="relative z-10 mb-6">
       <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
-        style={{ backgroundColor: "#141416", border: "1px solid rgba(74,222,128,0.15)" }}>
-        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "#4ADE80" }} />
+        style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(74,222,128,0.15)" }}>
+        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "var(--color-states-success)" }} />
         <div>
-          <span className="text-xs font-semibold" style={{ color: "#4ADE80" }}>
+          <span className="text-xs font-semibold" style={{ color: "var(--color-states-success)" }}>
             {streakDays} day{streakDays !== 1 ? "s" : ""} under 20
           </span>
-          <p className="text-[10px] mt-0.5" style={{ color: "#524F4C" }}>
+          <p className="text-[10px] mt-0.5" style={{ color: "var(--color-text-faint)" }}>
             Clean streak. Your body is thanking you.
           </p>
         </div>
@@ -163,9 +168,10 @@ export function DashboardScreen() {
     hrvData, faceAnalysis, zkProof,
     streakDays, confidenceTier,
     orbPersonality, agentEvents, agentProgress,
-    locale, mode,
+    locale,
   } = useBodyDebtStore();
 
+  const ctx = useRecoveryContext();
   const user = useEazo((s) => s.auth.user);
   const data: DebtAnalysis = analysis ?? FALLBACK_ANALYSIS;
   const isEmpty = !analysis && selectedStressors.length === 0;
@@ -311,22 +317,22 @@ export function DashboardScreen() {
   if (isEmpty) {
     return (
       <div className="min-h-svh flex flex-col items-center justify-center px-6 text-center"
-        style={{ backgroundColor: "#0A0A0B" }}>
+        style={{ backgroundColor: "var(--color-bg-base)" }}>
         <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
           className="w-28 h-28 rounded-full mb-8"
           style={{ background: "radial-gradient(circle at 40% 35%, rgba(245,158,11,0.25) 0%, rgba(234,88,12,0.08) 60%, transparent 100%)" }}
         />
-        <h2 className="text-xl font-normal mb-2" style={{ fontFamily: "var(--font-heading)", color: "#F5F5F4" }}>
+        <h2 className="text-xl font-normal mb-2" style={{ fontFamily: "var(--font-heading)", color: "var(--color-text-primary)" }}>
           Your body is waiting
         </h2>
-        <p className="text-sm mb-8" style={{ color: "#A8A29E" }}>
+        <p className="text-sm mb-8" style={{ color: "var(--color-text-secondary)" }}>
           Your debt can&apos;t be quantified without input. Log what hit you.
         </p>
         <motion.button whileTap={{ scale: 0.98 }}
           onClick={() => router.push("/wake-time")}
           className="w-full max-w-xs font-semibold rounded-2xl"
-          style={{ backgroundColor: "#EA580C", color: "#F5F5F4", minHeight: 58, fontFamily: "var(--font-body)" }}>
+          style={{ backgroundColor: "var(--color-brand-primary)", color: "var(--color-text-primary)", minHeight: 58, fontFamily: "var(--font-body)" }}>
           Start assessment
         </motion.button>
       </div>
@@ -336,85 +342,103 @@ export function DashboardScreen() {
   // ── Main dashboard ──────────────────────────────────────────────────────────
   return (
     <div className="relative min-h-svh flex flex-col overflow-hidden"
-      style={{ backgroundColor: "#0A0A0B" }}>
+      style={{ backgroundColor: "var(--color-bg-base)" }}>
 
       {/* Scrollable content */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5">
 
-      {/* Header */}
-      <header className="relative z-10 mt-10 mb-4">
+      {/* Header — diet version: two compact rows */}
+      <header className="relative z-10 mt-8 mb-4" role="banner" aria-label="Dashboard controls">
+        {/* Row 1: app name + contextual badges | new assessment */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="app-name text-sm font-bold tracking-widest uppercase" style={{ color: "#F5F5F4" }}>
-              {getContextConfig(mode).vocabulary.appName}
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className="app-name text-sm font-bold tracking-widest uppercase flex-shrink-0"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              {ctx.vocabulary.appName}
             </span>
-            {mode === "football" && (
-              <button
-                onClick={() => window.location.href = "/squad"}
-                className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 hover:text-emerald-300"
-              >
-                Squad
-              </button>
-            )}
-            <ModeToggle />
-            {data.agentTrace && data.agentTrace.source === "qvac-local" && (
-              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
-                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#4ADE80" }} />
-                <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#4ADE80" }}>Edge AI</span>
-              </span>
-            )}
-            {zkProof && zkProof.onChainStatus === "verified" && zkProof.txHash && (
-              <a
-                href={`https://juicy-low-small-testnet.explorer.skalenodes.com/tx/${zkProof.txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.15)" }}
-                title={`Last verified ${zkProof.durationMs ? `${(zkProof.durationMs / 1000).toFixed(1)}s ago · on SKALE` : "on SKALE"}`}
-              >
-                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#60A5FA" }} />
-                <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#60A5FA" }}>
-                  On-chain
+            {/* Badges — edge AI + on-chain, compact */}
+            <div className="flex items-center gap-1.5 overflow-hidden">
+              {data.agentTrace && data.agentTrace.source === "qvac-local" && (
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
+                  <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "var(--color-states-success)" }} />
+                  <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>Edge AI</span>
                 </span>
-              </a>
-            )}
-            <motion.button whileTap={{ scale: 0.9 }}
-              onClick={() => setPersonalityOpen(true)}
-              className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
-              style={{ backgroundColor: "rgba(168,162,158,0.08)" }}
-              title={`Voice: ${personalityCfg.label}`}
-            >
-              {personalityCfg.emoji}
-            </motion.button>
-            <button onClick={() => {
-              const order = ["en", "es", "fr"] as const;
-              const idx = order.indexOf(locale);
-              const next = order[(idx + 1) % order.length];
-              useBodyDebtStore.getState().setLocale(next);
-            }}
-              className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono"
-              style={{ backgroundColor: "rgba(168,162,158,0.08)", color: "#A8A29E" }}
-              title={`Language: ${locale.toUpperCase()}`}
-            >
-              {locale.toUpperCase()}
-            </button>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "#EA580C" }} />
+              )}
+              {zkProof && zkProof.onChainStatus === "verified" && zkProof.txHash && (
+                <a
+                  href={`https://juicy-low-small-testnet.explorer.skalenodes.com/tx/${zkProof.txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.15)" }}
+                  title={`Last verified ${zkProof.durationMs ? `${(zkProof.durationMs / 1000).toFixed(1)}s ago · on SKALE` : "on SKALE"}`}
+                  aria-label="View on-chain verification on SKALE explorer"
+                >
+                  <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#60A5FA" }} />
+                  <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#60A5FA" }}>
+                    On-chain
+                  </span>
+                </a>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {streakDays > 0 && (
-              <div className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#4ADE80" }} />
-                <span className="text-[10px] font-mono" style={{ color: "#4ADE80" }}>{streakDays}</span>
-              </div>
-            )}
-            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowReLogConfirm(true)}
-              className="text-[11px] font-medium rounded-xl"
-              style={{ color: "#A8A29E", border: "1px solid rgba(168,162,158,0.15)", backgroundColor: "rgba(0,0,0,0.4)", minHeight: 36, padding: "6px 12px" }}>
-              New assessment
-            </motion.button>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowReLogConfirm(true)}
+            className="text-[11px] font-medium rounded-xl flex-shrink-0"
+            style={{ color: "var(--color-text-secondary)", border: "1px solid rgba(168,162,158,0.15)", backgroundColor: "rgba(0,0,0,0.4)", minHeight: 34, padding: "4px 12px" }}
+            aria-label="Start new assessment">
+            New assessment
+          </motion.button>
+        </div>
+
+        {/* Row 2: mode toggle + controls + streak */}
+        <div className="flex items-center justify-between mt-2.5">
+          <div className="flex items-center gap-2.5">
+            <ModeToggle />
+            <div className="flex items-center gap-1.5">
+              {ctx.supportsSquad && (
+                <button
+                  onClick={() => window.location.href = "/squad"}
+                  className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 hover:text-emerald-300 px-2 py-1 rounded-lg hover:bg-emerald-900/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+                  aria-label="Open squad medical room"
+                >
+                  Squad
+                </button>
+              )}
+              <span className="w-px h-3.5" style={{ backgroundColor: "rgba(168,162,158,0.12)" }} />
+              <motion.button whileTap={{ scale: 0.9 }}
+                onClick={() => setPersonalityOpen(true)}
+                className="w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-emerald-900/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+                style={{ backgroundColor: "rgba(168,162,158,0.06)" }}
+                aria-label={`Voice: ${personalityCfg.label}`}
+              >
+                {personalityCfg.emoji}
+              </motion.button>
+              <button onClick={() => {
+                const order = ["en", "es", "fr"] as const;
+                const idx = order.indexOf(locale);
+                const next = order[(idx + 1) % order.length];
+                useBodyDebtStore.getState().setLocale(next);
+              }}
+                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono hover:bg-emerald-900/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+                style={{ backgroundColor: "rgba(168,162,158,0.06)", color: "var(--color-text-secondary)" }}
+                aria-label={`Switch language from ${locale.toUpperCase()}`}
+              >
+                {locale.toUpperCase()}
+              </button>
+            </div>
           </div>
+          {streakDays > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-mono tabular-nums" style={{ color: "var(--color-states-success)" }}>
+                {streakDays}d streak
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--color-states-success)" }} />
+            </div>
+          )}
         </div>
         <div className="h-px w-full mt-3" style={{ backgroundColor: "rgba(168,162,158,0.1)" }} />
       </header>
@@ -439,7 +463,7 @@ export function DashboardScreen() {
           </motion.div>
 
           {/* Verdict with personality prefix */}
-          <h3 className="mt-2 font-normal text-center px-4" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1rem,4vw,1.25rem)", color: "#F5F5F4", lineHeight: 1.3 }}>
+          <h3 className="mt-2 font-normal text-center px-4" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1rem,4vw,1.25rem)", color: "var(--color-text-primary)", lineHeight: 1.3 }}>
             {verdictPrefix}{data.verdict}
           </h3>
 
@@ -449,11 +473,11 @@ export function DashboardScreen() {
               className="flex items-center justify-center gap-1.5 mt-2">
               {[0, 0.2, 0.4].map(d => (
                 <motion.span key={d} className="w-1 h-1 rounded-full inline-block"
-                  style={{ backgroundColor: "#EA580C" }}
+                  style={{ backgroundColor: "var(--color-brand-primary)" }}
                   animate={{ opacity: [1, 0.2, 1] }}
                   transition={{ duration: 1, repeat: Infinity, delay: d }} />
               ))}
-              <span className="text-[9px] font-mono uppercase tracking-widest ml-1" style={{ color: "#524F4C" }}>
+              <span className="text-[9px] font-mono uppercase tracking-widest ml-1" style={{ color: "var(--color-text-faint)" }}>
                 Refining with AI
               </span>
             </motion.div>
@@ -467,13 +491,13 @@ export function DashboardScreen() {
           </div>
 
           {/* Personality tagline */}
-          <p className="mt-1 text-[10px] italic px-6" style={{ color: "#524F4C" }}>
+          <p className="mt-1 text-[10px] italic px-6" style={{ color: "var(--color-text-faint)" }}>
             {personalityTagline}
           </p>
 
           {/* Recovery window */}
-          <p className="mt-1 text-xs font-mono" style={{ color: "#A8A29E" }}>
-            {t.labels.recoveryAround} <span style={{ color: "#F5F5F4" }}>{data.recoveryTime}</span>
+          <p className="mt-1 text-xs font-mono" style={{ color: "var(--color-text-secondary)" }}>
+            {t.labels.recoveryAround} <span style={{ color: "var(--color-text-primary)" }}>{data.recoveryTime}</span>
           </p>
 
           {/* SKALE on-chain verification anchor */}
@@ -517,8 +541,8 @@ export function DashboardScreen() {
         </div>
       )}
 
-      {/* ── Football mode: Squad readiness board ──────────────────────── */}
-      {mode === "football" && (
+      {/* ── Squad readiness board (football mode only) ──────────────── */}
+      {ctx.supportsSquad && (
         <div className="relative z-10 mb-8">
           <SquadPanel onSelect={() => router.push("/squad")} />
         </div>
@@ -528,15 +552,15 @@ export function DashboardScreen() {
       {data.counterfactual && (
         <div ref={counterfactualRef} className="relative z-10 mb-6">
           <div className="rounded-2xl p-4 flex items-start gap-3"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)", borderLeft: "2px solid #F59E0B" }}>
-            <span className="text-[8px] font-mono font-bold uppercase tracking-widest flex-shrink-0 pt-0.5" style={{ color: "#F59E0B", minWidth: 120 }}>
+            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)", borderLeft: "2px solid var(--color-states-warning)" }}>
+            <span className="text-[8px] font-mono font-bold uppercase tracking-widest flex-shrink-0 pt-0.5" style={{ color: "var(--color-states-warning)", minWidth: 120 }}>
               What would change this
             </span>
-            <span className="text-xs leading-relaxed" style={{ color: "#A8A29E" }}>
-              If you had <strong style={{ color: "#F5F5F4" }}>{data.counterfactual.leverLabel}</strong>,{" "}
-              <strong style={{ color: "#F59E0B" }}>{data.counterfactual.systemLabel}</strong> debt would drop from{" "}
-              <strong style={{ color: "#F5F5F4" }}>{data.counterfactual.fromScore}</strong> to{" "}
-              <strong style={{ color: "#4ADE80" }}>{data.counterfactual.toScore}</strong>.
+            <span className="text-xs leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+              If you had <strong style={{ color: "var(--color-text-primary)" }}>{data.counterfactual.leverLabel}</strong>,{" "}
+              <strong style={{ color: "var(--color-states-warning)" }}>{data.counterfactual.systemLabel}</strong> debt would drop from{" "}
+              <strong style={{ color: "var(--color-text-primary)" }}>{data.counterfactual.fromScore}</strong> to{" "}
+              <strong style={{ color: "var(--color-states-success)" }}>{data.counterfactual.toScore}</strong>.
             </span>
           </div>
         </div>
@@ -603,19 +627,19 @@ export function DashboardScreen() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
           className="rounded-2xl p-4 mt-2"
-          style={{ backgroundColor: "#141416", border: "1px solid rgba(74,222,128,0.12)" }}
+          style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(74,222,128,0.12)" }}
         >
           <div className="flex items-start gap-3">
             <span className="text-base flex-shrink-0">⏳</span>
             <div>
-              <p className="text-xs font-semibold mb-0.5" style={{ color: "#F5F5F4" }}>
+              <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--color-text-primary)" }}>
                 {t.labels.checkBack}
               </p>
-              <p className="text-[10px] leading-relaxed" style={{ color: "#A8A29E" }}>
+              <p className="text-[10px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
                 {t.labels.checkBackSubtitle}
               </p>
               {streakDays > 0 && (
-                <p className="text-[9px] font-mono mt-1.5" style={{ color: "#4ADE80" }}>
+                <p className="text-[9px] font-mono mt-1.5" style={{ color: "var(--color-states-success)" }}>
                   {t.labels.streakChain(streakDays)}
                 </p>
               )}
@@ -661,7 +685,7 @@ export function DashboardScreen() {
                   onClick={() => scrollToSection(s.id)}
                   className="px-2.5 py-1 rounded-full text-[9px] font-mono uppercase tracking-wider transition-colors"
                   style={{
-                    color: activeSection === s.id ? "#F5F5F4" : "#524F4C",
+                    color: activeSection === s.id ? "var(--color-text-primary)" : "var(--color-text-faint)",
                     backgroundColor: activeSection === s.id ? "rgba(234,88,12,0.15)" : "transparent",
                   }}>
                   {s.label}
@@ -677,6 +701,9 @@ export function DashboardScreen() {
         {showReLogConfirm && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm new assessment"
             className="fixed inset-0 z-50 flex items-center justify-center px-6"
             style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
             onClick={() => setShowReLogConfirm(false)}
@@ -685,25 +712,25 @@ export function DashboardScreen() {
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
               className="rounded-2xl p-6 w-full max-w-sm text-center"
-              style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.15)" }}
+              style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.15)" }}
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="text-sm font-semibold mb-2" style={{ color: "#F5F5F4" }}>
+              <p className="text-sm font-semibold mb-2" style={{ color: "var(--color-text-primary)" }}>
                 Start a new assessment?
               </p>
-              <p className="text-xs mb-5" style={{ color: "#A8A29E" }}>
+              <p className="text-xs mb-5" style={{ color: "var(--color-text-secondary)" }}>
                 Your current score will be replaced. Your streak and history are preserved.
               </p>
               <div className="flex flex-col gap-2">
                 <motion.button whileTap={{ scale: 0.98 }}
                   onClick={() => { setShowReLogConfirm(false); handleReLog(); }}
                   className="w-full font-semibold text-sm rounded-xl py-3"
-                  style={{ backgroundColor: "#EA580C", color: "#F5F5F4" }}>
+                  style={{ backgroundColor: "var(--color-brand-primary)", color: "var(--color-text-primary)" }}>
                   {t.ctas.startFresh}
                 </motion.button>
                 <button onClick={() => setShowReLogConfirm(false)}
                   className="w-full text-xs font-medium py-2.5"
-                  style={{ color: "#524F4C" }}>
+                  style={{ color: "var(--color-text-faint)" }}>
                   {t.ctas.cancel}
                 </button>
               </div>
@@ -724,12 +751,12 @@ const SYSTEM_EMOJIS: Record<string, string> = {
 
 function AgentSchedule({ schedule }: { schedule: { time: string; action: string; system: string }[] }) {
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}>
+    <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
       <div className="px-4 pt-3.5 pb-2 flex items-center justify-between">
-        <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+        <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "var(--color-states-warning)" }}>
           Recovery Schedule
         </span>
-        <span className="text-[8px] font-mono" style={{ color: "#524F4C" }}>
+        <span className="text-[8px] font-mono" style={{ color: "var(--color-text-faint)" }}>
           Schedule Agent · QVAC
         </span>
       </div>
@@ -741,10 +768,10 @@ function AgentSchedule({ schedule }: { schedule: { time: string; action: string;
             transition={{ delay: i * 0.08 }}
             className="flex items-start gap-3 py-2.5"
             style={{ borderBottom: i < schedule.length - 1 ? "1px solid rgba(168,162,158,0.06)" : "none" }}>
-            <span className="text-xs font-mono flex-shrink-0 mt-0.5" style={{ color: "#EA580C", minWidth: 70 }}>
+            <span className="text-xs font-mono flex-shrink-0 mt-0.5" style={{ color: "var(--color-brand-primary)", minWidth: 70 }}>
               {block.time}
             </span>
-            <span className="text-sm flex-1" style={{ color: "#F5F5F4", lineHeight: 1.4 }}>
+            <span className="text-sm flex-1" style={{ color: "var(--color-text-primary)", lineHeight: 1.4 }}>
               {block.action}
             </span>
             <span className="text-sm flex-shrink-0">

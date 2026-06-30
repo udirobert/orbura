@@ -3,7 +3,7 @@ import {
   computeSystemScores,
   circadianPenaltyBrain,
   formatClearanceTime,
-} from "@/lib/systemScoring";
+} from "@/stressors";
 import type { Stressor } from "@/lib/types";
 
 // Pin dates for deterministic tests

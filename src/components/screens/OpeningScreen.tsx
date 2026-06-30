@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
+import { useRecoveryContext } from "@/lib/contexts/RecoveryContext";
+import { getAllContexts } from "@/lib/contexts";
 import { memory } from "@/lib/sdk/eazo-client";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import type { RecoveryMode } from "@/lib/types";
 
 // Turbulence frames for dormant orb
 const DORMANT_FRAMES = [
@@ -17,11 +20,14 @@ const DORMANT_FRAMES = [
 
 export function OpeningScreen() {
   const router = useRouter();
-  const { analysis, setHasSeenOpening } = useBodyDebtStore();
+  const { analysis, setHasSeenOpening, setMode } = useBodyDebtStore();
+  const ctx = useRecoveryContext();
   const [orbVisible, setOrbVisible] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
-  const [btnVisible, setBtnVisible] = useState(false);
-  const [exiting, setExiting] = useState(false); // kept for orb visual only
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [exiting, setExiting] = useState(false);
+
+  const allContexts = getAllContexts();
 
   useEffect(() => {
     if (analysis) {
@@ -33,27 +39,28 @@ export function OpeningScreen() {
     router.prefetch("/intake");
     const t1 = setTimeout(() => setOrbVisible(true), 200);
     const t2 = setTimeout(() => setTextVisible(true), 1000);
-    const t3 = setTimeout(() => setBtnVisible(true), 1800);
+    const t3 = setTimeout(() => setPickerVisible(true), 1600);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [analysis, router]);
 
-  const handleFindOut = () => {
+  const handleSelectMode = (mode: RecoveryMode) => {
+    setMode(mode);
     setHasSeenOpening(true);
     setExiting(true);
     router.prefetch("/wake-time");
     memory.reportAction({
-      content: "User started a body debt session from the opening screen.",
+      content: `User started a ${mode} session from the opening screen.`,
       event_type: "start",
       page: "opening",
-      metadata: { type: "start_session" },
+      metadata: { type: "start_session", mode },
     }).catch(() => {});
     router.push("/wake-time");
   };
 
   return (
     <motion.div
-      className="relative min-h-svh flex flex-col items-center justify-between overflow-hidden"
-      style={{ backgroundColor: "#0A0A0B" }}
+      className="relative min-h-svh flex flex-col items-center overflow-hidden"
+      style={{ backgroundColor: "var(--color-bg-base)" }}
       animate={{ opacity: exiting ? 0 : 1 }}
       transition={{ duration: 0.38 }}
     >
@@ -61,7 +68,7 @@ export function OpeningScreen() {
       <div
         className="absolute pointer-events-none"
         style={{
-          top: "38%", left: "50%",
+          top: "34%", left: "50%",
           transform: "translate(-50%, -50%)",
           width: "480px", height: "480px",
           borderRadius: "50%",
@@ -71,7 +78,7 @@ export function OpeningScreen() {
       />
 
       {/* Brand */}
-      <div className="relative z-10 w-full flex justify-center pt-16">
+      <div className="relative z-10 w-full flex justify-center pt-14">
         <AnimatePresence>
           {textVisible && (
             <motion.div
@@ -83,7 +90,7 @@ export function OpeningScreen() {
                 className="tracking-[0.25em] text-xs font-semibold uppercase"
                 style={{ color: "rgba(168,162,158,0.5)" }}
               >
-                BODY DEBT
+                {ctx.vocabulary.appName}
               </span>
             </motion.div>
           )}
@@ -91,7 +98,7 @@ export function OpeningScreen() {
       </div>
 
       {/* Dormant orb */}
-      <div className="relative z-10 flex flex-col items-center gap-8" style={{ marginTop: "-5vh" }}>
+      <div className="relative z-10 flex flex-col items-center gap-6" style={{ marginTop: "-2vh" }}>
         <AnimatePresence>
           {orbVisible && (
             <motion.div
@@ -99,7 +106,7 @@ export function OpeningScreen() {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 1.1, ease: [0.34, 1.56, 0.64, 1] }}
               className="relative flex items-center justify-center"
-              style={{ width: "52vw", maxWidth: 240, height: "52vw", maxHeight: 240 }}
+              style={{ width: "48vw", maxWidth: 200, height: "48vw", maxHeight: 200 }}
             >
               <motion.div
                 className="absolute inset-0 rounded-full"
@@ -159,37 +166,78 @@ export function OpeningScreen() {
                 className="leading-relaxed"
                 style={{
                   fontFamily: "var(--font-heading)",
-                  fontSize: "clamp(1.05rem, 4.5vw, 1.3rem)",
+                  fontSize: "clamp(1rem, 4vw, 1.15rem)",
                   color: "rgba(168,162,158,0.7)",
                   letterSpacing: "0.01em",
                 }}
               >
-                Your body is keeping score.
-                <br />
-                <span style={{ color: "rgba(168,162,158,0.45)" }}>Are you?</span>
+                {ctx.vocabulary.tagline}
               </p>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* CTA */}
-      <div className="relative z-10 w-full px-6 pb-14">
+      {/* Mode picker */}
+      <div className="relative z-10 w-full flex-1 flex flex-col justify-center px-6 pb-10">
         <AnimatePresence>
-          {btnVisible && (
+          {pickerVisible && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, ease: "easeOut" }}
+              className="flex flex-col gap-3"
             >
-              <PrimaryButton
-                size="lg"
-                shimmer
-                onClick={handleFindOut}
-                className="font-bold uppercase tracking-[0.18em]"
-              >
-                Find Out
-              </PrimaryButton>
+              {allContexts.map((c) => {
+                const v = c.vocabulary;
+                return (
+                  <motion.button
+                    key={c.mode}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => handleSelectMode(c.mode)}
+                    className="w-full rounded-2xl px-5 py-4 text-left flex items-start gap-4 transition-colors hover:border-emerald-600/40"
+                    style={{
+                      backgroundColor: "var(--color-bg-surface)",
+                      border: "1px solid rgba(168,162,158,0.1)",
+                    }}
+                  >
+                    <span className="text-xl flex-shrink-0 pt-0.5">
+                      {c.mode === "personal" ? "🧘" : "⚽"}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <span
+                        className="text-sm font-semibold block"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {v.appName}
+                      </span>
+                      <span
+                        className="text-[11px] block mt-0.5 leading-relaxed"
+                        style={{ color: "var(--color-text-secondary)" }}
+                      >
+                        {v.tagline}
+                      </span>
+                      {c.mode === "football" && (
+                        <span
+                          className="inline-block mt-1.5 text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
+                          style={{
+                            backgroundColor: "rgba(74,222,128,0.08)",
+                            color: "var(--color-states-success)",
+                          }}
+                        >
+                          Squad mode
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className="text-lg flex-shrink-0 pt-0.5"
+                      style={{ color: "var(--color-text-faint)" }}
+                    >
+                      →
+                    </span>
+                  </motion.button>
+                );
+              })}
               <p
                 className="text-center mt-4 text-[10px] tracking-widest uppercase font-mono"
                 style={{ color: "rgba(82,79,76,0.7)" }}

@@ -9,7 +9,7 @@ import type { HRVData } from "@/lib/types";
 export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue: () => void }) {
   const meta = SOURCE_META[data.source ?? "manual_proxy"];
   const isBad = (data.hrvDeltaPercent ?? 0) <= -20;
-  const orbColor = isBad ? "#DC2626" : data.hrvDeltaPercent <= -10 ? "#EA580C" : "#4ADE80";
+  const orbColor = isBad ? "var(--color-states-error)" : data.hrvDeltaPercent <= -10 ? "var(--color-brand-primary)" : "var(--color-states-success)";
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-4">
@@ -22,12 +22,12 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
       </div>
 
       {/* Delta card */}
-      <div className="rounded-2xl p-5" style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.1)" }}>
-        <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#A8A29E" }}>Last night</span>
+      <div className="rounded-2xl p-5" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}>
+        <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-text-secondary)" }}>Last night</span>
         <div className="py-2 font-normal leading-none" style={{ fontFamily: "var(--font-heading)", fontSize: "2.5rem", color: orbColor }}>
           {data.hrvDeltaPercent > 0 ? `+${data.hrvDeltaPercent}` : data.hrvDeltaPercent}%
         </div>
-        <p className="text-xs" style={{ color: "#A8A29E" }}>
+        <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
           {isBad
             ? "Your nervous system is still in recovery. This will factor into your prescription."
             : data.hrvDeltaPercent <= -10
@@ -39,12 +39,12 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
         {data.sleepStages && (
           <div className="grid grid-cols-3 gap-2 mt-3">
             {[
-              { label: "Deep",  val: data.sleepStages.deep,  color: "#EA580C" },
-              { label: "REM",   val: data.sleepStages.rem,   color: "#F59E0B" },
-              { label: "Light", val: data.sleepStages.light, color: "#A8A29E" },
+              { label: "Deep",  val: data.sleepStages.deep,  color: "var(--color-brand-primary)" },
+              { label: "REM",   val: data.sleepStages.rem,   color: "var(--color-states-warning)" },
+              { label: "Light", val: data.sleepStages.light, color: "var(--color-text-secondary)" },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl px-2 py-2 text-center" style={{ backgroundColor: "#0A0A0B" }}>
-                <div className="text-[9px] uppercase tracking-widest" style={{ color: "#3a3835" }}>{s.label}</div>
+              <div key={s.label} className="rounded-xl px-2 py-2 text-center" style={{ backgroundColor: "var(--color-bg-base)" }}>
+                <div className="text-[9px] uppercase tracking-widest" style={{ color: "var(--color-text-disabled)" }}>{s.label}</div>
                 <div className="text-xs font-mono font-bold mt-0.5" style={{ color: s.color }}>{s.val}m</div>
               </div>
             ))}
@@ -54,7 +54,7 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
 
       <motion.button whileTap={{ scale: 0.98 }} onClick={onContinue}
         className="w-full font-semibold text-sm rounded-2xl"
-        style={{ backgroundColor: "#EA580C", color: "#F5F5F4", fontFamily: "var(--font-body)", minHeight: "58px" }}>
+        style={{ backgroundColor: "var(--color-brand-primary)", color: "var(--color-text-primary)", fontFamily: "var(--font-body)", minHeight: "58px" }}>
         Calculate my full score
       </motion.button>
     </motion.div>

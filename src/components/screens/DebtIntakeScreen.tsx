@@ -10,7 +10,7 @@ import { MiniOrb } from "@/components/MiniOrb";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { StressorCard } from "./stressor-card";
-import { ACK_COPY, CONFIDENCE_CONFIG, computeLiveScore, filterStressorsByMode } from "@/lib/stressor-scoring";
+import { ACK_COPY, CONFIDENCE_CONFIG, computeLiveScore, byMode } from "@/stressors";
 import { bandMeta } from "@/lib/debt-band";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ export function DebtIntakeScreen() {
   return (
     <div
       className="relative min-h-svh flex flex-col px-5 overflow-hidden"
-      style={{ backgroundColor: "#0A0A0B" }}
+      style={{ backgroundColor: "var(--color-bg-base)" }}
     >
       {/* Nav + live score readout */}
       <ScreenHeader
@@ -103,7 +103,7 @@ export function DebtIntakeScreen() {
             >
               <span
                 className="font-mono text-[10px] uppercase tracking-widest"
-                style={{ color: "#524F4C" }}
+                style={{ color: "var(--color-text-faint)" }}
               >
                 Live
               </span>
@@ -129,13 +129,13 @@ export function DebtIntakeScreen() {
           style={{
             fontFamily: "var(--font-heading)",
             fontSize: "clamp(1.45rem, 5.5vw, 1.8rem)",
-            color: "#F5F5F4",
+            color: "var(--color-text-primary)",
             letterSpacing: "-0.01em",
           }}
         >
           What did you put your body through last night?
         </motion.h2>
-        <p className="text-xs mt-1.5" style={{ color: "#524F4C" }}>
+        <p className="text-xs mt-1.5" style={{ color: "var(--color-text-faint)" }}>
           Tap to log · chevron to add detail
         </p>
       </div>
@@ -151,7 +151,7 @@ export function DebtIntakeScreen() {
               exit={{ opacity: 0, y: 4 }}
               transition={{ duration: 0.2 }}
               className="text-[11px] font-mono italic"
-              style={{ color: "#EA580C" }}
+              style={{ color: "var(--color-brand-primary)" }}
             >
               {ackLine.text}
             </motion.p>
@@ -161,7 +161,7 @@ export function DebtIntakeScreen() {
 
       {/* Stressor cards */}
       <div className="relative z-10 flex flex-col gap-2.5 flex-1">
-        {filterStressorsByMode(mode).map((def, i) => {
+        {byMode(mode).map((def, i) => {
           const stressor = selectedStressors.find((s) => s.type === def.type);
           return (
             <motion.div
@@ -201,7 +201,7 @@ export function DebtIntakeScreen() {
         <button
           onClick={() => router.push("/dashboard")}
           className="w-full text-center text-[11px] py-2.5 font-medium mt-1"
-          style={{ color: "#524F4C" }}
+          style={{ color: "var(--color-text-faint)" }}
         >
           Skip — view dashboard
         </button>

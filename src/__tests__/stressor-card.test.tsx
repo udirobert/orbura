@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { StressorCard } from "@/components/screens/stressor-card";
-import type { StressorDef } from "@/lib/stressor-scoring";
+import type { StressorDef } from "@/stressors";
 
 const alcoholDef: StressorDef = {
   type: "alcohol",

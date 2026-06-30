@@ -12,7 +12,7 @@ export default function ErrorBoundary({
   return (
     <div
       className="min-h-svh flex flex-col items-center justify-center px-6 text-center"
-      style={{ backgroundColor: "#0A0A0B" }}
+      style={{ backgroundColor: "var(--color-bg-base)" }}
     >
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
@@ -26,11 +26,11 @@ export default function ErrorBoundary({
       />
       <h2
         className="text-xl font-normal mb-2"
-        style={{ fontFamily: "var(--font-heading)", color: "#F5F5F4" }}
+        style={{ fontFamily: "var(--font-heading)", color: "var(--color-text-primary)" }}
       >
         Something went wrong
       </h2>
-      <p className="text-sm mb-8 max-w-xs" style={{ color: "#A8A29E" }}>
+      <p className="text-sm mb-8 max-w-xs" style={{ color: "var(--color-text-secondary)" }}>
         {error.message || "An unexpected error occurred. Your data is safe."}
       </p>
       <motion.button
@@ -38,8 +38,8 @@ export default function ErrorBoundary({
         onClick={reset}
         className="w-full max-w-xs font-semibold rounded-2xl"
         style={{
-          backgroundColor: "#EA580C",
-          color: "#F5F5F4",
+          backgroundColor: "var(--color-brand-primary)",
+          color: "var(--color-text-primary)",
           minHeight: 58,
           fontFamily: "var(--font-body)",
         }}

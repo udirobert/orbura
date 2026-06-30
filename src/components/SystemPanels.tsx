@@ -48,10 +48,10 @@ function formatClearTime(clearedAt: string): string {
 }
 
 function getBarColor(score: number): string {
-  if (score >= 70) return "#DC2626";
-  if (score >= 40) return "#EA580C";
-  if (score >= 15) return "#F59E0B";
-  return "#4ADE80";
+  if (score >= 70) return "var(--color-states-error)";
+  if (score >= 40) return "var(--color-brand-primary)";
+  if (score >= 15) return "var(--color-states-warning)";
+  return "var(--color-states-success)";
 }
 
 // ─── Single system panel ──────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
       layout
       className="rounded-2xl overflow-hidden cursor-pointer relative"
       style={{
-        backgroundColor: "#141416",
+        backgroundColor: "var(--color-bg-surface)",
         border: `1px solid ${
           isCleared
             ? "rgba(74,222,128,0.2)"
@@ -124,13 +124,13 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
           <div className="flex items-center justify-between gap-2">
             <span
               className="text-xs font-semibold"
-              style={{ color: isCleared ? "#4ADE80" : "#F5F5F4" }}
+              style={{ color: isCleared ? "var(--color-states-success)" : "var(--color-text-primary)" }}
             >
               {sys.label}
             </span>
             <span
               className="text-[10px] font-mono flex-shrink-0"
-              style={{ color: isCleared ? "#4ADE80" : "#A8A29E" }}
+              style={{ color: isCleared ? "var(--color-states-success)" : "var(--color-text-secondary)" }}
             >
               {isCleared ? "✓ Clear" : countdown}
             </span>
@@ -152,7 +152,7 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
 
           {/* Clearance time */}
           <div className="mt-1 flex items-center justify-between">
-            <span className="text-[9px]" style={{ color: "#3a3835" }}>
+            <span className="text-[9px]" style={{ color: "var(--color-text-disabled)" }}>
               {clearTime}
             </span>
             {!isCleared && (
@@ -196,11 +196,11 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
                   <div className="flex items-start gap-2">
                     <span
                       className="text-[9px] font-mono uppercase tracking-wider flex-shrink-0 mt-0.5"
-                      style={{ color: "#524F4C" }}
+                      style={{ color: "var(--color-text-faint)" }}
                     >
                       Why
                     </span>
-                    <p className="text-xs leading-relaxed" style={{ color: "#A8A29E" }}>
+                    <p className="text-xs leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
                       {sys.causeText}
                     </p>
                   </div>
@@ -208,11 +208,11 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
                   <div className="flex items-start gap-2">
                     <span
                       className="text-[10px] font-mono font-bold flex-shrink-0 mt-0.5"
-                      style={{ color: "#EA580C" }}
+                      style={{ color: "var(--color-brand-primary)" }}
                     >
                       →
                     </span>
-                    <p className="text-xs leading-relaxed font-medium" style={{ color: "#F5F5F4" }}>
+                    <p className="text-xs leading-relaxed font-medium" style={{ color: "var(--color-text-primary)" }}>
                       {sys.actionText}
                     </p>
                   </div>
@@ -225,11 +225,11 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
                   className="rounded-xl px-3 py-2.5 space-y-1"
                   style={{ backgroundColor: "rgba(168,162,158,0.04)", border: "1px solid rgba(168,162,158,0.08)" }}
                 >
-                  <p className="text-[10px] leading-relaxed italic" style={{ color: "#A8A29E" }}>
+                  <p className="text-[10px] leading-relaxed italic" style={{ color: "var(--color-text-secondary)" }}>
                     &ldquo;{sys.scienceFact}&rdquo;
                   </p>
                   {sys.scienceCite && (
-                    <p className="text-[9px] font-mono" style={{ color: "#524F4C" }}>
+                    <p className="text-[9px] font-mono" style={{ color: "var(--color-text-faint)" }}>
                       — {sys.scienceCite}
                     </p>
                   )}
@@ -270,7 +270,7 @@ export function SystemPanels({ systems }: SystemPanelsProps) {
       <div className="flex items-center justify-between mb-3">
         <p
           className="text-[9px] uppercase tracking-widest font-semibold"
-          style={{ color: "#524F4C" }}
+          style={{ color: "var(--color-text-faint)" }}
         >
           Recovery by system
         </p>
@@ -279,7 +279,7 @@ export function SystemPanels({ systems }: SystemPanelsProps) {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-[9px] font-semibold"
-            style={{ color: "#4ADE80" }}
+            style={{ color: "var(--color-states-success)" }}
           >
             All systems clear ●
           </motion.span>
@@ -297,7 +297,7 @@ export function SystemPanels({ systems }: SystemPanelsProps) {
           onClick={() => setExpanded(true)}
           className="w-full rounded-xl py-2.5 text-center text-[10px] font-mono uppercase tracking-wider"
           style={{
-            color: "#A8A29E",
+            color: "var(--color-text-secondary)",
             backgroundColor: "rgba(168,162,158,0.04)",
             border: "1px solid rgba(168,162,158,0.08)",
           }}
@@ -312,7 +312,7 @@ export function SystemPanels({ systems }: SystemPanelsProps) {
           onClick={() => setExpanded(false)}
           className="w-full rounded-xl py-2.5 text-center text-[10px] font-mono uppercase tracking-wider"
           style={{
-            color: "#524F4C",
+            color: "var(--color-text-faint)",
             backgroundColor: "rgba(168,162,158,0.04)",
             border: "1px solid rgba(168,162,158,0.06)",
           }}
@@ -321,7 +321,7 @@ export function SystemPanels({ systems }: SystemPanelsProps) {
         </motion.button>
       )}
 
-      <p className="text-[9px] text-center pt-1" style={{ color: "#3a3835" }}>
+      <p className="text-[9px] text-center pt-1" style={{ color: "var(--color-text-disabled)" }}>
         Tap a system to see cause and recovery action
       </p>
     </div>

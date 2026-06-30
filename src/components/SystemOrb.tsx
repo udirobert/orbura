@@ -59,10 +59,10 @@ const PULSE: Record<RecoverySystem, { duration: number; scale: [number, number] 
 };
 
 function getOrbColor(score: number): string {
-  if (score >= 70) return "#DC2626";
-  if (score >= 40) return "#EA580C";
-  if (score >= 15) return "#F59E0B";
-  return "#4ADE80";
+  if (score >= 70) return "var(--color-states-error)";
+  if (score >= 40) return "var(--color-brand-primary)";
+  if (score >= 15) return "var(--color-states-warning)";
+  return "var(--color-states-success)";
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────

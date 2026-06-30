@@ -4,6 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
+import { useRecoveryContext } from "@/lib/contexts/RecoveryContext";
+import { getContextConfig } from "@/lib/contexts";
 import type { SquadPlayer, DebtAnalysis } from "@/lib/types";
 import { PrimaryButton } from "@/components/PrimaryButton";
 
@@ -16,12 +18,12 @@ function playerStatus(analysis: DebtAnalysis | null | undefined): {
   color: string;
   emoji: string;
 } {
-  if (!analysis) return { label: "Not scanned", color: "#524F4C", emoji: "○" };
+  if (!analysis) return { label: "Not scanned", color: "var(--color-text-faint)", emoji: "○" };
   const score = analysis.debtScore;
-  if (score >= 61) return { label: "Out — rest", color: "#EF4444", emoji: "🔴" };
-  if (score >= 41) return { label: "Impact sub", color: "#F59E0B", emoji: "🟡" };
-  if (score >= 21) return { label: "Modified", color: "#10B981", emoji: "🟢" };
-  return { label: "Fit to start", color: "#22D3EE", emoji: "⚽" };
+  if (score >= 61) return { label: "Out — rest", color: "var(--color-states-error)", emoji: "🔴" };
+  if (score >= 41) return { label: "Impact sub", color: "var(--color-states-warning)", emoji: "🟡" };
+  if (score >= 21) return { label: "Modified", color: "var(--color-states-success)", emoji: "🟢" };
+  return { label: "Fit to start", color: "var(--color-system-brain)", emoji: "⚽" };
 }
 
 // ─── Shared scan action — copies a player's state into the global session ─────
@@ -40,10 +42,11 @@ function useScanPlayer() {
 // ─── Squad panel — compact view embedded in DashboardScreen ──────────────────
 
 export function SquadPanel({ onSelect }: { onSelect: (id: string) => void }) {
-  const { squad, mode } = useBodyDebtStore();
+  const ctx = useRecoveryContext();
+  const { squad } = useBodyDebtStore();
   const scanPlayer = useScanPlayer();
 
-  if (mode !== "football") return null;
+  if (!ctx.supportsSquad) return null;
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
@@ -111,6 +114,7 @@ export function SquadPanel({ onSelect }: { onSelect: (id: string) => void }) {
 // ─── Squad screen — full CRUD view ───────────────────────────────────────────
 
 export function SquadScreen() {
+  const ctx = useRecoveryContext();
   const router = useRouter();
   const { squad, addPlayer, removePlayer, mode, setMode } = useBodyDebtStore();
   const scanPlayer = useScanPlayer();
@@ -118,14 +122,17 @@ export function SquadScreen() {
   const [name, setName] = useState("");
   const [position, setPosition] = useState<SquadPlayer["position"]>("MID");
 
-  if (mode !== "football") {
+  if (!ctx.supportsSquad) {
+    const targetMode: "personal" | "football" =
+      ctx.mode === "football" ? "personal" : "football";
+    const targetCtx = getContextConfig(targetMode);
     return (
       <div className="min-h-svh flex flex-col items-center justify-center px-6 bg-slate-950">
         <p className="text-sm text-slate-400 mb-4 text-center">
-          Squad view is part of the Match Fit (football) mode.
+          Squad view is part of the {targetCtx.vocabulary.personaLabel} mode.
         </p>
-        <PrimaryButton onClick={() => setMode("football")}>
-          Switch to Match Fit
+        <PrimaryButton onClick={() => setMode(targetMode)}>
+          Switch to {targetCtx.vocabulary.appName}
         </PrimaryButton>
       </div>
     );
@@ -163,9 +170,9 @@ export function SquadScreen() {
         {/* Team summary */}
         {squad.length > 0 && (
           <div className="grid grid-cols-3 gap-3 mb-6">
-            <SummaryStat label="Ready" value={readyCount} color="#22D3EE" />
-            <SummaryStat label="Impact" value={subCount}   color="#F59E0B" />
-            <SummaryStat label="Out"    value={outCount}   color="#EF4444" />
+            <SummaryStat label="Ready" value={readyCount} color="var(--color-system-brain)" />
+            <SummaryStat label="Impact" value={subCount}   color="var(--color-states-warning)" />
+            <SummaryStat label="Out"    value={outCount}   color="var(--color-states-error)" />
           </div>
         )}
 

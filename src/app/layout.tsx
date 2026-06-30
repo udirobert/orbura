@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { DM_Serif_Display, Instrument_Sans } from "next/font/google";
 import { EazoProvider } from "@/lib/sdk/eazo-react";
+import { RecoveryContextProvider } from "@/lib/contexts/RecoveryContext";
 import { cn } from "@/utils/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { UserSyncEffect } from "@/components/user-profile/user-sync-effect";
@@ -86,12 +87,14 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col" style={{ fontFamily: "var(--font-sans)" }}>
         <EazoProvider>
           <WagmiProviderWrapper>
-            <UserSyncEffect />
-            <ServiceWorkerRegister />
-            <PageTransition>
-              {children}
-            </PageTransition>
-            <Toaster />
+            <RecoveryContextProvider>
+              <UserSyncEffect />
+              <ServiceWorkerRegister />
+              <PageTransition>
+                {children}
+              </PageTransition>
+              <Toaster />
+            </RecoveryContextProvider>
           </WagmiProviderWrapper>
         </EazoProvider>
       </body>

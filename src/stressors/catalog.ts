@@ -1,28 +1,6 @@
-import type { Stressor, StressorType, RecoveryMode } from "@/lib/types";
+import type { StressorDef } from "./types";
 
-// ─── Stressor config types ──────────────────────────────────────────────────
-
-export interface SubOption {
-  key: string;
-  label: string;
-}
-
-export interface StressorDef {
-  type: StressorType;
-  label: string;
-  sublabel: string;
-  icon: string;
-  basePoints: number;
-  /** Modes this stressor is shown in. Defaults to all modes when omitted. */
-  modes?: RecoveryMode[];
-  expansions?: {
-    field: keyof Stressor;
-    question: string;
-    options: SubOption[];
-  }[];
-}
-
-// ─── Stressor definitions ────────────────────────────────────────────────────
+// ─── Stressor definitions (single source of truth) ───────────────────────────
 
 export const STRESSORS: StressorDef[] = [
   {
@@ -160,15 +138,6 @@ export const STRESSORS: StressorDef[] = [
   },
 ];
 
-// ─── Mode-scoped stressor lookup ──────────────────────────────────────────────
-
-export function filterStressorsByMode(
-  mode: RecoveryMode,
-  stressors: StressorDef[] = STRESSORS,
-): StressorDef[] {
-  return stressors.filter((s) => !s.modes || s.modes.includes(mode));
-}
-
 // ─── Acknowledgement copy ────────────────────────────────────────────────────
 
 export const ACK_COPY: Record<string, string> = {
@@ -218,9 +187,9 @@ export const ACK_COPY: Record<string, string> = {
   yellow:           "Yellow card noted. Mental load and cortisol elevated.",
   heavy_foul:       "Heavy foul logged. Recovery window extended.",
   red:              "Red card — significant psychological and cardiovascular load.",
-  // "1-2" / "3-5" / "6+" already cover alcohol count, so we reuse them
-  // for the football timezone delta. ACK_COPY is keyed by the literal
-  // option string, so context-specific entries would collide.
+  // "1-2" / "3-5" / "6+" already cover alcohol count, so we reuse them for the
+  // football timezone delta. ACK_COPY is keyed by the literal option string,
+  // so context-specific entries would collide.
   minor:            "Minor head impact. Monitoring, no protocol yet.",
   concussion_moderate: "Moderate impact — medical review required before return-to-play.",
   protocol:         "Concussion protocol activated. Medical clearance required to return.",
@@ -229,26 +198,9 @@ export const ACK_COPY: Record<string, string> = {
 // ─── Confidence tiers ────────────────────────────────────────────────────────
 
 export const CONFIDENCE_CONFIG = [
-  { tier: "estimated",  dot: "\u25D0", label: "Estimated",      color: "#524F4C" },
-  { tier: "partial",    dot: "\u25D1", label: "Partial picture", color: "#A8A29E" },
-  { tier: "good",       dot: "\u25D5", label: "Good read",       color: "#F59E0B" },
-  { tier: "accurate",   dot: "\u25CF", label: "Accurate",        color: "#EA580C" },
-  { tier: "precise",    dot: "\u25CF", label: "Precise",         color: "#4ADE80" },
+  { tier: "estimated",  dot: "\u25D0", label: "Estimated",       color: "var(--color-text-faint)" },
+  { tier: "partial",    dot: "\u25D1", label: "Partial picture", color: "var(--color-text-secondary)" },
+  { tier: "good",       dot: "\u25D5", label: "Good read",       color: "var(--color-states-warning)" },
+  { tier: "accurate",   dot: "\u25CF", label: "Accurate",        color: "var(--color-brand-primary)" },
+  { tier: "precise",    dot: "\u25CF", label: "Precise",         color: "var(--color-states-success)" },
 ] as const;
-
-// ─── Live score computation ──────────────────────────────────────────────────
-
-export function computeLiveScore(stressors: Stressor[]): number {
-  let score = 0;
-  for (const s of stressors) {
-    const def = STRESSORS.find((d) => d.type === s.type);
-    if (!def) continue;
-    score += def.basePoints;
-    if (s.type === "training" && s.trainingArea === "mobility") score -= def.basePoints * 1.5;
-    if (s.type === "training" && s.trainingIntensity === "destroyed") score += 8;
-    if (s.type === "alcohol" && s.alcoholType === "spirits") score += 6;
-    if (s.type === "alcohol" && s.alcoholCount === "5+") score += 8;
-    if (s.type === "alcohol" && s.alcoholCount === "lost_count") score += 12;
-  }
-  return Math.max(0, Math.min(100, score));
-}

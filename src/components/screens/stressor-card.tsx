@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import type { Stressor } from "@/lib/types";
-import type { StressorDef } from "@/lib/stressor-scoring";
+import type { StressorDef } from "@/stressors";
 import { StressorLedgerRow } from "@/components/primitives/StressorLedgerRow";
 
 /**
@@ -48,7 +48,7 @@ export function StressorCard({
           <div key={String(exp.field)}>
             <p
               className="text-[9px] uppercase tracking-widest font-semibold mb-2 mt-3"
-              style={{ color: "#524F4C" }}
+              style={{ color: "var(--color-text-faint)" }}
             >
               {exp.question}
             </p>
@@ -65,8 +65,8 @@ export function StressorCard({
                       : "rgba(255,255,255,0.04)",
                     border: `1px solid ${current === opt.key
                       ? (isCare ? "rgba(74,222,128,0.5)" : "rgba(234,88,12,0.5)")
-                      : "rgba(168,162,158,0.15)"}`,
-                    color: current === opt.key ? "#F5F5F4" : "#A8A29E",
+                      : "var(--color-border-default)"}`,
+                    color: current === opt.key ? "var(--color-text-primary)" : "var(--color-text-secondary)",
                     minHeight: "32px",
                   }}
                 >

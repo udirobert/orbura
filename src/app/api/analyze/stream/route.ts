@@ -6,6 +6,7 @@ import { computeScore, deterministicPrescription, deterministicSchedule } from "
 import { ai } from "@/lib/sdk/eazo-client";
 import { runMultiAgentPipeline, buildAgentTrace } from "@/lib/qvac";
 import type { MultiAgentInput } from "@/lib/qvac";
+import { validateSSEEvent } from "@/lib/sse-schemas";
 
 export const maxDuration = 120;
 
@@ -42,8 +43,16 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       function emit(event: string, data: unknown) {
+        const validated = validateSSEEvent(event, data);
+        if (!validated.ok) {
+          console.warn(
+            `[SSE Schema] Delivering event "${event}" despite validation failure`
+          );
+        }
         controller.enqueue(
-          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+          encoder.encode(
+            `event: ${event}\ndata: ${JSON.stringify(validated.data)}\n\n`
+          )
         );
       }
 

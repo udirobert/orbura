@@ -18,6 +18,9 @@ export function PersonalityPicker({
     <AnimatePresence>
       {open && (
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Select orb voice"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -33,19 +36,19 @@ export function PersonalityPicker({
             transition={{ type: "spring", stiffness: 300, damping: 32 }}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-t-3xl overflow-hidden"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.1)" }}
+            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}
           >
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-1">
-              <div className="w-8 h-1 rounded-full" style={{ backgroundColor: "#3a3835" }} />
+              <div className="w-8 h-1 rounded-full" style={{ backgroundColor: "var(--color-text-disabled)" }} />
             </div>
 
             {/* Header */}
             <div className="px-5 pb-3">
-              <h2 className="text-sm font-semibold" style={{ color: "#F5F5F4" }}>
+              <h2 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
                 Orb voice
               </h2>
-              <p className="text-[10px] mt-0.5" style={{ color: "#524F4C" }}>
+              <p className="text-[10px] mt-0.5" style={{ color: "var(--color-text-faint)" }}>
                 How the orb talks to you
               </p>
             </div>
@@ -79,14 +82,14 @@ export function PersonalityPicker({
                       <span
                         className="text-sm font-semibold block"
                         style={{
-                          color: isActive ? "#F5F5F4" : "#A8A29E",
+                          color: isActive ? "var(--color-text-primary)" : "var(--color-text-secondary)",
                         }}
                       >
                         {p.label}
                       </span>
                       <span
                         className="text-[10px] block mt-0.5"
-                        style={{ color: "#524F4C" }}
+                        style={{ color: "var(--color-text-faint)" }}
                       >
                         {p.tagline}
                       </span>
@@ -94,7 +97,7 @@ export function PersonalityPicker({
                     {isActive && (
                       <span
                         className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: "#EA580C" }}
+                        style={{ backgroundColor: "var(--color-brand-primary)" }}
                       />
                     )}
                   </motion.button>
@@ -109,8 +112,8 @@ export function PersonalityPicker({
                 style={{ backgroundColor: "rgba(168,162,158,0.04)" }}
               >
                 <span className="text-base">{current.emoji}</span>
-                <span className="text-[10px]" style={{ color: "#524F4C" }}>
-                  Currently using <strong style={{ color: "#A8A29E" }}>{current.label}</strong> —{" "}
+                <span className="text-[10px]" style={{ color: "var(--color-text-faint)" }}>
+                  Currently using <strong style={{ color: "var(--color-text-secondary)" }}>{current.label}</strong> —{" "}
                   {current.tagline}
                 </span>
               </div>

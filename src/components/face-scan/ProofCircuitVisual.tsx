@@ -102,16 +102,16 @@ function CircuitLine({ done, color, delay }: { done: boolean; color: string; del
 }
 
 export function ProofCircuitVisual({ steps }: { steps: CircuitStep[] }) {
-  const stepColors = ["#10B981", "#F59E0B", "#4ADE80", "#EA580C"];
+  const stepColors = ["#10B981", "var(--color-states-warning)", "var(--color-states-success)", "var(--color-brand-primary)"];
   const stepDelays = [0, 0.3, 0.6, 0.9];
 
   return (
     <div
       className="rounded-2xl p-4 overflow-hidden"
-      style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.1)", position: "relative" }}
+      style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)", position: "relative" }}
     >
       {/* Faint circuit-diagram grid background */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.03]" style={{ color: "#EA580C" }}>
+      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.03]" style={{ color: "var(--color-brand-primary)" }}>
         <defs>
           <pattern id="circuit-grid" width="24" height="24" patternUnits="userSpaceOnUse">
             <path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" strokeWidth="0.5" />
@@ -122,12 +122,12 @@ export function ProofCircuitVisual({ steps }: { steps: CircuitStep[] }) {
 
       <div className="relative z-10">
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-[9px] font-mono uppercase tracking-widest font-semibold" style={{ color: "#524F4C" }}>
+          <span className="text-[9px] font-mono uppercase tracking-widest font-semibold" style={{ color: "var(--color-text-faint)" }}>
             Proof Circuit
           </span>
           <motion.div
             className="w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: steps.every(s => s.done) ? "#4ADE80" : "#F59E0B" }}
+            style={{ backgroundColor: steps.every(s => s.done) ? "var(--color-states-success)" : "var(--color-states-warning)" }}
             animate={{ opacity: steps.every(s => s.done) ? 1 : [0.3, 1, 0.3] }}
             transition={{ duration: 1.5, repeat: steps.every(s => s.done) ? 0 : Infinity }}
           />
@@ -143,13 +143,13 @@ export function ProofCircuitVisual({ steps }: { steps: CircuitStep[] }) {
                 {/* Labels below */}
                 <span
                   className="text-[8px] font-semibold text-center leading-tight max-w-[60px]"
-                  style={{ color: step.done ? "#F5F5F4" : "#524F4C" }}
+                  style={{ color: step.done ? "var(--color-text-primary)" : "var(--color-text-faint)" }}
                 >
                   {step.label.length > 14 ? step.label.slice(0, 12) + "..." : step.label}
                 </span>
                 <span
                   className="text-[6px] font-mono text-center leading-tight break-words"
-                  style={{ color: step.done ? "#A8A29E" : "#3a3835", maxWidth: 72 }}
+                  style={{ color: step.done ? "var(--color-text-secondary)" : "var(--color-text-disabled)", maxWidth: 72 }}
                 >
                   {step.detail}
                 </span>

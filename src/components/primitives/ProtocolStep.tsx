@@ -64,7 +64,7 @@ export function ProtocolStep({
         </div>
         <p
           className="text-sm leading-relaxed font-medium"
-          style={{ color: "#F5F5F4" }}
+          style={{ color: "var(--color-text-primary)" }}
         >
           {action}
         </p>

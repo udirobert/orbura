@@ -9,7 +9,7 @@ import { memory } from "@/lib/sdk/eazo-client";
 import type { Stressor, StressorType } from "@/lib/types";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ScreenHeader } from "@/components/ScreenHeader";
-import { STRESSORS, type StressorDef, type SubOption } from "@/lib/stressor-scoring";
+import { STRESSORS, type StressorDef, type SubOption } from "@/stressors";
 
 type Question = {
   stressorType: StressorType;
@@ -121,7 +121,7 @@ export function ContextDeepenerScreen() {
   return (
     <div
       className="relative min-h-svh flex flex-col px-5 overflow-hidden"
-      style={{ backgroundColor: "#0A0A0B" }}
+      style={{ backgroundColor: "var(--color-bg-base)" }}
     >
       <ScreenHeader
         back={{ href: "/intake", label: "Back" }}
@@ -132,18 +132,18 @@ export function ContextDeepenerScreen() {
         {/* Top panel — carry-over from intake. "What we've got". */}
         <div
           className="rounded-2xl p-4 mb-4"
-          style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.1)" }}
+          style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}
         >
           <div className="flex items-center justify-between mb-3">
             <span
               className="text-[9px] font-mono uppercase tracking-widest"
-              style={{ color: "#524F4C" }}
+              style={{ color: "var(--color-text-faint)" }}
             >
               What we&apos;ve got
             </span>
             <span
               className="text-[9px] font-mono"
-              style={{ color: totalAnswered === summaries.length ? "#4ADE80" : "#A8A29E" }}
+              style={{ color: totalAnswered === summaries.length ? "var(--color-states-success)" : "var(--color-text-secondary)" }}
             >
               {totalAnswered} of {summaries.length} with detail
             </span>
@@ -167,14 +167,14 @@ export function ContextDeepenerScreen() {
                   <div className="flex-1 min-w-0">
                     <div
                       className="text-xs font-semibold"
-                      style={{ color: "#F5F5F4" }}
+                      style={{ color: "var(--color-text-primary)" }}
                     >
                       {s.def.label}
                     </div>
                     <div
                       className="text-[10px] mt-0.5 truncate"
                       style={{
-                        color: s.isComplete ? "#A8A29E" : "#F59E0B",
+                        color: s.isComplete ? "var(--color-text-secondary)" : "var(--color-states-warning)",
                       }}
                     >
                       {s.detail}
@@ -183,12 +183,12 @@ export function ContextDeepenerScreen() {
                   {s.isComplete ? (
                     <Check
                       className="w-3.5 h-3.5 flex-shrink-0"
-                      style={{ color: "#4ADE80" }}
+                      style={{ color: "var(--color-states-success)" }}
                     />
                   ) : isInteractive ? (
                     <ChevronRight
                       className="w-3.5 h-3.5 flex-shrink-0"
-                      style={{ color: "#524F4C" }}
+                      style={{ color: "var(--color-text-faint)" }}
                     />
                   ) : null}
                 </button>
@@ -215,7 +215,7 @@ export function ContextDeepenerScreen() {
                     className="text-lg font-normal"
                     style={{
                       fontFamily: "var(--font-heading)",
-                      color: "#F5F5F4",
+                      color: "var(--color-text-primary)",
                       letterSpacing: "-0.01em",
                     }}
                   >
@@ -223,7 +223,7 @@ export function ContextDeepenerScreen() {
                   </h2>
                   <p
                     className="text-[10px] mt-1.5 font-medium"
-                    style={{ color: "#524F4C" }}
+                    style={{ color: "var(--color-text-faint)" }}
                   >
                     For {activeSummary.def.label.toLowerCase()} · tap to choose
                   </p>
@@ -246,13 +246,13 @@ export function ContextDeepenerScreen() {
                         style={{
                           backgroundColor: isSelected
                             ? "rgba(74,222,128,0.1)"
-                            : "#141416",
+                            : "var(--color-bg-surface)",
                           border: `1.5px solid ${
                             isSelected
                               ? "rgba(74,222,128,0.5)"
                               : "rgba(168,162,158,0.12)"
                           }`,
-                          color: isSelected ? "#F5F5F4" : "#A8A29E",
+                          color: isSelected ? "var(--color-text-primary)" : "var(--color-text-secondary)",
                           minHeight: "56px",
                           fontSize: "14px",
                           fontWeight: 600,
@@ -263,7 +263,7 @@ export function ContextDeepenerScreen() {
                         {isSelected && (
                           <Check
                             className="w-4 h-4 flex-shrink-0"
-                            style={{ color: "#4ADE80" }}
+                            style={{ color: "var(--color-states-success)" }}
                           />
                         )}
                       </motion.button>
@@ -277,7 +277,7 @@ export function ContextDeepenerScreen() {
               <button
                 onClick={handleSkip}
                 className="text-[11px] font-medium px-3 py-2"
-                style={{ color: "#524F4C" }}
+                style={{ color: "var(--color-text-faint)" }}
               >
                 Skip · accept default
               </button>
@@ -296,18 +296,18 @@ export function ContextDeepenerScreen() {
                 border: "1.5px solid rgba(74,222,128,0.3)",
               }}
             >
-              <Check className="w-8 h-8" style={{ color: "#4ADE80" }} />
+              <Check className="w-8 h-8" style={{ color: "var(--color-states-success)" }} />
             </motion.div>
             <h2
               className="text-xl font-normal mb-2"
               style={{
                 fontFamily: "var(--font-heading)",
-                color: "#F5F5F4",
+                color: "var(--color-text-primary)",
               }}
             >
               Your picture is clear
             </h2>
-            <p className="text-sm" style={{ color: "#A8A29E" }}>
+            <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
               All stressors secured. Ready to check your face.
             </p>
           </div>

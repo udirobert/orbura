@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeLiveScore } from "@/lib/stressor-scoring";
+import { computeLiveScore } from "@/stressors";
 import type { Stressor } from "@/lib/types";
 
 describe("computeLiveScore", () => {

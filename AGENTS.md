@@ -57,12 +57,14 @@ Known local build caveats: production build may fail until Google font fetching 
 
 | Domain | Location |
 |---|---|
-| State | `src/stores/useBodyDebtStore.ts` |
+| State | `src/stores/useBodyDebtStore.ts` (3 slices: `profile-slice`, `session-slice`, `stream-slice`) |
 | Types | `src/lib/types.ts` |
+| Design tokens | `src/lib/design-tokens.ts` (CSS vars in `globals.css`) |
 | Recovery contexts | `src/lib/contexts/` (registry: `index.ts`, configs: `personal.ts`, `football.ts`) |
-| Stressor catalog | `src/lib/stressor-scoring.ts` |
-| Scoring | `src/lib/systemScoring.ts` |
-| AI analysis | `src/app/api/analyze/` |
+| Context provider | `src/lib/contexts/RecoveryContext.tsx` (`useRecoveryContext()` hook) |
+| Stressor catalog + scoring | `src/stressors/` (single source: `catalog.ts`, `scoring.ts`, `types.ts`, `index.ts`) |
+| SSE event schemas (Zod) | `src/lib/sse-schemas.ts` |
+| AI analysis (SSE stream) | `src/app/api/analyze/stream/route.ts` |
 | Streaming analysis hook | `src/hooks/useStreamingAnalysis.ts` |
 | Face scan UI | `src/components/screens/FaceScanScreen.tsx`, `src/components/face-scan/` |
 | Face feature extraction | `src/lib/ai/face-mesh.ts` |

@@ -49,12 +49,12 @@ export function PrimaryButton({
         className ?? "",
       ].filter(Boolean).join(" ")}
       style={{
-        backgroundColor: disabled ? "#141416" : "#EA580C",
-        color: disabled ? "#524F4C" : "#F5F5F4",
+        backgroundColor: disabled ? "var(--color-bg-surface)" : "var(--color-brand-primary)",
+        color: disabled ? "var(--color-text-muted)" : "var(--color-text-primary)",
         fontFamily: "var(--font-body)",
         minHeight: SIZE_MIN_HEIGHT[size],
         fontSize: size === "sm" ? 13 : size === "md" ? 14 : 15,
-        border: disabled ? "1px solid rgba(168,162,158,0.1)" : "none",
+        border: disabled ? "1px solid var(--color-border-subtle)" : "none",
         transition: "background-color 0.2s, color 0.2s",
         ...style,
       }}

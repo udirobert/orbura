@@ -34,7 +34,7 @@ export function WakeTimeScreen() {
   const selectedTime = TIME_SLOTS[selectedIdx];
 
   return (
-    <div className="relative min-h-svh flex flex-col items-center overflow-hidden" style={{ backgroundColor: "#0A0A0B" }}>
+    <div className="relative min-h-svh flex flex-col items-center overflow-hidden" style={{ backgroundColor: "var(--color-bg-base)" }}>
 
       {/* Dawn radial glow */}
       <motion.div className="absolute pointer-events-none"
@@ -91,16 +91,16 @@ export function WakeTimeScreen() {
       {/* Prompt text */}
       <div className="relative z-10 text-center px-8 mb-6 space-y-2">
         <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-          className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: "#F59E0B" }}>
+          className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: "var(--color-states-warning)" }}>
           The orb is calibrating
         </motion.p>
         <motion.h2 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
           className="font-normal leading-snug"
-          style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.5rem, 6vw, 1.85rem)", color: "#F5F5F4", letterSpacing: "-0.01em" }}>
+          style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.5rem, 6vw, 1.85rem)", color: "var(--color-text-primary)", letterSpacing: "-0.01em" }}>
           What time did you wake up today?
         </motion.h2>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0 }}
-          className="text-xs" style={{ color: "#524F4C" }}>
+          className="text-xs" style={{ color: "var(--color-text-faint)" }}>
           Swipe up or down · your recovery window is calculated from this
         </motion.p>
       </div>

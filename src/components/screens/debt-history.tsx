@@ -61,14 +61,14 @@ export function DebtHistory() {
         onClick={handleToggle}
         className="flex items-center gap-2 w-full text-left mb-2"
       >
-        <Clock className="w-3 h-3" style={{ color: "#524F4C" }} />
+        <Clock className="w-3 h-3" style={{ color: "var(--color-text-faint)" }} />
         <span
           className="text-[9px] uppercase tracking-widest font-semibold"
-          style={{ color: "#524F4C" }}
+          style={{ color: "var(--color-text-faint)" }}
         >
           Past scores
         </span>
-        <span className="text-[9px] ml-auto" style={{ color: "#524F4C" }}>
+        <span className="text-[9px] ml-auto" style={{ color: "var(--color-text-faint)" }}>
           {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </span>
       </button>
@@ -84,7 +84,7 @@ export function DebtHistory() {
           >
             {loading ? (
               <div className="rounded-2xl px-4 py-5 space-y-3"
-                style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}>
+                style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <motion.div className="rounded-full flex-shrink-0"
@@ -110,9 +110,9 @@ export function DebtHistory() {
             ) : items.length === 0 ? (
               <div
                 className="rounded-2xl px-4 py-5 text-center"
-                style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}
+                style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}
               >
-                <p className="text-[10px]" style={{ color: "#524F4C" }}>
+                <p className="text-[10px]" style={{ color: "var(--color-text-faint)" }}>
                   No past sessions yet. Complete an assessment to see it here.
                 </p>
               </div>
@@ -129,7 +129,7 @@ export function DebtHistory() {
                       transition={{ delay: i * 0.04 }}
                       className="rounded-2xl px-4 py-3 flex items-center gap-3"
                       style={{
-                        backgroundColor: "#141416",
+                        backgroundColor: "var(--color-bg-surface)",
                         border: "1px solid rgba(168,162,158,0.08)",
                       }}
                     >
@@ -145,11 +145,11 @@ export function DebtHistory() {
                       <div className="flex-1 min-w-0">
                         <p
                           className="text-[11px] font-semibold truncate"
-                          style={{ color: "#F5F5F4" }}
+                          style={{ color: "var(--color-text-primary)" }}
                         >
                           {item.verdict}
                         </p>
-                        <p className="text-[9px] mt-0.5" style={{ color: "#524F4C" }}>
+                        <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-faint)" }}>
                           {date} · {time}
                           {item.stressorCount > 0 && ` · ${item.stressorCount} stressors`}
                         </p>
@@ -159,13 +159,13 @@ export function DebtHistory() {
                       <div className="flex items-center gap-1 flex-shrink-0">
                         {item.hasFaceScan && (
                           <span className="text-[8px] px-1.5 py-0.5 rounded font-mono uppercase tracking-wider"
-                            style={{ backgroundColor: "rgba(16,185,129,0.1)", color: "#10B981" }}>
+                            style={{ backgroundColor: "rgba(16,185,129,0.1)", color: "var(--color-states-success)" }}>
                             📷
                           </span>
                         )}
                         {item.hasHRV && (
                           <span className="text-[8px] px-1.5 py-0.5 rounded font-mono uppercase tracking-wider"
-                            style={{ backgroundColor: "rgba(234,88,12,0.1)", color: "#EA580C" }}>
+                            style={{ backgroundColor: "rgba(234,88,12,0.1)", color: "var(--color-brand-primary)" }}>
                             ❤️
                           </span>
                         )}

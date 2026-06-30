@@ -91,23 +91,23 @@ export function NotificationsToggle() {
   return (
     <div className="mb-4 flex flex-col gap-2 rounded-2xl border p-3"
       style={{
-        backgroundColor: "#141416",
+        backgroundColor: "var(--color-bg-surface)",
         borderColor: "rgba(168,162,158,0.08)",
       }}>
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
           style={{ backgroundColor: "rgba(168,162,158,0.08)" }}>
           {subscribed ? (
-            <Bell className="h-4 w-4" style={{ color: "#EA580C" }} />
+            <Bell className="h-4 w-4" style={{ color: "var(--color-brand-primary)" }} />
           ) : (
-            <BellOff className="h-4 w-4" style={{ color: "#524F4C" }} />
+            <BellOff className="h-4 w-4" style={{ color: "var(--color-text-faint)" }} />
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-semibold" style={{ color: "#F5F5F4" }}>
+          <p className="text-[13px] font-semibold" style={{ color: "var(--color-text-primary)" }}>
             Push notifications
           </p>
-          <p className="text-[12px]" style={{ color: "#A8A29E" }}>
+          <p className="text-[12px]" style={{ color: "var(--color-text-secondary)" }}>
             {showHint
               ? "Open this app inside Eazo Mobile to receive system pushes."
               : subscribed === null
@@ -124,14 +124,14 @@ export function NotificationsToggle() {
           style={
             subscribed
               ? {
-                  backgroundColor: "#EA580C",
-                  color: "#F5F5F4",
+                  backgroundColor: "var(--color-brand-primary)",
+                  color: "var(--color-text-primary)",
                   boxShadow: "0 4px 10px rgba(234,88,12,0.32)",
                 }
               : {
-                  backgroundColor: "#141416",
-                  color: "#A8A29E",
-                  border: "1px solid rgba(168,162,158,0.15)",
+                  backgroundColor: "var(--color-bg-surface)",
+                  color: "var(--color-text-secondary)",
+                  border: "1px solid var(--color-border-default)",
                 }
           }
           onMouseEnter={(e) => {
@@ -140,7 +140,7 @@ export function NotificationsToggle() {
           }}
           onMouseLeave={(e) => {
             if (subscribed) e.currentTarget.style.filter = "none";
-            else e.currentTarget.style.backgroundColor = "#141416";
+            else e.currentTarget.style.backgroundColor = "var(--color-bg-surface)";
           }}
         >
           {toggling ? (
@@ -158,15 +158,15 @@ export function NotificationsToggle() {
         className="self-end h-7 rounded-lg px-3 text-[11px] font-semibold transition-colors disabled:opacity-50"
         style={{
           backgroundColor: "rgba(168,162,158,0.06)",
-          color: "#524F4C",
+          color: "var(--color-text-faint)",
           border: "1px solid rgba(168,162,158,0.08)",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.color = "#EA580C";
+          e.currentTarget.style.color = "var(--color-brand-primary)";
           e.currentTarget.style.backgroundColor = "rgba(234,88,12,0.08)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.color = "#524F4C";
+          e.currentTarget.style.color = "var(--color-text-faint)";
           e.currentTarget.style.backgroundColor = "rgba(168,162,158,0.06)";
         }}
       >

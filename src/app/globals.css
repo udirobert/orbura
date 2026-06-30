@@ -61,15 +61,24 @@
   /* Recovery */
   --color-recovery-green: #4ADE80;
 
-  /* Text */
+  /* Text
+     `muted` was previously #524F4C (2.43:1 on bg-base — fails WCAG AA).
+     Bumped to #8A8480 (~4.5:1) so tertiary copy stays legible. The old
+     swatch lives on as `faint` for purely decorative captions/dividers. */
   --color-text-primary: #F5F5F4;
   --color-text-secondary: #A8A29E;
-  --color-text-muted: #524F4C;
+  --color-text-muted: #8A8480;
+  --color-text-faint: #524F4C;
+  --color-text-disabled: #3A3835;
 
   /* States */
   --color-states-success: #4ADE80;
   --color-states-warning: #F59E0B;
   --color-states-error: #DC2626;
+
+  /* Borders / hairlines (alpha on bg-base) */
+  --color-border-subtle: rgba(168, 162, 158, 0.10);
+  --color-border-default: rgba(168, 162, 158, 0.15);
 
   /* Five-system color tokens — see src/lib/design-tokens.ts */
   --color-system-cardiovascular: #F43F5E;

@@ -60,8 +60,8 @@ export function SystemMeter({
   const accent = SYSTEM_ACCENTS[system];
   const accentColor = isPrimary ? accent.active : accent.muted;
   const barColor    = isPrimary ? accent.active : accent.muted;
-  const textColor   = isCleared ? "#4ADE80" : isPrimary ? "#F5F5F4" : "#A8A29E";
-  const subTextColor = isCleared ? "#4ADE80" : isPrimary ? accent.active : "#A8A29E";
+  const textColor   = isCleared ? "var(--color-states-success)" : isPrimary ? "var(--color-text-primary)" : "var(--color-text-secondary)";
+  const subTextColor = isCleared ? "var(--color-states-success)" : isPrimary ? accent.active : "var(--color-text-secondary)";
   const pct = Math.max(0, Math.min(100, score));
 
   return (
@@ -115,7 +115,7 @@ export function SystemMeter({
           </div>
 
           <div className="mt-1 flex items-center justify-between">
-            <span className="text-[9px] font-mono" style={{ color: "#3a3835" }}>
+            <span className="text-[9px] font-mono" style={{ color: "var(--color-text-disabled)" }}>
               {clearTime}
             </span>
             {!isCleared && isPrimary && (

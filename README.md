@@ -22,10 +22,11 @@ Body Debt calculates the precise recovery cost of last night's choices — alcoh
 
 ## What it does
 
-1. **Log stressors** — tap what happened (drank, trained, slept badly, stressed, ill, or took care)
-2. **Face scan** (optional) — webcam capture analyzed by MediaPipe FaceMesh to detect fatigue markers (eye aspect ratio, brow tension, eye symmetry)
-3. **Deterministic scoring** — five biological systems (Cardiovascular, Brain, Liver, Muscular/CNS, Gut) scored with physiological weights and circadian penalties
-4. **QVAC 4-agent pipeline** — Llama-3.2-1B runs 4 agents on-device: Triage → Coach → Schedule → Reflection
+1. **Choose your context** — personal recovery ("Body Debt") or football match-readiness ("Match Fit") with squad management
+2. **Log stressors** — tap what happened (drank, trained, slept badly, stressed, ill, or took care; football-specific: match minutes, card stress, travel fatigue, head impact)
+3. **Face scan** (optional) — webcam capture analyzed by MediaPipe FaceMesh to detect fatigue markers (eye aspect ratio, brow tension, eye symmetry)
+4. **Deterministic scoring** — five biological systems (Cardiovascular, Brain, Liver, Muscular/CNS, Gut) scored with physiological weights and circadian penalties
+5. **QVAC 4-agent pipeline** — Llama-3.2-1B runs 4 agents on-device: Triage → Coach → Schedule → Reflection
 
 ## The model
 

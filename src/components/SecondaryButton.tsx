@@ -40,9 +40,9 @@ export function SecondaryButton({
         className ?? "",
       ].filter(Boolean).join(" ")}
       style={{
-        backgroundColor: "#141416",
-        color: "#A8A29E",
-        border: "1px solid rgba(168,162,158,0.15)",
+        backgroundColor: "var(--color-bg-surface)",
+        color: "var(--color-text-secondary)",
+        border: "1px solid var(--color-border-default)",
         minHeight: SIZE_MIN_HEIGHT[size],
         fontFamily: "var(--font-body)",
         fontSize: size === "sm" ? 11 : size === "md" ? 12 : 13,

@@ -52,20 +52,20 @@ describe("getCircadianNote", () => {
     const note = getCircadianNote("10:00 PM");
     expect(note.label).toContain("Aligned");
     expect(note.penalty).toBe("none");
-    expect(note.color).toBe("#4ADE80");
+    expect(note.color).toBe("var(--color-states-success)");
   });
 
   it("returns aligned for 8-8:30 PM", () => {
     const note = getCircadianNote("8:00 PM");
     expect(note.label).toContain("Slightly early");
     expect(note.penalty).toBe("none");
-    expect(note.color).toBe("#4ADE80");
+    expect(note.color).toBe("var(--color-states-success)");
   });
 
   it("returns mild penalty for 6-8 PM", () => {
     const note = getCircadianNote("6:00 PM");
     expect(note.penalty).toBe("mild");
-    expect(note.color).toBe("#F59E0B");
+    expect(note.color).toBe("var(--color-states-warning)");
   });
 
   it("returns mild penalty for midnight-1 AM", () => {
@@ -76,7 +76,7 @@ describe("getCircadianNote", () => {
   it("returns significant penalty for 2-4 AM", () => {
     const note = getCircadianNote("3:00 AM");
     expect(note.penalty).toBe("significant");
-    expect(note.color).toBe("#DC2626");
+    expect(note.color).toBe("var(--color-states-error)");
   });
 
   it("handles 12 PM correctly by converting to 12 (noon)", () => {

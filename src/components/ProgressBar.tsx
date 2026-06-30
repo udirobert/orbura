@@ -29,7 +29,7 @@ export function ProgressBar({ current, total, optional }: ProgressBarProps) {
               style={{
                 width: filled ? 8 : 6,
                 height: filled ? 8 : 6,
-                backgroundColor: filled ? "#EA580C" : "rgba(168,162,158,0.25)",
+                backgroundColor: filled ? "var(--color-brand-primary)" : "rgba(168,162,158,0.25)",
               }}
             />
           );
@@ -39,11 +39,11 @@ export function ProgressBar({ current, total, optional }: ProgressBarProps) {
       {/* Visual percentage bar */}
       <div
         className="h-1 w-full rounded-full overflow-hidden"
-        style={{ backgroundColor: "rgba(168,162,158,0.1)" }}
+        style={{ backgroundColor: "var(--color-border-subtle)" }}
       >
         <motion.div
           className="h-full rounded-full"
-          style={{ backgroundColor: "#EA580C" }}
+          style={{ backgroundColor: "var(--color-brand-primary)" }}
           initial={{ width: "0%" }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.35, ease: "easeOut" }}
@@ -53,13 +53,13 @@ export function ProgressBar({ current, total, optional }: ProgressBarProps) {
       {/* Step count label */}
       <p
         className="text-center text-[9px] font-mono tracking-widest uppercase"
-        style={{ color: "#524F4C" }}
+        style={{ color: "var(--color-text-faint)" }}
       >
         Step {current} of {total}
         {optional && (
           <>
             {" · "}
-            <span style={{ color: "#A8A29E" }}>optional</span>
+            <span style={{ color: "var(--color-text-secondary)" }}>optional</span>
           </>
         )}
       </p>

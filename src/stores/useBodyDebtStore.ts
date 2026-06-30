@@ -2,320 +2,95 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type {
-  Stressor,
-  FaceAnalysisResult,
-  HRVData,
-  DebtAnalysis,
-  ConfidenceTier,
-  ZKProofResult,
-  RecoveryMode,
-  SquadPlayer,
-} from "@/lib/types";
-import type { OrbPersonality } from "@/lib/orbPersonality";
-import type { Locale } from "@/lib/i18n";
+import type { DebtAnalysis } from "@/lib/types";
 
-// Agent event state for live multi-agent UI
-export interface AgentEventState {
-  agent: string;
-  description: string;
-  status: "pending" | "active" | "done" | "error";
-  durationMs?: number;
-  tokens?: string;
-}
+import {
+  createProfileSlice,
+  PROFILE_PERSIST_FIELDS,
+  type ProfileSlice,
+} from "./slices/profile-slice";
+import {
+  createSessionSlice,
+  SESSION_PERSIST_FIELDS,
+  shouldExpireSession,
+  type SessionSlice,
+} from "./slices/session-slice";
+import {
+  createStreamSlice,
+  type StreamSlice,
+  type AgentEventState,
+} from "./slices/stream-slice";
 
-// Midnight expiry — reset session each day
-function isSessionExpired(ts: string | null): boolean {
-  if (!ts) return false;
-  const saved = new Date(ts);
-  const now = new Date();
-  return (
-    saved.getFullYear() !== now.getFullYear() ||
-    saved.getMonth()    !== now.getMonth()    ||
-    saved.getDate()     !== now.getDate()
-  );
-}
-
-interface BodyDebtState {
-  // Recovery mode
-  mode: RecoveryMode;
-  setMode: (m: RecoveryMode) => void;
-
-  // Squad (football mode)
-  squad: SquadPlayer[];
-  addPlayer: (player: Omit<SquadPlayer, "id">) => string;
-  updatePlayer: (id: string, patch: Partial<SquadPlayer>) => void;
-  removePlayer: (id: string) => void;
-  setPlayerAnalysis: (id: string, analysis: DebtAnalysis | null) => void;
-
-  // Active player — when set, the analysis flow runs against this squad
-  // player instead of the global single-user session.
-  activePlayerId: string | null;
-  setActivePlayerId: (id: string | null) => void;
-
-  // Onboarding
-  hasSeenOpening: boolean;
-  setHasSeenOpening: (v: boolean) => void;
-
-  // Wake time
-  wakeTime: string | null;
-  setWakeTime: (t: string) => void;
-
-  // Bed time (last night)
-  bedTime: string | null;
-  setBedTime: (t: string) => void;
-
-  // Stressor selections
-  selectedStressors: Stressor[];
-  setSelectedStressors: (stressors: Stressor[]) => void;
-  toggleStressor: (type: Stressor["type"]) => void;
-  updateStressor: (type: Stressor["type"], patch: Partial<Stressor>) => void;
-  // Legacy compat
-  updateStressorContext: (type: Stressor["type"], context: string) => void;
-
-  // Face scan
-  faceAnalysis: FaceAnalysisResult | null;
-  setFaceAnalysis: (result: FaceAnalysisResult | null) => void;
-  faceSkipped: boolean;
-  setFaceSkipped: (v: boolean) => void;
-
-  // HRV / wearable
-  hrvData: HRVData | null;
-  setHrvData: (data: HRVData | null) => void;
-  hrvSkipped: boolean;
-  setHrvSkipped: (v: boolean) => void;
-
-  // Debt analysis result
-  analysis: DebtAnalysis | null;
-  setAnalysis: (analysis: DebtAnalysis | null) => void;
-  isAnalyzing: boolean;
-  setIsAnalyzing: (v: boolean) => void;
-
-  // Confidence tier — computed from what's been provided, or set from server
-  confidenceTier: ConfidenceTier;
-  setConfidenceTier: (tier: ConfidenceTier) => void;
-  recomputeConfidence: () => void;
-
-  // Streak — consecutive days with debt < 20
-  streakDays: number;
-  lastStreakDate: string | null;
-  updateStreak: (score: number) => void;
-
-  // Orb personality
-  orbPersonality: OrbPersonality;
-  setOrbPersonality: (p: OrbPersonality) => void;
-
-  // Locale
-  locale: Locale;
-  setLocale: (l: Locale) => void;
-
-  // ZK proof result (ephemeral — not persisted)
-  zkProof: ZKProofResult | null;
-  setZkProof: (proof: ZKProofResult | null) => void;
-
-  // Agent events (live during analysis — not persisted)
-  agentEvents: AgentEventState[];
-  setAgentEvents: (events: AgentEventState[]) => void;
-
-  // Agent model download progress (live during analysis — not persisted)
-  agentProgress: { status: string; percent?: number; loaded?: number; total?: number } | null;
-  setAgentProgress: (progress: { status: string; percent?: number; loaded?: number; total?: number } | null) => void;
-
-  // Session timestamp
-  sessionStartedAt: string | null;
-  setSessionStartedAt: (timestamp: string) => void;
-
+/**
+ * Combined store type — flat API for backward compatibility with all
+ * existing consumers. Internally organised into three slices:
+ *
+ *   profile  — long-lived user state (mode, squad, streak, locale, etc.)
+ *   session  — per-assessment state, expires at midnight
+ *   stream   — ephemeral runtime state (zkProof, agent events, progress)
+ *
+ * See `src/stores/slices/` for the individual slice definitions.
+ */
+export type BodyDebtState = ProfileSlice & SessionSlice & StreamSlice & {
+  /** Reset session + stream, keep profile. */
   reset: () => void;
-}
+};
+
+// Re-export slice types and the agent event type for consumers.
+export type { ProfileSlice, SessionSlice, StreamSlice, AgentEventState };
 
 export const useBodyDebtStore = create<BodyDebtState>()(
   persist(
-    (set, get) => ({
-      mode: "football" as RecoveryMode,
-      setMode: (m) => set({ mode: m }),
+    (set, get, store) => ({
+      ...createProfileSlice(set as never, get as never, store as never),
+      ...createSessionSlice(set as never, get as never, store as never),
+      ...createStreamSlice(set as never, store as never),
 
-      squad: [],
-      addPlayer: (player) => {
-        const id = `p_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-        set({ squad: [...get().squad, { ...player, id }] });
-        return id;
-      },
-      updatePlayer: (id, patch) => {
-        set({ squad: get().squad.map((p) => (p.id === id ? { ...p, ...patch } : p)) });
-      },
-      removePlayer: (id) => {
-        const { activePlayerId } = get();
-        set({
-          squad: get().squad.filter((p) => p.id !== id),
-          activePlayerId: activePlayerId === id ? null : activePlayerId,
-        });
-      },
-      setPlayerAnalysis: (id, analysis) => {
-        set({ squad: get().squad.map((p) => (p.id === id ? { ...p, analysis } : p)) });
+      /**
+       * Reset session + stream, keep profile (mode, squad, streak, etc.).
+       * The original `reset` in the monolithic store cleared session fields
+       * and ephemeral fields but preserved profile fields — this preserves
+       * that contract.
+       */
+      reset: () => {
+        get().resetSession();
+        get().resetStream();
       },
 
-      activePlayerId: null,
-      setActivePlayerId: (id) => set({ activePlayerId: id }),
-
-      hasSeenOpening: false,
-      setHasSeenOpening: (v) => set({ hasSeenOpening: v }),
-
-      wakeTime: null,
-      setWakeTime: (t) => set({ wakeTime: t }),
-
-      bedTime: null,
-      setBedTime: (t) => set({ bedTime: t }),
-
-      selectedStressors: [],
-      setSelectedStressors: (stressors) => {
-        set({ selectedStressors: stressors });
-        get().recomputeConfidence();
-      },
-      toggleStressor: (type) => {
-        const existing = get().selectedStressors;
-        const has = existing.some((s) => s.type === type);
-        const updated = has
-          ? existing.filter((s) => s.type !== type)
-          : [...existing, { type }];
-        set({ selectedStressors: updated });
-        get().recomputeConfidence();
-      },
-      updateStressor: (type, patch) => {
-        const updated = get().selectedStressors.map((s) =>
-          s.type === type ? { ...s, ...patch } : s
-        );
-        set({ selectedStressors: updated });
-        get().recomputeConfidence();
-      },
-      updateStressorContext: (type, context) => {
-        get().updateStressor(type, { context });
-      },
-
-      faceAnalysis: null,
-      setFaceAnalysis: (result) => {
-        set({ faceAnalysis: result });
-        get().recomputeConfidence();
-      },
-      faceSkipped: false,
-      setFaceSkipped: (v) => set({ faceSkipped: v }),
-
-      hrvData: null,
-      setHrvData: (data) => {
-        set({ hrvData: data });
-        get().recomputeConfidence();
-      },
-      hrvSkipped: false,
-      setHrvSkipped: (v) => set({ hrvSkipped: v }),
-
-      analysis: null,
-      setAnalysis: (analysis) => {
+      /**
+       * Override `setAnalysis` to also update the streak in the profile
+       * slice — the session slice's own `setAnalysis` only sets the analysis
+       * and session timestamp; the cross-slice streak update lives here.
+       */
+      setAnalysis: (analysis: DebtAnalysis | null) => {
         set({ analysis });
         if (analysis) {
           set({ sessionStartedAt: new Date().toISOString() });
           get().updateStreak(analysis.debtScore);
         }
       },
-      isAnalyzing: false,
-      setIsAnalyzing: (v) => set({ isAnalyzing: v }),
-
-      // ── Confidence tier ────────────────────────────────────────────────────
-      confidenceTier: "estimated",
-      setConfidenceTier: (tier) => set({ confidenceTier: tier }),
-
-      orbPersonality: "honest" as OrbPersonality,
-      setOrbPersonality: (p) => set({ orbPersonality: p }),
-
-      locale: "en" as Locale,
-      setLocale: (l) => set({ locale: l }),
-
-      zkProof: null,
-      setZkProof: (proof) => set({ zkProof: proof }),
-
-      agentEvents: [],
-      setAgentEvents: (events) => set({ agentEvents: events }),
-
-      agentProgress: null,
-      setAgentProgress: (progress) => set({ agentProgress: progress }),
-
-      recomputeConfidence: () => {
-        const { selectedStressors, faceAnalysis, hrvData } = get();
-        const hasSpecifics = selectedStressors.some((s) =>
-          s.alcoholType || s.alcoholCount || s.trainingArea ||
-          s.trainingIntensity || s.sleepHours || s.stressCarried ||
-          s.illSeverity || s.context
-        );
-        let tier: ConfidenceTier = "estimated";
-        if (selectedStressors.length > 0) tier = "partial";
-        if (selectedStressors.length > 0 && hasSpecifics) tier = "good";
-        if (faceAnalysis) tier = "accurate";
-        if (hrvData) tier = "precise";
-        set({ confidenceTier: tier });
-      },
-
-      // ── Streak ────────────────────────────────────────────────────────────
-      streakDays: 0,
-      lastStreakDate: null,
-      updateStreak: (score) => {
-        const { streakDays, lastStreakDate } = get();
-        const today = new Date().toDateString();
-        if (lastStreakDate === today) return; // already updated today
-        if (score > 40) {
-          set({ streakDays: 0, lastStreakDate: today });
-        } else if (score <= 20) {
-          set({ streakDays: streakDays + 1, lastStreakDate: today });
-        }
-        // 21–40: streak frozen (not broken, not incremented)
-      },
-
-      sessionStartedAt: null,
-      setSessionStartedAt: (timestamp) => set({ sessionStartedAt: timestamp }),
-
-      reset: () => set({
-        wakeTime: null,
-        selectedStressors: [],
-        faceAnalysis: null,
-        faceSkipped: false,
-        hrvData: null,
-        hrvSkipped: false,
-        analysis: null,
-        isAnalyzing: false,
-        confidenceTier: "estimated",
-        sessionStartedAt: null,
-        zkProof: null,
-        agentEvents: [],
-        agentProgress: null,
-      }),
     }),
     {
       name: "body-debt-session",
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? localStorage : ({} as Storage)
       ),
-      partialize: (state) => ({
-        mode:              state.mode,
-        hasSeenOpening:    state.hasSeenOpening,
-        wakeTime:          state.wakeTime,
-        bedTime:           state.bedTime,
-        selectedStressors: state.selectedStressors,
-        faceSkipped:       state.faceSkipped,
-        hrvData:           state.hrvData,
-        hrvSkipped:        state.hrvSkipped,
-        analysis:          state.analysis,
-        sessionStartedAt:  state.sessionStartedAt,
-        streakDays:        state.streakDays,
-        lastStreakDate:     state.lastStreakDate,
-        orbPersonality:    state.orbPersonality,
-        locale:            state.locale,
-      }),
+      // Persist profile + session fields, never stream fields.
+      partialize: (state) => {
+        const persisted: Record<string, unknown> = {};
+        for (const key of PROFILE_PERSIST_FIELDS) {
+          persisted[key] = state[key];
+        }
+        for (const key of SESSION_PERSIST_FIELDS) {
+          persisted[key] = state[key];
+        }
+        return persisted;
+      },
+      // Midnight expiry — only the session slice should be reset.
       onRehydrateStorage: () => (state) => {
-        if (state && isSessionExpired(state.sessionStartedAt)) {
-          const seen = state.hasSeenOpening;
-          const streak = state.streakDays;
-          const lastStreak = state.lastStreakDate;
-          state.reset();
-          state.hasSeenOpening = seen;
-          state.streakDays = streak;
-          state.lastStreakDate = lastStreak;
+        if (state && shouldExpireSession(state.sessionStartedAt)) {
+          // Preserve profile fields, clear session fields.
+          state.resetSession();
         }
       },
     }
