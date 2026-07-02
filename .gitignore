@@ -228,6 +228,10 @@ public/ezkl-test/
 public/ezkl/*.key
 public/ezkl/*.bytes
 
+# Storybook build artifacts
+storybook-static/
+public/storybook/
+
 # OS specific
 .DS_Store
 Thumbs.db

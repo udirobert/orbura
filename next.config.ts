@@ -54,6 +54,21 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
+      // Storybook static build served at /storybook/
+      // Entry HTML: no-cache so new deployments are picked up immediately
+      {
+        source: "/storybook/",
+        headers: [
+          { key: "Cache-Control", value: "no-cache" },
+        ],
+      },
+      // Hashed assets (JS/CSS bundles with content hashes): immutable
+      {
+        source: "/storybook/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
     ];
   },
   turbopack: {},

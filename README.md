@@ -64,7 +64,7 @@ bun dev      # app at localhost:3000
 bun run storybook  # component catalog at localhost:6006
 ```
 
-96+ Storybook stories cover components across Primitives, Inputs, Effects, Evidence, Dashboard, and RecoverySchedule. Run `bun run storybook` to browse.
+131+ Storybook stories cover components across Primitives, Inputs, Effects, Evidence, Dashboard, and RecoverySchedule. Run `bun run storybook` to browse locally, or visit the live deployment at `/storybook/`.
 
 The QVAC worker spawns automatically via `bare scripts/qvac-worker.mjs`. The model downloads on first inference (~738MB) and caches at `~/.qvac/models/` for subsequent runs.
 
@@ -143,10 +143,15 @@ Requirements:
 
 A single-page summary of architecture, agent pipeline, measured performance, and graceful degradation lives at [bodydebt.thisyearnofear.com/evidence](https://bodydebt.thisyearnofear.com/evidence). It links back to this repo and is meant to be the first thing a hackathon judge screenshots.
 
+### Storybook component catalog
+
+The full component catalog (131+ stories) is deployed alongside the app at [bodydebt.thisyearnofear.com/storybook/](https://bodydebt.thisyearnofear.com/storybook/). Browse all Primitives, Inputs, Effects, Evidence, Dashboard, and RecoverySchedule components with live interactive previews.
+
 ### Live deployment
 
 - **Live URL:** https://bodydebt.thisyearnofear.com
 - **Evidence page:** https://bodydebt.thisyearnofear.com/evidence
+- **Storybook catalog:** https://bodydebt.thisyearnofear.com/storybook/
 - **Hosted on:** Vultr (nuncio-vultr, Intel Broadwell 4-core, 7.7GB RAM, 150GB disk, 85GB free)
 - **Process manager:** pm2 (`bodydebt` process on port 3050) → host nginx (`127.0.0.1:8765`) → Coolify/Traefik
 - **HTTPS:** terminated by the box's Coolify/Traefik proxy. A Traefik file-provider route (`/data/coolify/proxy/dynamic/bodydebt.yaml`) fronts host nginx and auto-issues/renews a Let's Encrypt cert via the HTTP-01 challenge (Traefik owns ports 80/443). No Cloudflare, no DNS API token, no nameserver change. The internal `:8765` nginx port is now just Traefik's upstream — don't hit it directly (it's plain HTTP, so the camera's secure-context check fails there).
@@ -170,7 +175,7 @@ SERVER=user@host ./scripts/deploy.sh
 
 What gets shipped to the server:
 - `.next/` (compiled output)
-- `public/`
+- `public/` (includes built Storybook at `public/storybook/`)
 - `node_modules/` (production deps, single-platform prebuilds)
 - `scripts/qvac-worker.mjs` + `scripts/trim-node-modules.mjs`
 - `package.json`, `next.config.ts`, `next-env.d.ts`, `ecosystem.config.cjs`

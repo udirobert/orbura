@@ -61,9 +61,16 @@ for f in "${ZK_REQUIRED[@]}"; do
   fi
 done
 
-# 1. Build locally (idempotent — Next.js will skip if no changes)
-echo ">>> Building locally..."
+# 1. Build Next.js app locally (idempotent — Next.js will skip if no changes)
+echo ">>> Building Next.js app locally..."
 NEXT_TELEMETRY_DISABLED=1 npm run build
+
+# 1b. Build Storybook and copy into public/ so Next.js serves it at /storybook/
+echo ">>> Building Storybook..."
+bun run build-storybook 2>&1
+rm -rf public/storybook
+cp -r storybook-static public/storybook
+echo ">>> Storybook build copied to public/storybook/"
 
 # 2. Trim local node_modules so we don't ship every platform's prebuilds
 echo ">>> Trimming local node_modules for $TRIM_PLATFORM..."
@@ -88,6 +95,7 @@ RSYNC_EXCLUDES=(
   --exclude='.husky/'
   --exclude='.commandcode/'
   --exclude='.eazo/'
+  --exclude='storybook-static/'
   --exclude='test/'
   --exclude='tests/'
   --exclude='__tests__/'
