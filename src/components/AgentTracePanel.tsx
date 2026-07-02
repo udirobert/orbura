@@ -12,7 +12,7 @@ const AGENT_ICONS: Record<string, string> = {
 };
 
 const SOURCE_LABELS: Record<string, string> = {
-  "qvac-local": "QVAC · Llama-3.2-1B · on-device",
+  "qvac-local": "QVAC · Qwen3-1.7B · on-device",
   "eazo-cloud": "Cloud AI · Eazo",
   "deterministic": "Deterministic engine",
 };

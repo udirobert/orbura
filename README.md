@@ -11,14 +11,14 @@ tags:
   - multi-agent
   - health
 models:
-  - unsloth/Llama-3.2-1B-Instruct-GGUF
+  - unsloth/Qwen3-1.7B-GGUF
 ---
 
 # 🫀 Body Debt — QVAC Edge AI
 
 **Quantify your physiological debt. Get AI-backed recovery prescriptions from 4 on-device agents.**
 
-Body Debt calculates the precise recovery cost of last night's choices — alcohol, training, poor sleep, stress, illness — across five biological systems, then generates personalized recovery advice using **Llama-3.2-1B-Instruct running locally via the QVAC SDK**.
+Body Debt calculates the precise recovery cost of last night's choices — alcohol, training, poor sleep, stress, illness — across five biological systems, then generates personalized recovery advice using **Qwen3-1.7B-Instruct running locally via the QVAC SDK**.
 
 ## What it does
 
@@ -26,17 +26,17 @@ Body Debt calculates the precise recovery cost of last night's choices — alcoh
 2. **Log stressors** — tap what happened (drank, trained, slept badly, stressed, ill, or took care; football-specific: match minutes, card stress, travel fatigue, head impact)
 3. **Face scan** (optional) — webcam capture analyzed by MediaPipe FaceMesh to detect fatigue markers (eye aspect ratio, brow tension, eye symmetry)
 4. **Deterministic scoring** — five biological systems (Cardiovascular, Brain, Liver, Muscular/CNS, Gut) scored with physiological weights and circadian penalties
-5. **QVAC 4-agent pipeline** — Llama-3.2-1B runs 4 agents on-device: Triage → Coach → Schedule → Reflection
+5. **QVAC 4-agent pipeline** — Qwen3-1.7B runs 4 agents on-device: Triage → Coach → Schedule → Reflection
 
 ## The model
 
-**Llama-3.2-1B-Instruct** (Q4_0 quantized, 738MB) — runs entirely on-device via the **QVAC SDK** (`@qvac/sdk` v0.12.2) using the Bare runtime. No external API calls, no cloud inference for the primary path. Your health data stays on-device.
+**Qwen3-1.7B-Instruct** (Q4 quantized, ~1GB) — runs entirely on-device via the **QVAC SDK** (`@qvac/sdk` v0.12.2) using the Bare runtime. No external API calls, no cloud inference for the primary path. Your health data stays on-device.
 
 The face scan stress classifier is a custom 7→16→8→1 MLP (~2KB ONNX) that converts facial geometry features into a fatigue score.
 
 ## Tech
 
-- **LLM**: Llama-3.2-1B-Instruct (Q4) via QVAC SDK (`@qvac/sdk`), Bare runtime, llamacpp-completion plugin
+- **LLM**: Qwen3-1.7B-Instruct (Q4) via QVAC SDK (`@qvac/sdk`), Bare runtime, llamacpp-completion plugin
 - **Face analysis**: MediaPipe FaceMesh → 7 stress features → ONNX MLP
 - **Scoring**: Deterministic 5-system engine with physiological weights, drink-type modifiers, training CNS load, circadian alignment penalties
 - **ZK privacy**: EZKL Halo2 proofs on SKALE Europa testnet
@@ -60,8 +60,11 @@ The face scan stress classifier is a custom 7→16→8→1 MLP (~2KB ONNX) that 
 
 ```bash
 bun install
-bun dev
+bun dev      # app at localhost:3000
+bun run storybook  # component catalog at localhost:6006
 ```
+
+96+ Storybook stories cover components across Primitives, Inputs, Effects, Evidence, Dashboard, and RecoverySchedule. Run `bun run storybook` to browse.
 
 The QVAC worker spawns automatically via `bare scripts/qvac-worker.mjs`. The model downloads on first inference (~738MB) and caches at `~/.qvac/models/` for subsequent runs.
 
@@ -87,7 +90,7 @@ A lighter Gradio demo using SmolLM2-360M via HuggingFace Transformers is in `hf-
 
 ## QVAC Edge AI — Multi-Agent Pipeline
 
-The Next.js app uses **QVAC SDK** for all AI inference. Four agents run sequentially on-device via Llama-3.2-1B (Q4 quantized with TurboQuant KV-cache):
+The Next.js app uses **QVAC SDK** for all AI inference. Four agents run sequentially on-device via Qwen3-1.7B (Q4 quantized with TurboQuant KV-cache):
 
 1. **Triage Agent** — analyzes the 5-system debt breakdown, identifies the priority system, secondary concern, and what to avoid
 2. **Recovery Coach Agent** — generates a 4-part prescription (Right Now / This Morning / Today / Avoid) using the triage output as context
@@ -106,7 +109,7 @@ Camera frame
   -> local verify + SKALE on-chain commit
   -> Deterministic 5-system score (instant, <5ms)
   -> Counterfactual engine (single-variable re-run, highest-leverage change)
-  -> QVAC 4-agent pipeline (Llama-3.2-1B, on-device)
+  -> QVAC 4-agent pipeline (Qwen3-1.7B, on-device)
   -> Deterministic schedule + prescription + verdict fallbacks at every layer
   -> Streaming SSE to dashboard
 ```
@@ -147,7 +150,7 @@ A single-page summary of architecture, agent pipeline, measured performance, and
 - **Hosted on:** Vultr (nuncio-vultr, Intel Broadwell 4-core, 7.7GB RAM, 150GB disk, 85GB free)
 - **Process manager:** pm2 (`bodydebt` process on port 3050) → host nginx (`127.0.0.1:8765`) → Coolify/Traefik
 - **HTTPS:** terminated by the box's Coolify/Traefik proxy. A Traefik file-provider route (`/data/coolify/proxy/dynamic/bodydebt.yaml`) fronts host nginx and auto-issues/renews a Let's Encrypt cert via the HTTP-01 challenge (Traefik owns ports 80/443). No Cloudflare, no DNS API token, no nameserver change. The internal `:8765` nginx port is now just Traefik's upstream — don't hit it directly (it's plain HTTP, so the camera's secure-context check fails there).
-- **QVAC model:** Llama-3.2-1B-Instruct Q4_0 (738MB), cached at `~/.qvac/models/` after first inference
+- **QVAC model:** Qwen3-1.7B-Instruct Q4 (~1GB), cached at `~/.qvac/models/` after first inference
 - **Measured pipeline on nuncio-vultr:** 4 agents complete in ~95s end-to-end (Intel Broadwell is slower than the AMD EPYC we tested on snel-bot, which was 22s).
 
 ### Lean deploy

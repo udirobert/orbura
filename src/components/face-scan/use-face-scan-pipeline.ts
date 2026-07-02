@@ -20,9 +20,10 @@ import type { Hex } from "viem";
 export type ScanPhase =
   | "privacy" | "prompt" | "camera"
   | "extracting" | "proving" | "verifying"
-  | "result" | "error" | "skipped";
+  | "result" | "error" | "skipped"
+  | "mediapipe_error";
 
-export type CameraError = "denied" | "unavailable" | "in_use" | "insecure" | "generic";
+export type CameraError = "denied" | "unavailable" | "in_use" | "insecure" | "generic" | "mediapipe_loading";
 
 export const SCAN_MESSAGES = [
   "Extracting facial geometry locally...",
@@ -45,6 +46,7 @@ export function cameraErrorCopy(kind: CameraError) {
     case "unavailable": return { title: "No camera found", body: "This device doesn't appear to have a camera.", action: "Continue without scan" };
     case "in_use": return { title: "Camera is in use", body: "Another app is using your camera.", action: "Try again" };
     case "insecure": return { title: "HTTPS required for camera", body: "Browsers block camera access on non-HTTPS pages. Open this app over HTTPS (or localhost) to use face scan.", action: "Continue without scan" };
+    case "mediapipe_loading": return { title: "Face detection model unavailable", body: "The MediaPipe face mesh model could not load. This can happen on slow connections or when CDN assets are blocked. You can still provide a manual self-assessment below.", action: "Use manual check" };
     case "generic": return { title: "Camera unavailable", body: "The camera API is blocked on this connection. The page must be served over HTTPS to access the camera. Use “Continue without scan” or open the HTTPS URL.", action: "Continue without scan" };
   }
 }
@@ -379,11 +381,22 @@ export function useFaceScanPipeline() {
         } else throw frontErr;
       }
       streamRef.current = stream;
-      // Initialise the mesh with a no-op listener, then immediately
-      // replace it with a single dispatcher that forwards to whichever
-      // listener the detection/capture loops have installed. This is
-      // the only onResults binding for the lifetime of the mesh.
-      faceMeshRef.current = initializeFaceMesh(() => {});
+
+      // ── Initialise MediaPipe Face Mesh ────────────────────────────
+      // The dynamic require inside initializeFaceMesh can throw if the
+      // @mediapipe/face_mesh bundle is missing, the WASM/CDN assets are
+      // blocked, or the browser doesn't support the required APIs.
+      // We catch that here and transition to the manual fallback flow
+      // instead of showing a generic camera error.
+      try {
+        faceMeshRef.current = initializeFaceMesh(() => {});
+      } catch (meshErr) {
+        setCameraError("mediapipe_loading");
+        setPhase("mediapipe_error");
+        streamRef.current?.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+        return;
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       faceMeshRef.current.onResults((results: any) => {
         resultsListenerRef.current?.(results);

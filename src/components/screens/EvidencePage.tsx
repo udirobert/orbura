@@ -2,6 +2,19 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { MetricCard } from "./evidence/MetricCard";
+import { SYSTEMS_SCIENCE } from "./evidence/systems-science";
+import {
+  SAMPLE_BENCHMARK,
+  SAMPLE_COUNTERFACTUAL,
+  ARCHITECTURE_STEPS,
+  FALLBACK_CHAIN,
+  CONFIDENCE_TIERS,
+  DRINK_COUNT_MODS,
+  SCORING_METHODOLOGY,
+  CIRCADIAN_THRESHOLDS,
+} from "./evidence/evidence-data";
+import { formatMs } from "@/lib/format-ms";
 
 /**
  * EvidencePage — a static, single-screen page judges can screenshot.
@@ -15,65 +28,14 @@ import Link from "next/link";
  *   - Direct links to live app and source code
  */
 
-const SAMPLE_BENCHMARK = {
-  edgeTotalMs: 21_500,
-  cloudVerdictMs: 7_120,
-  agentBreakdown: [
-    { agent: "triage",     durationMs: 6_300, role: "Identifies priority system, secondary concern, and what to avoid" },
-    { agent: "coach",      durationMs: 4_300, role: "Generates 4-part prescription from triage context" },
-    { agent: "schedule",   durationMs: 6_400, role: "Produces time-blocked recovery schedule" },
-    { agent: "reflection", durationMs: 4_400, role: "Rewrites Coach output in user's chosen voice" },
-  ],
-  model: "Llama-3.2-1B-Instruct (Q4 + TurboQuant KV-cache)",
-  input: "alcohol 3 drinks + sleep 5h",
-  outputDebt: 67,
-  personality: "honest",
-};
+// ─── Data constants — imported from ./evidence/evidence-data
+//     SAMPLE_BENCHMARK, SAMPLE_COUNTERFACTUAL, ARCHITECTURE_STEPS,
+//     FALLBACK_CHAIN, CONFIDENCE_TIERS, DRINK_COUNT_MODS,
+//     SCORING_METHODOLOGY, CIRCADIAN_THRESHOLDS
 
-const SAMPLE_COUNTERFACTUAL = {
-  leverLabel: "slept 7+ hours",
-  systemLabel: "Brain",
-  fromScore: 67,
-  toScore: 22,
-  delta: 45,
-};
+// ─── Science data — imported from ./evidence/systems-science
 
-const ARCHITECTURE_STEPS = [
-  { id: "camera",    label: "Camera frame",                          icon: "📷" },
-  { id: "mesh",      label: "MediaPipe FaceMesh (browser, 468 landmarks)", icon: "🔺" },
-  { id: "zk",        label: "7-dim feature vector → EZKL ZK proof (Web Worker)", icon: "🛡" },
-  { id: "skale",     label: "Local verify + SKALE on-chain commit",   icon: "⛓" },
-  { id: "score",     label: "Deterministic 5-system score (<5ms)",    icon: "📊" },
-  { id: "counter",   label: "Counterfactual engine (single-variable flip)", icon: "🎯" },
-  { id: "qvac",      label: "QVAC 4-agent pipeline (Llama-3.2-1B)",  icon: "🧠" },
-  { id: "fallback",  label: "Deterministic schedule + prescription + verdict fallbacks", icon: "🔁" },
-  { id: "stream",    label: "Streaming SSE to dashboard",            icon: "📡" },
-];
-
-const FALLBACK_CHAIN = [
-  { layer: "QVAC 4-agent pipeline",     primary: "On-device inference",          fallback: "Cloud AI (Eazo/deepseek, 5–8s timeout)" },
-  { layer: "Verdict",                   primary: "Cloud AI (Eazo parallel)",     fallback: "Deterministic verdict from score" },
-  { layer: "Prescription",              primary: "QVAC Coach Agent",            fallback: "Deterministic rule-based prescription" },
-  { layer: "Schedule",                  primary: "QVAC Schedule Agent",         fallback: "Deterministic 4-block schedule" },
-  { layer: "Counterfactual",            primary: "Deterministic single-flip",    fallback: "Always available, no LLM needed" },
-];
-
-function formatMs(ms: number): string {
-  return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
-}
-
-function MetricCard({ label, value, sub, color = "var(--color-states-success)" }: {
-  label: string; value: string; sub?: string; color?: string;
-}) {
-  return (
-    <div className="rounded-2xl p-4 flex flex-col gap-1"
-      style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
-      <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: "var(--color-text-faint)" }}>{label}</span>
-      <span className="font-black leading-none" style={{ fontFamily: "var(--font-heading)", fontSize: "1.75rem", color }}>{value}</span>
-      {sub && <span className="text-[10px]" style={{ color: "var(--color-text-secondary)" }}>{sub}</span>}
-    </div>
-  );
-}
+// formatMs imported from @/lib/format-ms
 
 export function EvidencePage() {
   return (
@@ -330,6 +292,305 @@ export function EvidencePage() {
               Biometric data never leaves the device. The on-chain anchor is a verifiable commitment
               that the score came from a real face — not a screenshot.
             </p>
+          </div>
+        </section>
+
+        {/* ── Science behind the scoring ── */}
+        <section>
+          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "var(--color-text-faint)" }}>
+            Science behind the scoring
+          </h2>
+          <p className="text-xs mb-4 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+            The Body Debt scoring engine is a deterministic, rule-based system rooted in peer-reviewed
+            physiology research. Each of the five recovery systems accumulates debt independently based on
+            the type, intensity, and timing of user-reported stressors. Below is the scientific basis for
+            each system&apos;s scoring logic and the evidence that informs it.
+          </p>
+
+          {SYSTEMS_SCIENCE.map((s, i) => (
+            <motion.div
+              key={s.system}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08 }}
+              className="rounded-2xl mb-3 overflow-hidden"
+              style={{ backgroundColor: "var(--color-bg-surface)", border: `1px solid ${s.accent}22` }}
+            >
+              {/* System header */}
+              <div className="flex items-center gap-3 px-4 py-3"
+                style={{ borderBottom: "1px solid rgba(168,162,158,0.06)" }}>
+                <span className="text-lg">{s.icon}</span>
+                <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  {s.system}
+                </span>
+                <div className="w-1.5 h-1.5 rounded-full ml-auto"
+                  style={{ backgroundColor: s.accent }} />
+              </div>
+
+              <div className="px-4 py-3 space-y-3">
+                {/* Science citation card */}
+                <div className="rounded-xl px-3 py-2.5"
+                  style={{ backgroundColor: `${s.accent}0A`, border: `1px solid ${s.accent}18` }}>
+                  <p className="text-[10px] italic leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+                    &ldquo;{s.fact}&rdquo;
+                  </p>
+                  <p className="text-[9px] font-mono mt-1" style={{ color: s.accent }}>
+                    — {s.cite}
+                  </p>
+                </div>
+
+                {/* Expanded context */}
+                <p className="text-[11px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+                  {s.expanded}
+                </p>
+
+                {/* Stressor scoring table */}
+                <div>
+                  <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-text-faint)" }}>
+                    Scoring inputs
+                  </span>
+                  <div className="mt-1 space-y-0.5">
+                    {s.stressors.map((st) => (
+                      <div key={st.name} className="flex items-start gap-2 py-1">
+                        <span className="text-[10px] font-mono font-medium flex-shrink-0" style={{ color: s.accent, minWidth: 80 }}>
+                          {st.name}
+                        </span>
+                        <span className="text-[10px]" style={{ color: "var(--color-text-disabled)" }}>
+                          {st.systems}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </section>
+
+        {/* ── Scoring methodology ── */}
+        <section>
+          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "var(--color-text-faint)" }}>
+            Scoring methodology — how stressor inputs map to system scores
+          </h2>
+          <p className="text-xs mb-4 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+            Each stressor the user logs carries a base point value and a set of system-specific multipliers.
+            The scoring engine runs in under 5ms with no external calls — every score is fully deterministic
+            and reproducible from the same inputs.
+          </p>
+
+          {SCORING_METHODOLOGY.map((cat) => (
+            <div key={cat.category}
+              className="rounded-2xl mb-3 overflow-hidden"
+              style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
+              <div className="px-4 py-2.5"
+                style={{ borderBottom: "1px solid rgba(168,162,158,0.06)" }}>
+                <span className="text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  {cat.category}
+                </span>
+                <p className="text-[9px] mt-0.5 font-mono" style={{ color: "var(--color-text-faint)" }}>
+                  {cat.note}
+                </p>
+              </div>
+              <div className="px-4 py-2.5 overflow-x-auto">
+                <table className="w-full text-[9px] font-mono">
+                  <thead>
+                    <tr>
+                      <th className="text-left py-1 pr-3" style={{ color: "var(--color-text-faint)" }}>Variable</th>
+                      {Object.keys(cat.modifiers[0]).filter((k) => k !== "label").map((k) => (
+                        <th key={k} className="text-right py-1 px-2" style={{ color: "var(--color-text-faint)" }}>
+                          {k}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cat.modifiers.map((row) => (
+                      <tr key={row.label}>
+                        <td className="py-1 pr-3 font-medium" style={{ color: "var(--color-text-primary)" }}>
+                          {row.label}
+                        </td>
+                        {Object.entries(row).filter(([k]) => k !== "label").map(([k, v]) => (
+                          <td key={k} className="text-right py-1 px-2" style={{ color: "var(--color-text-secondary)" }}>
+                            {v}×
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Alcohol count modifiers — only shown for the Alcohol category */}
+              {cat.category === "Alcohol" && (
+                <div className="border-t" style={{ borderColor: "rgba(168,162,158,0.06)" }}>
+                  <div className="px-4 py-2">
+                    <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-text-faint)" }}>
+                      Count multiplier (applied after drink-type modifier)
+                    </span>
+                    <table className="w-full text-[9px] font-mono mt-1">
+                      <thead>
+                        <tr>
+                          <th className="text-left py-1 pr-3" style={{ color: "var(--color-text-faint)" }}>Drinks</th>
+                          <th className="text-right py-1 px-2" style={{ color: "var(--color-text-faint)" }}>Multiplier</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {DRINK_COUNT_MODS.map((row) => (
+                          <tr key={row.label}>
+                            <td className="py-1 pr-3" style={{ color: "var(--color-text-primary)" }}>{row.label}</td>
+                            <td className="text-right py-1 px-2" style={{ color: "var(--color-text-secondary)" }}>{row.mod}×</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Circadian penalty */}
+          <div className="rounded-2xl mb-3 overflow-hidden"
+            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
+            <div className="px-4 py-2.5"
+              style={{ borderBottom: "1px solid rgba(168,162,158,0.06)" }}>
+              <span className="text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                Circadian penalty — bedtime timing
+              </span>
+              <p className="text-[9px] mt-0.5 font-mono" style={{ color: "var(--color-text-faint)" }}>
+                Additional brain + cardiovascular debt from late bedtimes. Sleep under 6 hours adds +4 per missing hour regardless of timing.
+              </p>
+            </div>
+            <div className="px-4 py-2.5 overflow-x-auto">
+              <table className="w-full text-[9px] font-mono">
+                <thead>
+                  <tr>
+                    <th className="text-left py-1 pr-3" style={{ color: "var(--color-text-faint)" }}>Bedtime window</th>
+                    <th className="text-right py-1 px-2" style={{ color: "var(--color-text-faint)" }}>Brain</th>
+                    <th className="text-right py-1 px-2" style={{ color: "var(--color-text-faint)" }}>Cardiovascular</th>
+                    <th className="text-right py-1 pl-2" style={{ color: "var(--color-text-faint)" }}>Classification</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CIRCADIAN_THRESHOLDS.map((r) => (
+                    <tr key={r.window}>
+                      <td className="py-1 pr-3 font-medium" style={{ color: "var(--color-text-primary)" }}>{r.window}</td>
+                      <td className="text-right py-1 px-2" style={{ color: "var(--color-states-error)" }}>{r.brain}</td>
+                      <td className="text-right py-1 px-2" style={{ color: r.cardio === "0" ? "var(--color-text-disabled)" : "var(--color-states-warning)" }}>{r.cardio}</td>
+                      <td className="text-right py-1 pl-2" style={{
+                        color: r.label === "Aligned"
+                          ? "var(--color-states-success)"
+                          : r.label === "Mild mismatch"
+                          ? "var(--color-states-warning)"
+                          : "var(--color-states-error)"
+                      }}>{r.label}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Football-specific stressors */}
+          <div className="rounded-2xl mb-3 overflow-hidden"
+            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
+            <div className="px-4 py-2.5"
+              style={{ borderBottom: "1px solid rgba(168,162,158,0.06)" }}>
+              <span className="text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                Football-specific stressors (Match Fit mode)
+              </span>
+              <p className="text-[9px] mt-0.5 font-mono" style={{ color: "var(--color-text-faint)" }}>
+                Additional stressor types available when the app is in football/squad mode.
+              </p>
+            </div>
+            <div className="px-4 py-2.5 space-y-3">
+              <div>
+                <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Match minutes</span>
+                <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                  35 points on muscular/CNS × modifier, 30 on cardiovascular × modifier.
+                  Under 30 min: 0.3–0.4×, 30–60 min: 0.6–0.7×, 60–90 min: 0.9–1.0×, extra time: 1.2–1.3×.
+                </p>
+              </div>
+              <div>
+                <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Card/disciplinary stress</span>
+                <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                  20 points on brain × modifier, 10 on cardiovascular. Yellow: 0.4×, heavy foul: 0.7×, red: 1.0×.
+                </p>
+              </div>
+              <div>
+                <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Travel / timezone shift</span>
+                <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                  1–2h shift adds +8 brain, +5 cardio, +3 gut. 3–5h adds +18 brain, +10 cardio, +8 gut. 6h+ adds +30 brain, +18 cardio, +15 gut.
+                </p>
+              </div>
+              <div>
+                <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Concussion check</span>
+                <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                  50 base points on brain × severity modifier. Minor: 0.8×, moderate: 1.0×, protocol: 1.5×.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Confidence tier ladder ── */}
+        <section>
+          <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "var(--color-text-faint)" }}>
+            Confidence tier ladder — from estimated to precise
+          </h2>
+          <p className="text-xs mb-4 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+            As more data sources are connected (face scan, wearable HRV), the debt score moves through
+            five confidence tiers. Each tier adds a layer of biometric calibration over the deterministic
+            base score.
+          </p>
+          <div className="rounded-2xl overflow-hidden"
+            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
+            {CONFIDENCE_TIERS.map((t, i) => (
+              <motion.div
+                key={t.tier}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.07 }}
+                className="flex items-start gap-3 px-4 py-3"
+                style={{ borderBottom: i < CONFIDENCE_TIERS.length - 1 ? "1px solid rgba(168,162,158,0.04)" : "none" }}>
+                {/* Step indicator */}
+                <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                  <div className="w-3 h-3 rounded-full flex items-center justify-center"
+                    style={{
+                      backgroundColor: i < 2 ? "rgba(168,162,158,0.15)" : i === 2 ? "rgba(245,158,11,0.2)" : i === 3 ? "rgba(34,211,238,0.2)" : "rgba(74,222,128,0.2)",
+                      border: `1px solid ${
+                        i < 2 ? "rgba(168,162,158,0.3)" : i === 2 ? "rgba(245,158,11,0.4)" : i === 3 ? "rgba(34,211,238,0.4)" : "rgba(74,222,128,0.4)"
+                      }`,
+                    }}>
+                    <div className="w-1.5 h-1.5 rounded-full"
+                      style={{
+                        backgroundColor: i < 2 ? "rgba(168,162,158,0.5)" : i === 2 ? "var(--color-states-warning)" : i === 3 ? "#22D3EE" : "var(--color-states-success)",
+                      }} />
+                  </div>
+                  {i < CONFIDENCE_TIERS.length - 1 && (
+                    <div className="w-px h-4" style={{ backgroundColor: "rgba(168,162,158,0.1)" }} />
+                  )}
+                </div>
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                      {t.tier}
+                    </span>
+                    <span className="text-[8px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: i < 2 ? "rgba(168,162,158,0.08)" : i === 2 ? "rgba(245,158,11,0.1)" : i === 3 ? "rgba(34,211,238,0.1)" : "rgba(74,222,128,0.1)",
+                        color: i < 2 ? "var(--color-text-faint)" : i === 2 ? "var(--color-states-warning)" : i === 3 ? "#22D3EE" : "var(--color-states-success)",
+                      }}>
+                      {t.level}
+                    </span>
+                  </div>
+                  <p className="text-[10px] mt-1" style={{ color: "var(--color-text-secondary)" }}>
+                    {t.desc}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </section>
 

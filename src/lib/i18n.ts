@@ -36,7 +36,7 @@ export interface LocalizedCopy {
     edgeAiBadge: string;          // "Edge AI"
     onChainBadge: string;         // "On-chain"
     onChainPill: string;          // "Last verified on SKALE"
-    qvacBadge: string;            // "QVAC · Llama-3.2-1B · on-device"
+    qvacBadge: string;            // "QVAC · Qwen3-1.7B · on-device"
     qvacAgentsWorking: string;    // "edge AI agents working"
     checkBack: string;            // "Check back in the morning"
     checkBackSubtitle: string;    // sub-copy under "Check back"
@@ -104,7 +104,7 @@ const EN: LocalizedCopy = {
     edgeAiBadge: "Edge AI",
     onChainBadge: "On-chain",
     onChainPill: "Last verified on SKALE",
-    qvacBadge: "QVAC · Llama-3.2-1B · on-device",
+    qvacBadge: "QVAC · Qwen3-1.7B · on-device",
     qvacAgentsWorking: "edge AI agents working",
     checkBack: "Check back in the morning",
     checkBackSubtitle:
@@ -169,7 +169,7 @@ const ES: LocalizedCopy = {
     edgeAiBadge: "Edge AI",
     onChainBadge: "On-chain",
     onChainPill: "Última verificación en SKALE",
-    qvacBadge: "QVAC · Llama-3.2-1B · en el dispositivo",
+    qvacBadge: "QVAC · Qwen3-1.7B · en el dispositivo",
     qvacAgentsWorking: "agentes edge AI trabajando",
     checkBack: "Vuelve por la mañana",
     checkBackSubtitle:
@@ -234,7 +234,7 @@ const FR: LocalizedCopy = {
     edgeAiBadge: "Edge AI",
     onChainBadge: "On-chain",
     onChainPill: "Dernière vérif sur SKALE",
-    qvacBadge: "QVAC · Llama-3.2-1B · sur l'appareil",
+    qvacBadge: "QVAC · Qwen3-1.7B · sur l'appareil",
     qvacAgentsWorking: "agents edge AI en cours",
     checkBack: "Reviens demain matin",
     checkBackSubtitle:

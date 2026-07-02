@@ -198,9 +198,9 @@ export const ACK_COPY: Record<string, string> = {
 // ─── Confidence tiers ────────────────────────────────────────────────────────
 
 export const CONFIDENCE_CONFIG = [
-  { tier: "estimated",  dot: "\u25D0", label: "Estimated",       color: "var(--color-text-faint)" },
-  { tier: "partial",    dot: "\u25D1", label: "Partial picture", color: "var(--color-text-secondary)" },
-  { tier: "good",       dot: "\u25D5", label: "Good read",       color: "var(--color-states-warning)" },
-  { tier: "accurate",   dot: "\u25CF", label: "Accurate",        color: "var(--color-brand-primary)" },
-  { tier: "precise",    dot: "\u25CF", label: "Precise",         color: "var(--color-states-success)" },
+  { tier: "estimated",  dot: "◐", label: "Estimated",       color: "var(--color-text-faint)" },
+  { tier: "partial",    dot: "◑", label: "Partial picture", color: "var(--color-text-secondary)" },
+  { tier: "good",       dot: "◕", label: "Good read",       color: "var(--color-states-warning)" },
+  { tier: "accurate",   dot: "●", label: "Accurate",        color: "var(--color-brand-primary)" },
+  { tier: "precise",    dot: "●", label: "Precise",         color: "var(--color-states-success)" },
 ] as const;

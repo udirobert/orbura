@@ -20,7 +20,7 @@ import { NotificationsToggle } from "@/components/notifications/notifications-to
 import { AgentTracePanel } from "@/components/AgentTracePanel";
 import { getOrbCopy, getPersonality } from "@/lib/orbPersonality";
 import { getStrings } from "@/lib/i18n";
-import { bandMeta } from "@/lib/debt-band";
+import { bandMeta, bandLabel } from "@/lib/debt-band";
 import { useRecoveryContext } from "@/lib/contexts/RecoveryContext";
 import { ModeToggle } from "@/components/ModeToggle";
 import { SquadPanel } from "./SquadScreen";
@@ -28,7 +28,14 @@ import { GuestAuthCard } from "@/components/GuestAuthCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SecondaryButton } from "@/components/SecondaryButton";
 import { SignalUpsellCard } from "@/components/SignalUpsellCard";
-import type { DebtAnalysis, ConfidenceTier, RecoverySystem } from "@/lib/types";
+import { generateRecoveryIcs, downloadIcs } from "@/lib/ics";
+import { RecoverySchedule } from "@/components/screens/RecoverySchedule";
+import { ConfidenceSignal } from "./dashboard/ConfidenceSignal";
+import { VerdictCard } from "./dashboard/VerdictCard";
+import { SystemIconRow } from "./dashboard/SystemIconRow";
+import { PatternLayer } from "./dashboard/PatternLayer";
+import { AgentSchedule } from "./dashboard/AgentSchedule";
+import type { DebtAnalysis, ConfidenceTier } from "@/lib/types";
 
 // ─── Fallback ─────────────────────────────────────────────────────────────────
 
@@ -53,111 +60,15 @@ const FALLBACK_ANALYSIS: DebtAnalysis = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const CONFIDENCE_CONFIG: Record<string, { dot: string; label: string; color: string; explanation: string }> = {
-  estimated: { dot: "◐", label: "Estimated",       color: "var(--color-text-faint)", explanation: "Based on your reported stressors only. No biometric data used." },
-  partial:   { dot: "◑", label: "Partial picture", color: "var(--color-text-secondary)", explanation: "Some biometric signal received. Connecting a wearable or doing a face scan would improve accuracy." },
-  good:      { dot: "◕", label: "Good read",        color: "var(--color-states-warning)", explanation: "Face scan or HRV data is included. Confidence is high enough to act on." },
-  accurate:  { dot: "●", label: "Accurate",         color: "var(--color-brand-primary)", explanation: "Multiple biometric signals verified. Your score reflects real physiology." },
-  precise:   { dot: "●", label: "Precise",          color: "var(--color-states-success)", explanation: "Full signal coverage: stressors, face scan, and HRV. Maximum confidence." },
-};
+// (ConfidenceSignal, VerdictCard moved to dashboard/ subdirectory)
 
-function ConfidenceSignal({ tier }: { tier?: ConfidenceTier }) {
-  const [expanded, setExpanded] = useState(false);
-  if (!tier || tier === "estimated") return null;
-  const cfg = CONFIDENCE_CONFIG[tier] ?? CONFIDENCE_CONFIG.partial;
-  return (
-    <div className="flex flex-col items-center">
-      <motion.button
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={expanded}
-        aria-controls="confidence-explanation"
-        className="flex items-center justify-center gap-1.5 mt-1"
-      >
-        <span className="text-sm" style={{ color: cfg.color }}>{cfg.dot}</span>
-        <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: cfg.color }}>
-          {cfg.label}
-        </span>
-        <motion.span animate={{ rotate: expanded ? 180 : 0 }} className="text-[8px]" style={{ color: cfg.color }}>
-          ▾
-        </motion.span>
-      </motion.button>
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            id="confidence-explanation"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-            role="region"
-            aria-label="Confidence explanation"
-          >
-            <p className="text-[9px] text-center px-8 mt-1.5 leading-relaxed" style={{ color: "var(--color-text-faint)" }}>
-              {cfg.explanation}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+// ─── Verdict card — imported from dashboard/ subdirectory
 
-// ─── System icon quick-nav ────────────────────────────────────────────────────
-
-const SYSTEM_ORDER: RecoverySystem[] = ["cardiovascular", "brain", "liver", "muscular", "gut"];
-const SYSTEM_ICONS: Record<RecoverySystem, string> = {
-  cardiovascular: "🫀", brain: "🧠", liver: "🫁", muscular: "💪", gut: "🦠",
-};
-
-function SystemIconRow({ systems, onTap }: {
-  systems: DebtAnalysis["systemScores"];
-  onTap: () => void;
-}) {
-  if (!systems?.length) return null;
-  return (
-    <div className="flex items-center justify-center gap-5 mt-4">
-      {SYSTEM_ORDER.map((sys) => {
-        const score = systems.find(s => s.system === sys)?.score ?? 0;
-        const color = score >= 70 ? "var(--color-states-error)" : score >= 40 ? "var(--color-brand-primary)" : score >= 15 ? "var(--color-states-warning)" : "var(--color-states-success)";
-        return (
-          <motion.button key={sys} whileTap={{ scale: 0.85 }}
-            onClick={onTap}
-            className="flex flex-col items-center gap-0.5"
-          >
-            <span className="text-base">{SYSTEM_ICONS[sys]}</span>
-            <div className="w-1 h-1 rounded-full" style={{ backgroundColor: color }} />
-          </motion.button>
-        );
-      })}
-    </div>
-  );
-}
+// ─── System icon quick-nav — imported from dashboard/ subdirectory
 
 // ─── Stressor breakdown (collapsible) — replaced by DonutChart/BarChartView
 
-// ─── Pattern layer (streak) ───────────────────────────────────────────────────
-
-function PatternLayer({ streakDays }: { streakDays: number }) {
-  if (streakDays === 0) return null;
-  return (
-    <div className="relative z-10 mb-6">
-      <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
-        style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(74,222,128,0.15)" }}>
-        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "var(--color-states-success)" }} />
-        <div>
-          <span className="text-xs font-semibold" style={{ color: "var(--color-states-success)" }}>
-            {streakDays} day{streakDays !== 1 ? "s" : ""} under 20
-          </span>
-          <p className="text-[10px] mt-0.5" style={{ color: "var(--color-text-faint)" }}>
-            Clean streak. Your body is thanking you.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── Pattern layer (streak) — imported from dashboard/ subdirectory
 
 // ─── Main dashboard ───────────────────────────────────────────────────────────
 
@@ -177,6 +88,13 @@ export function DashboardScreen() {
   const isEmpty = !analysis && selectedStressors.length === 0;
   const hasData = !!analysis || selectedStressors.length > 0;
   const isGuest = !user && hasData;
+
+  // Entry animation — subtle scale morph on first render (from analysis loader)
+  const [entryPhase, setEntryPhase] = useState<"entering" | "settled">("entering");
+  useEffect(() => {
+    const t = setTimeout(() => setEntryPhase("settled"), 400);
+    return () => clearTimeout(t);
+  }, []);
 
   // Animated score count-up
   const [displayScore, setDisplayScore] = useState(0);
@@ -341,7 +259,11 @@ export function DashboardScreen() {
 
   // ── Main dashboard ──────────────────────────────────────────────────────────
   return (
-    <div className="relative min-h-svh flex flex-col overflow-hidden"
+    <motion.div
+      initial={entryPhase === "entering" ? { opacity: 0.85, scale: 0.98 } : { opacity: 1, scale: 1 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="relative min-h-svh flex flex-col overflow-hidden"
       style={{ backgroundColor: "var(--color-bg-base)" }}>
 
       {/* Scrollable content */}
@@ -408,6 +330,14 @@ export function DashboardScreen() {
                   Squad
                 </button>
               )}
+              <button
+                onClick={() => router.push("/evidence")}
+                className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded-lg hover:bg-emerald-900/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+                style={{ color: "var(--color-text-faint)" }}
+                aria-label="View evidence and science"
+              >
+                Evidence
+              </button>
               <span className="w-px h-3.5" style={{ backgroundColor: "rgba(168,162,158,0.12)" }} />
               <motion.button whileTap={{ scale: 0.9 }}
                 onClick={() => setPersonalityOpen(true)}
@@ -462,10 +392,26 @@ export function DashboardScreen() {
             {displayScore}
           </motion.div>
 
-          {/* Verdict with personality prefix */}
-          <h3 className="mt-2 font-normal text-center px-4" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1rem,4vw,1.25rem)", color: "var(--color-text-primary)", lineHeight: 1.3 }}>
-            {verdictPrefix}{data.verdict}
-          </h3>
+          {/* Band pill */}
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.3 }}
+            className="flex items-center justify-center gap-1.5 mt-3"
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: scoreColor }} />
+            <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: scoreColor }}>
+              {bandLabel(data.debtScore)}
+            </span>
+          </motion.div>
+
+          {/* Verdict card — unified verdict + tagline + recovery time */}
+          <VerdictCard
+            verdict={verdictPrefix + data.verdict}
+            tagline={personalityTagline}
+            recoveryTime={data.recoveryTime}
+            recoveryLabel={t.labels.recoveryAround}
+          />
 
           {/* Refining indicator */}
           {(data as DebtAnalysis & { _layer?: string })._layer === "deterministic" && (
@@ -486,19 +432,7 @@ export function DashboardScreen() {
           <ConfidenceSignal tier={(data as DebtAnalysis & { confidenceTier?: ConfidenceTier }).confidenceTier ?? confidenceTier} />
 
           {/* Debt gauge */}
-          <div className="mt-2">
-            <DebtGauge score={displayScore} />
-          </div>
-
-          {/* Personality tagline */}
-          <p className="mt-1 text-[10px] italic px-6" style={{ color: "var(--color-text-faint)" }}>
-            {personalityTagline}
-          </p>
-
-          {/* Recovery window */}
-          <p className="mt-1 text-xs font-mono" style={{ color: "var(--color-text-secondary)" }}>
-            {t.labels.recoveryAround} <span style={{ color: "var(--color-text-primary)" }}>{data.recoveryTime}</span>
-          </p>
+          <DebtGauge score={displayScore} />
 
           {/* SKALE on-chain verification anchor */}
           {zkProof && zkProof.onChainStatus === "verified" && zkProof.txHash && (
@@ -531,24 +465,54 @@ export function DashboardScreen() {
       {/* Recovery arc timeline */}
       <div className="relative z-10 mb-6">
         <RecoveryTimeline arc={data.recoveryArc} />
+        {/* Add to Calendar — ICS download */}
+        <button
+          onClick={() => {
+            const ics = generateRecoveryIcs({
+              verdict: data.verdict,
+              recoveryTime: data.recoveryTime,
+              recoveryArc: data.recoveryArc,
+              appName: ctx.vocabulary.appName,
+            });
+            downloadIcs(ics);
+          }}
+          className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-mono uppercase tracking-widest transition-colors"
+          style={{
+            color: "var(--color-text-faint)",
+            border: "1px dashed rgba(168,162,158,0.15)",
+          }}
+          aria-label="Add recovery window to your calendar"
+        >
+          <span>📅</span>
+          <span>Add to Calendar</span>
+        </button>
       </div>
 
-      {/* ── Layer 2: System panels ───────────────────────────────────── */}
-      {data.systemScores && data.systemScores.length > 0 && (
-        <div ref={systemsRef} className="relative z-10 mb-8">
-          <SystemPanels systems={data.systemScores} />
-          <SystemClearanceNotifier systems={data.systemScores} analysisId={data.sessionId} />
+      {/* ── Prescription schedule — time-banded plan ──────────────── */}
+      {analysis?.prescription && (
+        <div className="relative z-10 mb-6">
+          <RecoverySchedule
+            prescription={analysis.prescription}
+            scheduleLabel={ctx.vocabulary.scheduleLabel}
+          />
         </div>
       )}
 
-      {/* ── Squad readiness board (football mode only) ──────────────── */}
-      {ctx.supportsSquad && (
-        <div className="relative z-10 mb-8">
-          <SquadPanel onSelect={() => router.push("/squad")} />
-        </div>
-      )}
+      {/* ── Primary CTA (actionable — moved up for primary-first) ──── */}
+      <div className="relative z-10 flex flex-col gap-3 mb-6">
+        <PrimaryButton size="md" onClick={() => router.push("/prescription")}>
+          {t.ctas.viewPrescription}
+        </PrimaryButton>
+        <SecondaryButton
+          size="sm"
+          onClick={() => router.push("/share-card")}
+          style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}
+        >
+          {t.ctas.shareScore}
+        </SecondaryButton>
+      </div>
 
-      {/* ── Layer 2b: Counterfactual insight ────────────────────────── */}
+      {/* ── Layer 2: Counterfactual insight (actionable) ──────────── */}
       {data.counterfactual && (
         <div ref={counterfactualRef} className="relative z-10 mb-6">
           <div className="rounded-2xl p-4 flex items-start gap-3"
@@ -572,49 +536,50 @@ export function DashboardScreen() {
         <BarChartView items={data.stressorBreakdown} />
       </div>
 
-      {/* ── Layer 3b: Agent trace (multi-agent edge AI) ─────────────── */}
-      <div ref={traceRef} className="relative z-10 mb-6">
-        {data.agentTrace && <AgentTracePanel trace={data.agentTrace} />}
-      </div>
-
-      {/* ── Layer 3c: Recovery schedule (from Schedule Agent) ──────── */}
+      {/* ── Layer 3b: Recovery schedule (actionable) ───────────────── */}
       {data.schedule && data.schedule.length > 0 && (
         <div ref={scheduleRef} className="relative z-10 mb-6">
           <AgentSchedule schedule={data.schedule} />
         </div>
       )}
 
-      {/* ── Layer 4: Patterns ────────────────────────────────────────── */}
+      {/* ── Layer 4: System panels (detailed breakdown) ────────────── */}
+      {data.systemScores && data.systemScores.length > 0 && (
+        <div ref={systemsRef} className="relative z-10 mb-8">
+          <SystemPanels systems={data.systemScores} />
+          <SystemClearanceNotifier systems={data.systemScores} analysisId={data.sessionId} />
+        </div>
+      )}
+
+      {/* ── Squad readiness board (football mode only) ──────────────── */}
+      {ctx.supportsSquad && (
+        <div className="relative z-10 mb-8">
+          <SquadPanel onSelect={() => router.push("/squad")} />
+        </div>
+      )}
+
+      {/* ── Layer 4b: Agent trace (technical detail) ───────────────── */}
+      <div ref={traceRef} className="relative z-10 mb-6">
+        {data.agentTrace && <AgentTracePanel trace={data.agentTrace} />}
+      </div>
+
+      {/* ── Layer 5: Patterns ────────────────────────────────────────── */}
       <PatternLayer streakDays={streakDays} />
 
-      {/* ── Layer 4b: Score heatmap (collapsible, auth-only) ──────── */}
+      {/* ── Layer 5b: Score heatmap (collapsible, auth-only) ───────── */}
       {user && <ScoreHeatmap />}
 
-      {/* ── Layer 5: Past history (collapsible, auth-only) ─────────── */}
+      {/* ── Layer 6: Past history (collapsible, auth-only) ─────────── */}
       {user && <DebtHistory />}
 
-      {/* ── Layer 6: Notifications (auth-only) ──────────────────────── */}
+      {/* ── Layer 7: Notifications (auth-only) ──────────────────────── */}
       {user && <NotificationsToggle />}
 
       {/* ── Auth upgrade ───────────────────────────────────────────── */}
       {isGuest && <GuestAuthCard />}
 
-      {/* CTAs */}
+      {/* Bottom CTAs */}
       <div className="relative z-10 flex flex-col gap-3 pb-12 mt-2">
-
-        {/* Primary — go to prescription */}
-        <PrimaryButton size="md" onClick={() => router.push("/prescription")}>
-          {t.ctas.viewPrescription}
-        </PrimaryButton>
-
-        {/* Secondary — share */}
-        <SecondaryButton
-          size="sm"
-          onClick={() => router.push("/share-card")}
-          style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}
-        >
-          {t.ctas.shareScore}
-        </SecondaryButton>
 
         {/* Signal nudge — only at low confidence */}
         {(confidenceTier === "partial" || confidenceTier === "estimated") && (
@@ -737,49 +702,8 @@ export function DashboardScreen() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
-    </div>
-  );
+      </AnimatePresence>      </motion.div>
+    );
 }
 
-// ─── Agent Schedule (from Schedule Agent) ─────────────────────────────────────
-
-const SYSTEM_EMOJIS: Record<string, string> = {
-  cardiovascular: "🫀", brain: "🧠", liver: "🫁", muscular: "💪", gut: "🦠",
-  Cardiovascular: "🫀", Brain: "🧠", Liver: "🫁", Muscular: "💪", Gut: "🦠",
-};
-
-function AgentSchedule({ schedule }: { schedule: { time: string; action: string; system: string }[] }) {
-  return (
-    <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
-      <div className="px-4 pt-3.5 pb-2 flex items-center justify-between">
-        <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "var(--color-states-warning)" }}>
-          Recovery Schedule
-        </span>
-        <span className="text-[8px] font-mono" style={{ color: "var(--color-text-faint)" }}>
-          Schedule Agent · QVAC
-        </span>
-      </div>
-      <div className="px-4 pb-3">
-        {schedule.map((block, i) => (
-          <motion.div key={i}
-            initial={{ opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.08 }}
-            className="flex items-start gap-3 py-2.5"
-            style={{ borderBottom: i < schedule.length - 1 ? "1px solid rgba(168,162,158,0.06)" : "none" }}>
-            <span className="text-xs font-mono flex-shrink-0 mt-0.5" style={{ color: "var(--color-brand-primary)", minWidth: 70 }}>
-              {block.time}
-            </span>
-            <span className="text-sm flex-1" style={{ color: "var(--color-text-primary)", lineHeight: 1.4 }}>
-              {block.action}
-            </span>
-            <span className="text-sm flex-shrink-0">
-              {SYSTEM_EMOJIS[block.system] ?? "•"}
-            </span>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  );
-}
+// ─── Agent Schedule — imported from dashboard/ subdirectory

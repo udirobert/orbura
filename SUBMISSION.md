@@ -2,7 +2,7 @@
 
 ## Track Selection
 
-**Psy Models** — Body Debt makes strong use of QVAC models for specialized health tasks. The 4-agent pipeline uses Llama-3.2-1B-Instruct (Q4) for health triage, recovery coaching, schedule planning, and reflection.
+**Psy Models** — Body Debt makes strong use of QVAC models for specialized health tasks. The 4-agent pipeline uses Qwen3-1.7B-Instruct (Q4) for health triage, recovery coaching, schedule planning, and reflection.
 
 **Hardware:** Vultr VPS (Intel Broadwell 4-core, 7.7GB RAM, 150GB disk) — fits General Purpose track (≤32GB RAM).
 
@@ -18,14 +18,14 @@ All AI inference uses the QVAC SDK (`@qvac/sdk` v0.12.2). No other inference eng
 Next.js API route (/api/qvac/infer)
   → src/lib/qvac/index.ts: spawn worker with `bare` runtime
   → scripts/qvac-worker.mjs: registers llmPlugin, loads model, runs 4 agents
-  → @qvac/sdk: loadModel(LLAMA_3_2_1B_INST_Q4_0) + completion() per agent
+  → @qvac/sdk: loadModel(QWEN3_1_7B_INST_Q4) + completion() per agent
   → Results stream back via stdout JSON lines → SSE to client
 ```
 
 ### Model
 
-- **Model:** Llama-3.2-1B-Instruct (Q4_0 quantization, 738MB)
-- **Model source:** `LLAMA_3_2_1B_INST_Q4_0` from `@qvac/sdk` model registry
+- **Model:** Qwen3-1.7B-Instruct (Q4 quantization, ~1GB)
+- **Model source:** `QWEN3_1_7B_INST_Q4` from `@qvac/sdk` model registry
 - **Runtime:** Bare v1.29.4 (required by QVAC SDK for native addon loading via `require.addon()`)
 - **Plugin:** `llamacpp-completion` (registered via `plugins([llmPlugin])` before first SDK call)
 - **Config:** TurboQuant KV-cache quantization (`cache-type-k: tbq4_0`, `cache-type-v: pq4_0`)
@@ -133,7 +133,7 @@ Outputs:
 
 | Component | Role | Cloud dependency? |
 |---|---|---|
-| `@qvac/sdk` v0.12.2 | On-device LLM inference (Llama-3.2-1B Q4) | No — runs locally via Bare runtime |
+| `@qvac/sdk` v0.12.2 | On-device LLM inference (Qwen3-1.7B Q4) | No — runs locally via Bare runtime |
 | `@qvac/llm-llamacpp` v0.22.1 | Native llamacpp addon (prebuilt for linux-x64) | No |
 | QVAC P2P registry | Model download (first run only, then cached) | Yes — P2P network, first download only |
 

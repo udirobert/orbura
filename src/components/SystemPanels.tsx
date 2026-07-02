@@ -243,6 +243,59 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
   );
 }
 
+// ─── System score dot row ────────────────────────────────────────────────────
+
+const SYSTEM_ORDER: Record<string, { icon: string; accent: string }> = {
+  cardiovascular: { icon: "🫀", accent: "#F43F5E" },
+  brain:          { icon: "🧠", accent: "#22D3EE" },
+  liver:          { icon: "🫁", accent: "#EAB308" },
+  muscular:       { icon: "💪", accent: "#A78BFA" },
+  gut:            { icon: "🦠", accent: "#2DD4BF" },
+};
+
+function SystemScoreBar({ systems, now }: { systems: SystemScore[]; now: Date }) {
+  const maxScore = Math.max(...systems.map((s) => s.score), 1);
+  return (
+    <div className="flex items-center gap-3 px-1 py-2">
+      {systems.map((sys) => {
+        const meta = SYSTEM_ORDER[sys.system] ?? { icon: "•", accent: "rgba(168,162,158,0.2)" };
+        const isCleared = new Date(sys.clearedAt) <= now || sys.score === 0;
+        const pct = maxScore > 0 ? (sys.score / maxScore) * 100 : 0;
+        const barHeight = Math.max(4, (pct / 100) * 24);
+        return (
+          <div key={sys.system} className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
+            <span className="text-sm">{meta.icon}</span>
+            <div
+              className="w-full rounded-full flex items-end justify-center"
+              style={{
+                height: 28,
+                backgroundColor: "rgba(168,162,158,0.04)",
+              }}
+            >
+              <motion.div
+                className="w-2 rounded-full"
+                style={{
+                  backgroundColor: isCleared ? "var(--color-states-success)" : meta.accent,
+                  maxHeight: 24,
+                }}
+                initial={{ height: 0 }}
+                animate={{ height: barHeight }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              />
+            </div>
+            <span
+              className={`text-[9px] font-mono tabular-nums ${isCleared ? "" : "font-semibold"}`}
+              style={{ color: isCleared ? "var(--color-states-success)" : "var(--color-text-secondary)" }}
+            >
+              {isCleared ? "✓" : sys.score}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Panel list ───────────────────────────────────────────────────────────────
 
 interface SystemPanelsProps {
@@ -262,29 +315,48 @@ export function SystemPanels({ systems }: SystemPanelsProps) {
   });
 
   const allClear = sorted.every((s) => new Date(s.clearedAt) <= now || s.score === 0);
+  const activeSystems = sorted.filter((s) => new Date(s.clearedAt) > now && s.score > 0);
   const visibleSystems = expanded ? sorted : sorted.slice(0, 2);
   const hiddenCount = sorted.length - visibleSystems.length;
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <p
           className="text-[9px] uppercase tracking-widest font-semibold"
           style={{ color: "var(--color-text-faint)" }}
         >
           Recovery by system
         </p>
-        {allClear && (
-          <motion.span
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-[9px] font-semibold"
-            style={{ color: "var(--color-states-success)" }}
-          >
-            All systems clear ●
-          </motion.span>
-        )}
+        <div className="flex items-center gap-2">
+          {activeSystems.length > 0 && (
+            <span className="text-[8px] font-mono px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: "rgba(168,162,158,0.06)", color: "var(--color-text-faint)" }}>
+              {activeSystems.length} active
+            </span>
+          )}
+          {allClear && (
+            <motion.span
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-[9px] font-semibold"
+              style={{ color: "var(--color-states-success)" }}
+            >
+              All systems clear ●
+            </motion.span>
+          )}
+        </div>
       </div>
+
+      {/* Score comparison bar strip */}
+      {sorted.length > 1 && (
+        <div
+          className="rounded-xl mb-2 overflow-hidden"
+          style={{ backgroundColor: "rgba(168,162,158,0.03)", border: "1px solid rgba(168,162,158,0.06)" }}
+        >
+          <SystemScoreBar systems={sorted} now={now} />
+        </div>
+      )}
 
       {visibleSystems.map((sys) => (
         <SystemPanel key={sys.system} sys={sys} now={now} />
@@ -295,14 +367,19 @@ export function SystemPanels({ systems }: SystemPanelsProps) {
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => setExpanded(true)}
-          className="w-full rounded-xl py-2.5 text-center text-[10px] font-mono uppercase tracking-wider"
+          className="w-full rounded-xl py-2.5 text-center text-[10px] font-mono uppercase tracking-wider flex items-center justify-center gap-1.5"
           style={{
             color: "var(--color-text-secondary)",
             backgroundColor: "rgba(168,162,158,0.04)",
             border: "1px solid rgba(168,162,158,0.08)",
           }}
         >
-          Show {hiddenCount} more system{hiddenCount !== 1 ? "s" : ""} ↓
+          <span>Show {hiddenCount} more system{hiddenCount !== 1 ? "s" : ""}</span>
+          <span className="text-[8px] font-mono px-1 py-0.5 rounded"
+            style={{ backgroundColor: "rgba(168,162,158,0.06)", color: "var(--color-text-faint)" }}>
+            {hiddenCount}
+          </span>
+          <span>↓</span>
         </motion.button>
       )}
 

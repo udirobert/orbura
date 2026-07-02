@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
@@ -116,11 +116,57 @@ export function SquadPanel({ onSelect }: { onSelect: (id: string) => void }) {
 export function SquadScreen() {
   const ctx = useRecoveryContext();
   const router = useRouter();
-  const { squad, addPlayer, removePlayer, mode, setMode } = useBodyDebtStore();
+  const { squad, addPlayer, removePlayer, setMode } = useBodyDebtStore();
   const scanPlayer = useScanPlayer();
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [position, setPosition] = useState<SquadPlayer["position"]>("MID");
+  const [sharing, setSharing] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+
+  // Share squad — defined before early return so the hook call isn't conditional
+  const hasData = squad.some((p) => p.analysis);
+  const handleShare = useCallback(async () => {
+    if (sharing || squad.length === 0) return;
+    setSharing(true);
+    setShareLink(null);
+    try {
+      const res = await fetch("/api/squad/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          squad: squad.map((p) => ({
+            id: p.id,
+            name: p.name,
+            position: p.position,
+            analysis: p.analysis,
+            stressors: p.stressors,
+            faceAnalysis: p.faceAnalysis,
+          })),
+          appName: ctx.vocabulary.appName,
+        }),
+      });
+      if (!res.ok) throw new Error("Share failed");
+      const { url } = await res.json();
+      // Ensure absolute URL for external sharing — if the API returned a
+      // relative path (NEXT_PUBLIC_APP_URL not configured), prepend origin
+      const absoluteUrl = url.startsWith("http")
+        ? url
+        : `${window.location.origin}${url}`;
+      setShareLink(absoluteUrl);
+
+      // Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(absoluteUrl);
+      } catch {
+        // Clipboard API unavailable — show link for manual copy
+      }
+    } catch {
+      // Share failed silently — user sees the link input
+    } finally {
+      setSharing(false);
+    }
+  }, [squad, sharing, ctx.vocabulary.appName]);
 
   if (!ctx.supportsSquad) {
     const targetMode: "personal" | "football" =
@@ -281,6 +327,60 @@ export function SquadScreen() {
             </motion.button>
           )}
         </AnimatePresence>
+
+        {/* Share squad button */}
+        {squad.length > 0 && (
+          <div className="mb-6">
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              className="w-full py-3 rounded-2xl flex items-center justify-center gap-2 text-xs font-mono uppercase tracking-widest transition-colors"
+              style={{
+                color: "var(--color-text-secondary)",
+                border: "1px dashed rgba(168,162,158,0.15)",
+              }}
+            >
+              {sharing ? (
+                <span className="opacity-60">Generating share link…</span>
+              ) : (
+                <>
+                  <span>🔗</span>
+                  <span>Share squad snapshot{!hasData ? " (scan players first)" : ""}</span>
+                </>
+              )}
+            </button>
+
+            {/* Shared link display */}
+            <AnimatePresence>
+              {shareLink && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden mt-2"
+                >
+                  <div
+                    className="p-3 rounded-xl"
+                    style={{
+                      backgroundColor: "rgba(74,222,128,0.06)",
+                      border: "1px solid rgba(74,222,128,0.15)",
+                    }}
+                  >
+                    <p className="text-[10px] font-mono text-emerald-400 mb-1">
+                      Share link copied!
+                    </p>
+                    <input
+                      readOnly
+                      value={shareLink}
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
+                      className="w-full px-2 py-1.5 rounded text-[10px] font-mono bg-slate-950 border border-slate-800 text-slate-300"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
     </div>
   );

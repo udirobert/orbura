@@ -42,12 +42,12 @@ export function SignalUpsellCard({
       }}
     >
       <p className="text-xs mb-1" style={{ color: "var(--color-text-secondary)" }}>
-        {isPrimary ? "I can see more if you let me." : "\u201CI can see more if you let me.\u201D"}
+        {isPrimary ? "I can see more if you let me." : "“I can see more if you let me.”"}
       </p>
       <p className="text-[10px] mb-3" style={{ color: "var(--color-text-faint)" }}>
         {subtitle ?? (isPrimary
           ? "Connect your watch and camera for a full picture."
-          : "Face scan + wearable data makes this prescription 3\u00D7 more precise.")}
+          : "Face scan + wearable data makes this prescription 3× more precise.")}
       </p>
       <motion.button
         whileTap={{ scale: 0.98 }}

@@ -110,7 +110,7 @@ describe("getQvacAdvice", () => {
       const chunk = createResultEvent({
         advice: "Take a deep breath and hydrate.",
         source: "qvac-local",
-        model: "llama-3.2-1b-inst-q4",
+        model: "qwen3-1.7b-inst-q4",
       });
       const reader = createMockReader([chunk]);
       mockFetchResponse(reader);
@@ -119,7 +119,7 @@ describe("getQvacAdvice", () => {
 
       expect(result.advice).toBe("Take a deep breath and hydrate.");
       expect(result.source).toBe("qvac-local");
-      expect(result.model).toBe("llama-3.2-1b-inst-q4");
+      expect(result.model).toBe("qwen3-1.7b-inst-q4");
     });
 
     it("resolves with fallback fallback when no result event in stream", async () => {
@@ -142,7 +142,7 @@ describe("getQvacAdvice", () => {
         createResultEvent({
           advice: "Rest your eyes with the 20-20-20 rule. Prioritize 7+ hours of sleep.",
           source: "qvac-local",
-          model: "llama-3.2-1b-inst-q4",
+          model: "qwen3-1.7b-inst-q4",
         }),
       ];
       const reader = createMockReader(chunks);
@@ -155,7 +155,7 @@ describe("getQvacAdvice", () => {
       expect(onProgress).toHaveBeenNthCalledWith(2, expect.objectContaining({ status: "generating" }));
       expect(result.advice).toContain("20-20-20 rule");
       expect(result.source).toBe("qvac-local");
-      expect(result.model).toBe("llama-3.2-1b-inst-q4");
+      expect(result.model).toBe("qwen3-1.7b-inst-q4");
     });
   });
 
@@ -325,7 +325,7 @@ describe("getQvacAdvice", () => {
         createResultEvent({
           advice: "Rest well.",
           source: "qvac-local",
-          model: "llama-3.2-1b-inst-q4",
+          model: "qwen3-1.7b-inst-q4",
         }),
         // These come after the result — should be ignored
         createProgressEvent({ status: "downloading", loaded: 50, total: 100, percent: 50 }),

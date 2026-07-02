@@ -8,6 +8,16 @@ import { runMultiAgentPipeline, buildAgentTrace } from "@/lib/qvac";
 import type { MultiAgentInput } from "@/lib/qvac";
 import { validateSSEEvent } from "@/lib/sse-schemas";
 
+// ─── Feature flags ───────────────────────────────────────────────────────────
+//
+// NEXT_PUBLIC_ENABLE_CLOUD_VERDICT
+//   When disabled (default), the server skips cloud AI calls entirely —
+//   the deterministic Layer 1 score serves as the final verdict.
+//   Enable by setting NEXT_PUBLIC_ENABLE_CLOUD_VERDICT=true.
+//
+const ENABLE_CLOUD_VERDICT =
+  process.env.NEXT_PUBLIC_ENABLE_CLOUD_VERDICT === "true";
+
 export const maxDuration = 120;
 
 /**
@@ -24,7 +34,7 @@ export const maxDuration = 120;
  *   event: done         → Final merged result with full agent trace
  *   event: error        → Only if all layers fail
  *
- * AI inference runs on QVAC (Llama-3.2-1B, local) as the primary path.
+ * AI inference runs on QVAC (Qwen3-1.7B, local) as the primary path.
  * Cloud AI (Eazo/deepseek) is fallback only when QVAC is unavailable.
  */
 export async function POST(request: NextRequest) {
@@ -72,18 +82,27 @@ export async function POST(request: NextRequest) {
       });
 
       // ── Layer 2: AI verdict (runs in parallel with agents) ──────────────
-      // Also serves as the cloud AI benchmark for the Edge vs Cloud comparison
+      // When NEXT_PUBLIC_ENABLE_CLOUD_VERDICT is off, skip the cloud AI
+      // call and use the deterministic Layer 1 score as the verdict.
       const cloudStartTime = Date.now();
-      const verdictPromise = fetchVerdict(body, layer1).then((result) => {
-        const cloudDurationMs = Date.now() - cloudStartTime;
-        return { ...result, _cloudDurationMs: cloudDurationMs };
-      }).catch(() => ({
-        verdict:     layer1.verdict,
-        recoveryTime: layer1.recoveryTime,
-        recoveryArc: layer1.recoveryArc,
-        _layer: "fallback",
-        _cloudDurationMs: Date.now() - cloudStartTime,
-      }));
+      const verdictPromise = ENABLE_CLOUD_VERDICT
+        ? fetchVerdict(body, layer1).then((result) => {
+            const cloudDurationMs = Date.now() - cloudStartTime;
+            return { ...result, _cloudDurationMs: cloudDurationMs };
+          }).catch(() => ({
+            verdict:     layer1.verdict,
+            recoveryTime: layer1.recoveryTime,
+            recoveryArc: layer1.recoveryArc,
+            _layer: "fallback",
+            _cloudDurationMs: Date.now() - cloudStartTime,
+          }))
+        : Promise.resolve({
+            verdict:     layer1.verdict,
+            recoveryTime: layer1.recoveryTime,
+            recoveryArc: layer1.recoveryArc,
+            _layer: "deterministic_only",
+            _cloudDurationMs: undefined,
+          });
 
       // ── Layer 3: QVAC multi-agent pipeline (primary AI path) ─────────────
       const qvacInput: MultiAgentInput = {
@@ -140,6 +159,13 @@ export async function POST(request: NextRequest) {
         // Generate deterministic schedule fallback
         schedule = deterministicSchedule(layer1.systemScores ?? [], layer1.debtScore, body.locale ?? "en");
       }
+
+      // ── Fan-out: HRV + face-scan signals ───────────────────────────────
+      // Both signals are consumed in computeScore (Layer 1) as synchronous
+      // deterministic arithmetic — no async processing needed. They're
+      // already processed together in a single function call. If future
+      // enrichment (e.g. external API calls, model inference) is added,
+      // fan them out here with Promise.all.
 
       // Emit prescription as soon as it's ready
       emit("prescription", {

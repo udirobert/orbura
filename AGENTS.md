@@ -38,6 +38,9 @@ bun run lint
 bun run build
 bun run test
 
+bun run storybook
+bun run storybook --no-open
+
 bun run db:generate
 bun run db:push
 bun run db:studio
@@ -74,6 +77,10 @@ Known local build caveats: production build may fail until Google font fetching 
 | Wagmi config | `src/lib/providers/wagmi-config.ts`, `src/components/providers/WagmiProviderWrapper.tsx` |
 | Contracts | `contracts/HealthCredentialVerifier.sol`, `contracts/EZKLVerifierReusable.sol` |
 | Contract scripts | `scripts/deploy-reusable-verifier.mjs`, `scripts/register-vk-on-chain.mjs`, `scripts/deploy-standalone.mjs` |
+| Storybook stories | `src/**/*.stories.tsx` (96+ stories across Primitives, Inputs, Effects, Evidence, Dashboard, RecoverySchedule) |
+| Storybook config | `.storybook/main.ts`, `.storybook/preview.ts` |
+| Evidence data | `src/components/screens/evidence/evidence-data.ts`, `systems-science.ts` |
+| Format utility | `src/lib/format-ms.ts` |
 | QVAC | `scripts/qvac-worker.mjs`, `src/lib/qvac/index.ts`, `src/app/api/qvac/infer/route.ts` |
 | Wearables | `src/app/api/terra/`, `src/app/api/google-fit/`, `src/app/api/garmin/parse/route.ts`, `src/app/api/hrv/resolve/route.ts` |
 | DB | `src/lib/db/schema/`, `src/lib/db/queries/`, `src/lib/db/client.ts` |

@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
-import { ChevronLeft, Clock } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
+import { RecoverySchedule } from "@/components/screens/RecoverySchedule";
 import { getOrbCopy } from "@/lib/orbPersonality";
 import { GuestAuthCard } from "@/components/GuestAuthCard";
 import { MiniOrb } from "@/components/MiniOrb";
@@ -142,29 +143,16 @@ export function PrescriptionScreen() {
           </motion.div>
         ))}
 
-        {/* Reminder prompt */}
+        {/* Recovery schedule — time-banded plan */}
         <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
-          className="rounded-2xl px-4 py-4 text-center"
-          style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.12)" }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55 }}
         >
-          <div className="flex items-center justify-center gap-1.5 mb-2">
-            <Clock className="w-3 h-3" style={{ color: "var(--color-states-warning)" }} />
-            <span
-              className="text-[9px] font-mono uppercase tracking-widest font-semibold"
-              style={{ color: "var(--color-states-warning)" }}
-            >
-              Coming soon
-            </span>
-          </div>
-          <p className="text-xs font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>
-            Reminders need a backend
-          </p>
-          <p className="text-[10px]" style={{ color: "var(--color-text-secondary)" }}>
-            Push notifications and calendar invites require
-            server-side infrastructure (Zapier-style integration).
-            Until then, use the prescription as-is.
-          </p>
+          <RecoverySchedule
+            prescription={rx}
+            scheduleLabel="Recovery Schedule"
+          />
         </motion.div>
 
         {/* Upsell — only at low confidence */}

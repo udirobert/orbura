@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { useRecoveryContext } from "@/lib/contexts/RecoveryContext";
 import { getAllContexts } from "@/lib/contexts";
 import { memory } from "@/lib/sdk/eazo-client";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -21,7 +20,6 @@ const DORMANT_FRAMES = [
 export function OpeningScreen() {
   const router = useRouter();
   const { analysis, setHasSeenOpening, setMode } = useBodyDebtStore();
-  const ctx = useRecoveryContext();
   const [orbVisible, setOrbVisible] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
   const [pickerVisible, setPickerVisible] = useState(false);
@@ -90,7 +88,7 @@ export function OpeningScreen() {
                 className="tracking-[0.25em] text-xs font-semibold uppercase"
                 style={{ color: "rgba(168,162,158,0.5)" }}
               >
-                {ctx.vocabulary.appName}
+                BODY DEBT
               </span>
             </motion.div>
           )}
@@ -171,7 +169,7 @@ export function OpeningScreen() {
                   letterSpacing: "0.01em",
                 }}
               >
-                {ctx.vocabulary.tagline}
+                Your body keeps the score. Quantify the debt from last night&apos;s choices — alcohol, sleep, training, stress — and get a recovery plan that works offline.
               </p>
             </motion.div>
           )}
@@ -190,44 +188,58 @@ export function OpeningScreen() {
             >
               {allContexts.map((c) => {
                 const v = c.vocabulary;
+                const isDefault = c.mode === "personal";
                 return (
                   <motion.button
                     key={c.mode}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => handleSelectMode(c.mode)}
-                    className="w-full rounded-2xl px-5 py-4 text-left flex items-start gap-4 transition-colors hover:border-emerald-600/40"
+                    className="w-full rounded-2xl px-5 py-4 text-left flex items-start gap-4 transition-colors"
                     style={{
-                      backgroundColor: "var(--color-bg-surface)",
-                      border: "1px solid rgba(168,162,158,0.1)",
+                      backgroundColor: isDefault ? "rgba(234,88,12,0.06)" : "var(--color-bg-surface)",
+                      border: isDefault ? "1px solid rgba(234,88,12,0.2)" : "1px solid rgba(168,162,158,0.1)",
                     }}
                   >
                     <span className="text-xl flex-shrink-0 pt-0.5">
-                      {c.mode === "personal" ? "🧘" : "⚽"}
+                      {isDefault ? "🧘" : "⚽"}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <span
-                        className="text-sm font-semibold block"
-                        style={{ color: "var(--color-text-primary)" }}
-                      >
-                        {v.appName}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-sm font-semibold block ${isDefault ? "" : ""}`}
+                          style={{ color: "var(--color-text-primary)" }}
+                        >
+                          {v.appName}
+                        </span>
+                        {isDefault && (
+                          <span
+                            className="text-[8px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
+                            style={{
+                              backgroundColor: "rgba(234,88,12,0.1)",
+                              color: "var(--color-brand-primary)",
+                            }}
+                          >
+                            Default
+                          </span>
+                        )}
+                        {c.mode === "football" && (
+                          <span
+                            className="text-[8px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
+                            style={{
+                              backgroundColor: "rgba(74,222,128,0.08)",
+                              color: "var(--color-states-success)",
+                            }}
+                          >
+                            Squad mode
+                          </span>
+                        )}
+                      </div>
                       <span
                         className="text-[11px] block mt-0.5 leading-relaxed"
                         style={{ color: "var(--color-text-secondary)" }}
                       >
                         {v.tagline}
                       </span>
-                      {c.mode === "football" && (
-                        <span
-                          className="inline-block mt-1.5 text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
-                          style={{
-                            backgroundColor: "rgba(74,222,128,0.08)",
-                            color: "var(--color-states-success)",
-                          }}
-                        >
-                          Squad mode
-                        </span>
-                      )}
                     </div>
                     <span
                       className="text-lg flex-shrink-0 pt-0.5"
@@ -242,7 +254,7 @@ export function OpeningScreen() {
                 className="text-center mt-4 text-[10px] tracking-widest uppercase font-mono"
                 style={{ color: "rgba(82,79,76,0.7)" }}
               >
-                No account · Free to start
+                No account · AI runs on-device
               </p>
             </motion.div>
           )}

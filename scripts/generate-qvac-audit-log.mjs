@@ -201,9 +201,9 @@ async function main() {
       timestamp: new Date(modelLoadTime ?? runStart).toISOString(),
       runId,
       event: "model_load",
-      model: "Llama-3.2-1B-Instruct-Q4",
+      model: "Qwen3-1.7B-Instruct-Q4",
       source: "qvac-sdk",
-      modelSrc: "LLAMA_3_2_1B_INST_Q4_0",
+      modelSrc: "QWEN3_1_7B_INST_Q4",
       loadDurationMs: (modelLoadTime ?? runEnd) - runStart,
     });
 
@@ -224,7 +224,7 @@ async function main() {
         runId,
         event: "inference_call",
         agent: agentName,
-        model: "Llama-3.2-1B-Instruct-Q4",
+        model: "Qwen3-1.7B-Instruct-Q4",
         source: "qvac-local",
         prompt: agentPrompts[agentName] ?? "",
         tokensGenerated: m.totalTokens ?? 0,
@@ -242,7 +242,7 @@ async function main() {
       timestamp: new Date(modelUnloadTime ?? runEnd).toISOString(),
       runId,
       event: "model_unload",
-      model: "Llama-3.2-1B-Instruct-Q4",
+      model: "Qwen3-1.7B-Instruct-Q4",
       source: "qvac-sdk",
       unloadDurationMs: modelUnloadTime ? runEnd - modelUnloadTime : 0,
     });

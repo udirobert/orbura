@@ -9,7 +9,7 @@
  *   3. Schedule Agent    — produces a time-blocked recovery schedule
  *   4. Reflection Agent  — rewrites the Coach output in the user's voice
  *
- * All inference runs on-device via @qvac/sdk (Llama-3.2-1B-Instruct Q4).
+ * All inference runs on-device via @qvac/sdk (Qwen3-1.7B-Instruct Q4).
  * Falls back gracefully per-agent: if an agent fails, the next still runs
  * and the result includes which agents succeeded.
  *
@@ -21,10 +21,10 @@
  *   {"event":"progress","data":{"status":"downloading","percent":50}}
  *   {"event":"agent_token","data":{"agent":"triage","token":"..."}}
  *   {"event":"agent_done","data":{"agent":"triage","result":{...},"durationMs":1200}}
- *   {"event":"result","data":{"triage":{...},"prescription":{...},"schedule":[...],"reflection":{...},"source":"qvac-local","model":"llama-3.2-1b-inst-q4"}}
+ *   {"event":"result","data":{"triage":{...},"prescription":{...},"schedule":[...],"reflection":{...},"source":"qvac-local","model":"qwen3-1.7b-inst-q4"}}
  */
 
-import { plugins, LLAMA_3_2_1B_INST_Q4_0 } from "@qvac/sdk";
+import { plugins, QWEN3_1_7B_INST_Q4 } from "@qvac/sdk";
 import { llmPlugin } from "@qvac/sdk/llamacpp-completion/plugin";
 
 const isBare = typeof Bare !== "undefined";
@@ -65,11 +65,11 @@ function getCtx(input) {
 
 // ─── Tool definitions (simulated tool-calling for small models) ──────────────
 //
-// Llama-3.2-1B doesn't have native function-calling, so we simulate it
-// with structured prompts. Each agent gets a clear system prompt with its
-// role, the available "tools" (deterministic functions we already have),
-// and a strict output format. The orchestrator parses the output and
-// feeds it to the next agent.
+// Qwen3-1.7B has native tool-calling support, but we keep the structured-prompt
+// approach for reliability with the small quantized model. Each agent gets a clear
+// system prompt with its role, the available "tools" (deterministic functions we
+// already have), and a strict output format. The orchestrator parses the output
+// and feeds it to the next agent.
 
 const AGENTS = {
   triage: {
@@ -176,9 +176,10 @@ async function main() {
   send("progress", { status: "downloading", loaded: 0, total: 0, percent: 0 });
 
   const modelId = await loadModel({
-    modelSrc: LLAMA_3_2_1B_INST_Q4_0,
+    modelSrc: QWEN3_1_7B_INST_Q4,
     modelType: "llamacpp-completion",
     modelConfig: {
+      ctx_size: 4096,
       // TurboQuant: KV-cache quantization — up to 5x less memory
       "cache-type-k": "tbq4_0",
       "cache-type-v": "pq4_0",
@@ -211,7 +212,7 @@ async function main() {
     results.triage = parseTriage(triageRaw);
     const triageText = formatTriageForContext(results.triage);
     const triageDuration = Date.now() - triageStart;
-    results.agentMeta.push({ agent: "triage", durationMs: triageDuration, status: "done", model: "llama-3.2-1b-inst-q4", raw: triageRaw });
+    results.agentMeta.push({ agent: "triage", durationMs: triageDuration, status: "done", model: "qwen3-1.7b-inst-q4", raw: triageRaw });
     send("agent_done", { agent: "triage", result: results.triage, durationMs: triageDuration, raw: triageRaw });
 
     // ── Agent 2: Coach (uses triage output) ──────────────────────────────
@@ -221,7 +222,7 @@ async function main() {
       const coachRaw = await runAgent(modelId, "coach", input, triageText);
       results.prescription = parsePrescription(coachRaw);
       const coachDuration = Date.now() - coachStart;
-      results.agentMeta.push({ agent: "coach", durationMs: coachDuration, status: "done", model: "llama-3.2-1b-inst-q4", raw: coachRaw });
+      results.agentMeta.push({ agent: "coach", durationMs: coachDuration, status: "done", model: "qwen3-1.7b-inst-q4", raw: coachRaw });
       send("agent_done", { agent: "coach", result: results.prescription, durationMs: coachDuration, raw: coachRaw });
 
       // ── Agent 3: Schedule (uses triage + coach output) ──────────────────
@@ -231,7 +232,7 @@ async function main() {
         const schedRaw = await runAgent(modelId, "schedule", input, triageText, formatPrescriptionForContext(results.prescription));
         results.schedule = parseSchedule(schedRaw);
         const schedDuration = Date.now() - schedStart;
-        results.agentMeta.push({ agent: "schedule", durationMs: schedDuration, status: "done", model: "llama-3.2-1b-inst-q4", raw: schedRaw });
+        results.agentMeta.push({ agent: "schedule", durationMs: schedDuration, status: "done", model: "qwen3-1.7b-inst-q4", raw: schedRaw });
         send("agent_done", { agent: "schedule", result: results.schedule, durationMs: schedDuration, raw: schedRaw });
 
         // ── Agent 4: Reflection (rewrites Coach output in user's voice) ─────
@@ -252,7 +253,7 @@ async function main() {
             results.prescription = reflected;
           }
           const reflectDuration = Date.now() - reflectStart;
-          results.agentMeta.push({ agent: "reflection", durationMs: reflectDuration, status: "done", model: "llama-3.2-1b-inst-q4", raw: reflectRaw });
+          results.agentMeta.push({ agent: "reflection", durationMs: reflectDuration, status: "done", model: "qwen3-1.7b-inst-q4", raw: reflectRaw });
           send("agent_done", { agent: "reflection", result: results.reflection ?? results.prescription, durationMs: reflectDuration, raw: reflectRaw });
         } catch (err) {
           results.agentMeta.push({ agent: "reflection", durationMs: Date.now() - reflectStart, status: "error", error: err.message });
@@ -276,7 +277,7 @@ async function main() {
   send("result", {
     ...results,
     source: "qvac-local",
-    model: "llama-3.2-1b-inst-q4",
+    model: "qwen3-1.7b-inst-q4",
     totalDurationMs: results.agentMeta.reduce((sum, m) => sum + (m.durationMs ?? 0), 0),
   });
 }

@@ -39,11 +39,15 @@ const AGENT_LABELS: Record<string, string> = {
 interface AnalysisLoaderProps {
   hasFaceScan: boolean;
   hasHRV: boolean;
+  /** Optional HRV context for personalised loading messages. */
+  hrvContext?: { deltaPercent: number; source: string };
+  /** Optional face-scan context for personalised loading messages. */
+  faceContext?: { summary: string };
   agentEvents?: AgentEventState[];
   agentProgress?: { status: string; percent?: number; loaded?: number; total?: number } | null;
 }
 
-export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress }: AnalysisLoaderProps) {
+export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, agentEvents, agentProgress }: AnalysisLoaderProps) {
   const [elapsed, setElapsed] = useState(0);       // 0–1 simulated progress
   const [orbScore, setOrbScore] = useState(0);     // orb heats up as signals process
 
@@ -62,9 +66,23 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
     return () => clearInterval(iv);
   }, []);
 
-  const activeSignals = SIGNALS.filter((s) => {
-    if (s.id === "face" && !hasFaceScan) return false;
-    if (s.id === "hrv"  && !hasHRV)     return false;
+  // Personalised signal label when HRV or face context is available
+  const personalizedSignals = SIGNALS.map((s) => {
+    if (s.id === "hrv" && hrvContext) {
+      const prefix = hrvContext.deltaPercent > 0
+        ? `HRV +${hrvContext.deltaPercent}%`
+        : `HRV ${hrvContext.deltaPercent}%`;
+      return { ...s, label: `${prefix} (${hrvContext.source.replace("_", " ")})` };
+    }
+    if (s.id === "face" && faceContext) {
+      return { ...s, label: `Face: ${faceContext.summary.slice(0, 32)}…` };
+    }
+    return s;
+  });
+
+  const activeSignals = personalizedSignals.filter((s) => {
+    if (s.id === "face" && !hasFaceScan && !faceContext) return false;
+    if (s.id === "hrv"  && !hasHRV && !hrvContext)     return false;
     return true;
   });
 
@@ -187,7 +205,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
               transition={{ duration: 1.5, repeat: Infinity }}
             />
             <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>
-              QVAC · Llama-3.2-1B · on-device
+              QVAC · Qwen3-1.7B · on-device
             </span>
           </motion.div>
         )}
@@ -198,7 +216,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
             style={{ backgroundColor: "rgba(234,88,12,0.06)", border: "1px solid rgba(234,88,12,0.15)" }}>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "var(--color-brand-primary)" }}>
-                Loading Llama-3.2-1B
+                Loading Qwen3-1.7B
               </span>
               <span className="text-[9px] font-mono" style={{ color: "var(--color-text-secondary)" }}>
                 {agentProgress.percent != null ? `${agentProgress.percent}%` : "..."}

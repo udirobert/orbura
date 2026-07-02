@@ -389,7 +389,7 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
               <Cpu className="w-3 h-3 flex-shrink-0" style={{ color: "var(--color-brand-primary)" }} />
               <div>
                 <p className="text-[8px] font-mono" style={{ color: "var(--color-text-secondary)" }}>
-                  QVAC Edge AI · Llama 3.2 1B Q4 ·{' '}
+                  QVAC Edge AI · Qwen3 1.7B Q4 ·{' '}
                   <span className="text-[7px]" style={{ color: "var(--color-brand-primary)" }}>isolated fork sandbox</span>
                 </p>
                 <p className="text-[7px] font-mono mt-0.5" style={{ color: "var(--color-text-faint)" }}>

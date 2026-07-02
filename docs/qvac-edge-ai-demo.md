@@ -60,7 +60,7 @@ If you're only demoing the personal context, skip the first half and start at
 **Show:** The analysis loader transitions to show live agent activity
 
 **Say:**
-> *"Now the QVAC edge AI pipeline kicks in. Four agents run sequentially on your device using Llama-3.2-1B quantized to Q4 — no cloud calls. The agent prompts are mode-aware — they speak match-readiness and return-to-play vocabulary in football mode, body debt and recovery vocabulary in personal mode."*
+> *"Now the QVAC edge AI pipeline kicks in. Four agents run sequentially on your device using Qwen3-1.7B quantized to Q4 — no cloud calls. The agent prompts are mode-aware — they speak match-readiness and return-to-play vocabulary in football mode, body debt and recovery vocabulary in personal mode."*
 
 **Show:** The loader now displays live agent cards:
 1. **Triage Agent** (active, token streaming) — analyzes the 5-system breakdown
@@ -69,7 +69,7 @@ If you're only demoing the personal context, skip the first half and start at
 4. **Reflection Agent** (pending) — rewrites the Coach's prescription in the user's chosen voice
 
 **Say:**
-> *"Watch the green QVAC badge — 'Llama-3.2-1B · on-device'. The Triage Agent identifies which body system needs priority attention. Its output feeds the Coach Agent, which writes the player's protocol. The Schedule Agent turns that into a match-day plan. Then the Reflection Agent rewrites everything in your selected voice — honest, gentle, scientific, or sarcastic — without losing the specific actions. Each agent streams tokens live, and you can see exactly how long each one took."*
+> *"Watch the green QVAC badge — 'Qwen3-1.7B · on-device'. The Triage Agent identifies which body system needs priority attention. Its output feeds the Coach Agent, which writes the player's protocol. The Schedule Agent turns that into a match-day plan. Then the Reflection Agent rewrites everything in your selected voice — honest, gentle, scientific, or sarcastic — without losing the specific actions. Each agent streams tokens live, and you can see exactly how long each one took."*
 
 **Show:** The agents complete one by one, each showing a green checkmark and duration. The dashboard appears with:
 - The Edge AI badge next to "MATCH FIT"
@@ -138,7 +138,7 @@ If you're only demoing the personal context, skip the first half and start at
 |---|---|
 | **Why edge AI?** | "Four AI agents run on-device with zero data leaving the device." |
 | **Multi-agent orchestration** | "Triage → Coach → Schedule → Reflection — sequential pipeline with structured outputs that feed each other." |
-| **QVAC SDK** | "Llama-3.2-1B Q4 with TurboQuant KV-cache quantization via @qvac/sdk." |
+| **QVAC SDK** | "Qwen3-1.7B Q4 with TurboQuant KV-cache quantization via @qvac/sdk." |
 | **Fork isolation** | "The LLM runs in `child_process.fork()` — if it crashes, your session doesn't." |
 | **Real benchmarks** | "Each agent reports its own duration. Total pipeline time is visible in the UI. Edge vs Cloud bars show real measured timings, not estimates." |
 | **Counterfactual engine** | "Deterministic re-run with one variable flipped. Not an LLM. Converts a score into the one change that would help most." |

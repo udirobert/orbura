@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         send("result", {
           advice: qvacResult.value,
           source: "qvac-local",
-          model: "llama-3.2-1b-inst-q4",
+          model: "qwen3-1.7b-inst-q4",
           edgeDurationMs,
           cloudDurationMs,
         });

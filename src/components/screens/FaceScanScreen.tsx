@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Camera, AlertTriangle, ShieldCheck, Loader2 } from "lucide-react";
 import { MiniOrb } from "@/components/MiniOrb";
@@ -14,6 +15,7 @@ import {
   SCAN_MESSAGES,
 } from "@/components/face-scan/use-face-scan-pipeline";
 import { ScanResult } from "@/components/face-scan/scan-result";
+import { FaceScanFallback } from "@/components/face-scan/FaceScanFallback";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { getOrbCopy } from "@/lib/orbPersonality";
 
@@ -26,6 +28,8 @@ export function FaceScanScreen() {
     videoRef, canvasRef, streamRef,
     startCamera, captureAndProve, handleSkip, retry,
   } = useFaceScanPipeline();
+  const router = useRouter();
+  const { setFaceAnalysis } = useBodyDebtStore();
   const { orbPersonality } = useBodyDebtStore();
   const personalityCopy = getOrbCopy(orbPersonality);
 
@@ -267,6 +271,29 @@ export function FaceScanScreen() {
                 </p>
               </div>
             </div>
+          </motion.div>
+        )}
+
+        {/* ── MediaPipe fallback: manual self-assessment ────────────── */}
+        {phase === "mediapipe_error" && (
+          <motion.div
+            key="fallback"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="relative z-10 flex-1 flex flex-col"
+          >
+            <FaceScanFallback
+              onSubmit={(result) => {
+                setFaceAnalysis(result);
+                // Cleanup camera tracks before navigating
+                streamRef.current?.getTracks().forEach((t) => t.stop());
+                // Navigate without clearing the analysis — handleSkip
+                // would overwrite it with null, so we navigate directly.
+                router.push("/hrv-pull");
+              }}
+              onSkip={handleSkip}
+            />
           </motion.div>
         )}
 
