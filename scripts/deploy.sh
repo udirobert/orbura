@@ -61,6 +61,30 @@ for f in "${ZK_REQUIRED[@]}"; do
   fi
 done
 
+# 0b. Ensure the deploy target's SWC binary is in local node_modules.
+#     The build host (e.g. darwin-arm64) won't have @next/swc-linux-x64-gnu
+#     installed by default — package managers skip non-native optional deps.
+#     Since we rsync local node_modules to the server, the server would crash
+#     on boot with "Failed to load SWC binary for linux/x64".
+#
+#     We can't use `npm install` here — it re-resolves the whole tree and
+#     prunes packages (the exact failure that crashed the server before).
+#     Instead, download the tarball and extract it directly into node_modules,
+#     touching nothing else.
+SWC_DIR="node_modules/@next/swc-${TRIM_PLATFORM}-gnu"
+SWC_VERSION=$(node -p "require('./package.json').optionalDependencies['@next/swc-${TRIM_PLATFORM}-gnu'] || require('./package.json').dependencies.next")
+if [ ! -f "$SWC_DIR/next-swc.${TRIM_PLATFORM}-gnu.node" ]; then
+  echo ">>> Fetching @next/swc-${TRIM_PLATFORM}-gnu@$SWC_VERSION for deploy target..."
+  TMPDIR_SWC=$(mktemp -d)
+  (cd "$TMPDIR_SWC" && npm pack "@next/swc-${TRIM_PLATFORM}-gnu@$SWC_VERSION" 2>&1 | tail -1)
+  mkdir -p "$SWC_DIR"
+  tar -xzf "$TMPDIR_SWC"/next-swc-${TRIM_PLATFORM}-gnu-*.tgz -C "$SWC_DIR" --strip-components=1
+  rm -rf "$TMPDIR_SWC"
+  echo ">>> SWC binary installed at $SWC_DIR"
+else
+  echo ">>> @next/swc-${TRIM_PLATFORM}-gnu already present in node_modules"
+fi
+
 # 1. Build Next.js app locally (idempotent — Next.js will skip if no changes)
 echo ">>> Building Next.js app locally..."
 NEXT_TELEMETRY_DISABLED=1 npm run build
@@ -70,7 +94,24 @@ echo ">>> Building Storybook..."
 bun run build-storybook 2>&1
 rm -rf public/storybook
 cp -r storybook-static public/storybook
-echo ">>> Storybook build copied to public/storybook/"
+
+# 1c. Inject <base href="/storybook/"> into Storybook HTML files.
+#     Next.js (trailingSlash: false) redirects /storybook/ → /storybook, which
+#     breaks the relative paths (./sb-manager/..., ./iframe.html) in the
+#     Storybook build. The <base> tag forces the browser to resolve all
+#     relative URLs against /storybook/ regardless of the actual page URL.
+#     iframe.html already has <base target="_parent"> — we extend it.
+for html_file in public/storybook/index.html public/storybook/iframe.html; do
+  if [ -f "$html_file" ]; then
+    if grep -q '<base ' "$html_file"; then
+      sed -i.bak 's|<base |<base href="/storybook/" |' "$html_file"
+    else
+      sed -i.bak 's|<head>|<head><base href="/storybook/">|' "$html_file"
+    fi
+    rm -f "$html_file.bak"
+  fi
+done
+echo ">>> Storybook build copied to public/storybook/ (with <base> tag injected)"
 
 # 2. Trim local node_modules so we don't ship every platform's prebuilds
 echo ">>> Trimming local node_modules for $TRIM_PLATFORM..."
@@ -83,7 +124,9 @@ echo ">>> Rsyncing lean bundle to $SERVER..."
 RSYNC_EXCLUDES=(
   --exclude='.git/'
   --exclude='.next/cache/'
+  --exclude='.next/dev/'          # turbopack dev cache — not needed in prod
   --exclude='.next/standalone/'  # not used (Turbopack build)
+  --exclude='.venv/'             # Python venv for ZK scripts — huge, not runtime
   --exclude='docs/'
   --exclude='contracts/'
   --exclude='hf-space/'

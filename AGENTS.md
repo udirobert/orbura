@@ -54,7 +54,9 @@ node scripts/register-vk-on-chain.mjs
 node scripts/deploy-standalone.mjs
 ```
 
-Known local build caveats: production build may fail until Google font fetching and the QVAC worker bundling path are fixed. Do not treat those as blockchain regressions unless your change touched them.
+Known local build notes: `next build` (Turbopack) compiles cleanly. Google fonts are fetched via `next/font/google` at build time, so the build host needs internet access. The QVAC worker (`scripts/qvac-worker.mjs`) is spawned as a child process at runtime — `src/lib/qvac/index.ts` marks the `node:child_process` import with `/* webpackIgnore: true */` and `@qvac/sdk` is in `serverExternalPackages`, so neither gets bundled into Next server chunks.
+
+Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target platform (`TRIM_PLATFORM`, default `linux-x64`), rsyncs the runtime to the server, and reloads pm2. The script auto-fetches the target platform's `@next/swc-*` binary via tarball extraction before rsync — without it the server crashes with "Failed to load SWC binary for linux/x64" because the build host (darwin-arm64) doesn't install non-native optional deps. Never run `npm install` on the server; it prunes the rsynced `node_modules` and wipes `.next`. Storybook is built and copied to `public/storybook/` with a `<base href="/storybook/">` tag injected; `next.config.ts` rewrites `/storybook` → `/storybook/index.html` to handle the `trailingSlash: false` redirect. See `docs/deployment.md` for details.
 
 ## Key Files
 

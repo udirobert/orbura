@@ -72,3 +72,28 @@ Notes:
   proxies to it over plain HTTP, so a redirect there would loop.
 - No Cloudflare. The old quick-tunnel (`cloudflared`) was removed from
   `ecosystem.config.cjs`; HTTPS now comes from Traefik.
+- Don't run `npm install` or `bun install` on the server. The deploy script
+  rsyncs a pre-trimmed `node_modules` from the build host; running a package
+  manager on the server re-resolves the tree, prunes platform-specific binaries
+  (including `@next/swc-linux-x64-gnu`), and wipes `.next`. If dependencies are
+  out of sync, fix them locally and re-run `scripts/deploy.sh`.
+
+## Storybook at /storybook
+
+Storybook is built locally by `scripts/deploy.sh` (`bun run build-storybook`),
+copied into `public/storybook/`, and served by Next.js as static files at
+`/storybook`.
+
+Next.js uses `trailingSlash: false` (default), which redirects `/storybook/` →
+`/storybook`. This breaks the relative paths (`./sb-manager/...`,
+`./iframe.html`) in the Storybook HTML because the browser resolves them
+relative to `/` instead of `/storybook/`. Two fixes work together:
+
+1. **`<base href="/storybook/">` injection** — `deploy.sh` injects this tag into
+   `index.html` and `iframe.html` after the Storybook build, forcing the browser
+   to resolve all relative URLs against `/storybook/`.
+2. **Rewrite** — `next.config.ts` rewrites `/storybook` → `/storybook/index.html`
+   so the slashless URL serves the entry HTML instead of 404ing.
+
+The entry HTML is served with `Cache-Control: no-cache`; hashed asset bundles
+use `immutable`.

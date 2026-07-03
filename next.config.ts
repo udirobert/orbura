@@ -54,10 +54,11 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
-      // Storybook static build served at /storybook/
-      // Entry HTML: no-cache so new deployments are picked up immediately
+      // Storybook static build served at /storybook
+      // Entry HTML (served via rewrite from /storybook → /storybook/index.html):
+      // no-cache so new deployments are picked up immediately
       {
-        source: "/storybook/",
+        source: "/storybook",
         headers: [
           { key: "Cache-Control", value: "no-cache" },
         ],
@@ -69,6 +70,16 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
+    ];
+  },
+  // Storybook is built to public/storybook/ and served as static files.
+  // Next.js (trailingSlash: false) redirects /storybook/ → /storybook, which
+  // breaks relative paths in the Storybook HTML. The <base href="/storybook/">
+  // tag (injected by deploy.sh) fixes relative path resolution, and this rewrite
+  // ensures /storybook serves index.html instead of 404ing.
+  async rewrites() {
+    return [
+      { source: "/storybook", destination: "/storybook/index.html" },
     ];
   },
   turbopack: {},
