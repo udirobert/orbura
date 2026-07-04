@@ -538,18 +538,88 @@ Post on LinkedIn and X:
 
 | File | Purpose | Status |
 |---|---|---|
-| `hf-space/deterministic_labels.py` | `generate_schedule()` + `apply_voice()` + `generate_triage()` + `generate_coach()` | Done |
+| `hf-space/deterministic_labels.py` | `generate_schedule()` + `apply_voice()` + `generate_triage()` + `generate_coach()` | Done (v2) |
 | `hf-space/generate_finetune_dataset.py` | Scales profile generation to 3,200, produces 4 train + 4 test JSONL | Done |
-| `hf-space/datasets/*.jsonl` | 8 JSONL files, 12,800 total examples | Done |
-| `hf-space/datasets/augmented_combined.csv` | Adaption-augmented combined dataset (5,462 rows) | Done |
-| `hf-space/datasets/augmented_train.jsonl` | Flat JSONL of augmented data for HF publishing | Done |
+| `hf-space/datasets/*.jsonl` | 8 JSONL files, 12,800 total examples | Done (v2) |
+| `hf-space/datasets/augmented_combined.csv` | Adaption-augmented combined dataset (5,462 rows, v1 — triage-only) | Deprecated |
+| `hf-space/datasets/augmented_train.jsonl` | Flat JSONL of augmented data for HF publishing | Deprecated |
 | `hf-space/eval_finetuned.py` | Baseline vs fine-tuned eval harness with structured metrics | Done |
 | `hf-space/eval_together.py` | Eval via Together AI API (for AutoScientist-deployed model) | Done |
 | `hf-space/publish_finetune_dataset.py` | Upload original dataset to HF Dataset Hub | Done |
 | `hf-space/publish_augmented_dataset.py` | Upload augmented dataset to HF Dataset Hub | Done |
 | `hf-space/publish_model.py` | Upload fine-tuned model weights to HF Model Hub | Done |
 | `hf-space/publish_kaggle.py` | Upload dataset + weights to Kaggle (original + augmented + weights) | Done |
-| `hf-space/run_adaption.py` | Adaptive Data SDK script for dataset augmentation | Done |
+| `hf-space/run_adaption.py` | Adaptive Data SDK script (v2: prompt_rephrase disabled, --combined flag) | Done (v2) |
 | `hf-space/demo_autoscientist.py` | Before/after comparison demo (Gradio) | Done |
 | `hf-space/social_posts.md` | LinkedIn + X post templates (Phase 1 + Phase 2) | Done |
-| AutoScientist training | Llama-3.2-3B LoRA, 4x H100, free compute | In progress |
+| AutoScientist training (v1) | Llama-3.2-3B LoRA, 4x H100 | Completed, 49% win rate |
+| AutoScientist training (v2) | Retrain with fixed labels, all 4 agents, no prompt rephrase | Pending |
+
+---
+
+## 13. Post-mortem: v1 training run (49% win rate)
+
+### What happened
+
+The first AutoScientist training run completed successfully (100% training
+success) but achieved only a **49% win rate** against the baseline on
+Adaption's held-out healthcare test set. Fine-tuning actually *hurt* the
+model's general healthcare performance.
+
+### Root causes
+
+1. **Dataset was 99% triage, 0% coach, 0% schedule.** The augmented
+   dataset uploaded to AutoScientist (`body_debt_unified_coach`) contained
+   5,462 rows, but analysis showed 5,426 triage examples and only 36
+   reflection examples. Zero coach and zero schedule examples made it
+   through. The model overfit to one narrow output format
+   (PRIORITY/SECONDARY/AVOID) and forgot how to do general healthcare
+   reasoning.
+
+2. **Labels didn't match system prompt format.** The system prompt said
+   `PRIORITY: <system> <score> — <health reason in 8 words>` but the
+   label was just `PRIORITY: Cardiovascular 22/100` — missing the health
+   reason entirely. Coach lines were 4-8 words when the prompt asked for
+   12-18. AVOID was missing biological reasons. The model learned to
+   produce terse, incomplete outputs — worse than what the zero-shot
+   baseline generates by just reading the prompt.
+
+3. **Prompt rephrasing changed system prompts.** Adaption's
+   `prompt_rephrase` recipe rewrote system prompts into different formats
+   ("# Role: Physiological Recovery Scheduler"). At inference time the
+   model sees the original QVAC system prompts, not the rephrased ones —
+   a train/inference mismatch that confused the model.
+
+### Fixes applied (v2)
+
+1. **Fixed `generate_triage`**: Added `HEALTH_REASONS` dict with 8-word
+   health reasons per system. Now emits `PRIORITY: Liver 82/100 —
+   Metabolic clearance needs reduced toxin load`. Always emits exactly
+   3 lines (was skipping SECONDARY when score ≤ 10).
+
+2. **Rewrote `generate_coach`**: Replaced the `health_coach._fallback_advice`
+   import with a dedicated `COACH_THIS_MORNING` / `COACH_TODAY` /
+   `COACH_AVOID` dict system. 12-18 words per line, severity-tiered
+   (high/moderate/low), system-specific biological reasons in every line.
+
+3. **Enriched `generate_schedule`**: Schedule actions now include
+   biological reasons (e.g., "no caffeine to support hepatic clearance"
+   instead of just "no caffeine").
+
+4. **Disabled `prompt_rephrase`** in `run_adaption.py`: Only
+   `reasoning_traces` + `deduplication` are enabled. System prompts
+   are preserved verbatim.
+
+5. **Added `--combined` flag** to `run_adaption.py`: Merges all 4 agents
+   into one dataset file before upload, ensuring balanced representation.
+
+### Verification
+
+All 12,800 examples pass format validation:
+- Triage: 3 lines, PRIORITY/SECONDARY have `— <reason>`, AVOID present
+- Coach: 4 lines, 12-18 words per line, hydration in RIGHT NOW
+- Schedule: 4 lines, pipe format, 4 time blocks
+- Reflection: 4 lines, voice markers present
+
+All 4 agents score 100% when the eval harness parses and scores their
+own ground truth.

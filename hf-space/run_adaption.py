@@ -2,8 +2,15 @@
 Run the Adaption Adaptive Data augmentation pipeline for all 4 agents.
 
 Uploads each agent's training JSONL to Adaption, runs the augmentation
-(reasoning traces + prompt rephrasing + deduplication), waits for
-completion, and downloads the enhanced dataset.
+(reasoning traces + deduplication, NO prompt rephrasing to preserve
+system prompt alignment), waits for completion, and downloads the
+enhanced dataset.
+
+IMPORTANT: prompt_rephrase is DISABLED. Adaption's prompt rephrasing
+rewrites system prompts into different formats, which causes a
+train/inference mismatch — at inference time the model sees the
+original QVAC system prompts, not the rephrased ones. This was a
+root cause of the 49% win rate in the first training run.
 
 The script first converts our chat-format JSONL (messages array) into
 the prompt/completion format Adaption expects, uploads, runs, and
@@ -15,6 +22,7 @@ Usage:
     python run_adaption.py --agent triage     # single agent
     python run_adaption.py --estimate-only    # just get cost estimates
     python run_adaption.py --n-rows 100       # small test run
+    python run_adaption.py --combined         # upload all 4 agents as one dataset
 """
 
 from __future__ import annotations
@@ -101,18 +109,22 @@ def run_agent(client: Adaption, agent: str, n_rows: int | None, estimate_only: b
         time.sleep(2)
 
     # Step 4: Estimate cost
-    print(f"  Estimating cost...")
+    # NOTE: prompt_rephrase is DISABLED. It rewrites system prompts into
+    # different formats, causing a train/inference mismatch. The model
+    # sees the original QVAC system prompts at inference time.
+    recipe = {
+        "recipes": {
+            "reasoning_traces": True,
+            "prompt_rephrase": False,
+            "deduplication": True,
+        }
+    }
+    print(f"  Estimating cost (prompt_rephrase disabled)...")
     estimate = client.datasets.run(
         dataset_id,
         column_mapping={"prompt": "prompt", "completion": "completion"},
         training_type="instruction_dataset",
-        recipe_specification={
-            "recipes": {
-                "reasoning_traces": True,
-                "prompt_rephrase": True,
-                "deduplication": True,
-            }
-        },
+        recipe_specification=recipe,
         estimate=True,
     )
     print(f"  Estimated credits: {estimate.estimated_credits_consumed}")
@@ -123,18 +135,12 @@ def run_agent(client: Adaption, agent: str, n_rows: int | None, estimate_only: b
         return {"agent": agent, "dataset_id": dataset_id, "estimated_credits": estimate.estimated_credits_consumed, "estimated_minutes": estimate.estimated_minutes}
 
     # Step 5: Run augmentation
-    print(f"  Starting augmentation run...")
+    print(f"  Starting augmentation run (prompt_rephrase disabled)...")
     run = client.datasets.run(
         dataset_id,
         column_mapping={"prompt": "prompt", "completion": "completion"},
         training_type="instruction_dataset",
-        recipe_specification={
-            "recipes": {
-                "reasoning_traces": True,
-                "prompt_rephrase": True,
-                "deduplication": True,
-            }
-        },
+        recipe_specification=recipe,
         brand_controls={
             "length": "concise",
         },
@@ -174,23 +180,134 @@ def run_agent(client: Adaption, agent: str, n_rows: int | None, estimate_only: b
     return {"agent": agent, "dataset_id": dataset_id, "status": "succeeded", "download_url": url}
 
 
+def run_combined(client: Adaption, n_rows: int | None, estimate_only: bool) -> dict | None:
+    """Upload all 4 agents as a single combined dataset.
+
+    This ensures the model sees all 4 task types during training,
+    preventing the overfitting-to-one-agent problem that caused
+    the 49% win rate in the first run.
+    """
+    print(f"\n{'='*60}")
+    print("Combined dataset (all 4 agents)")
+    print(f"{'='*60}")
+
+    # Step 1: Convert and merge all agents into one file
+    combined_path = AUGMENTED_DIR / "combined_train_pc.jsonl"
+    AUGMENTED_DIR.mkdir(parents=True, exist_ok=True)
+
+    total = 0
+    with open(combined_path, "w") as fout:
+        for agent in AGENTS:
+            input_path = DATASETS_DIR / f"{agent}_train.jsonl"
+            if not input_path.exists():
+                print(f"  [skip] {input_path} not found")
+                continue
+            agent_pc_path = AUGMENTED_DIR / f"{agent}_train_pc.jsonl"
+            count = convert_chat_to_prompt_completion(input_path, agent_pc_path, n_rows)
+            with open(agent_pc_path) as fin:
+                for line in fin:
+                    fout.write(line)
+                    total += 1
+            print(f"  {agent}: {count} examples")
+
+    print(f"  Combined: {total} examples → {combined_path.name}")
+
+    # Step 2: Upload
+    print(f"  Uploading to Adaption...")
+    result = client.datasets.upload_file(
+        str(combined_path),
+        name="body-debt-unified-coach",
+    )
+    dataset_id = result.dataset_id
+    print(f"  Dataset ID: {dataset_id}")
+
+    # Step 3: Wait for processing
+    print(f"  Waiting for file processing...")
+    while True:
+        status = client.datasets.get_status(dataset_id)
+        if status.row_count is not None:
+            print(f"  Processed: {status.row_count} rows, status={status.status}")
+            break
+        time.sleep(2)
+
+    # Step 4: Estimate + run (prompt_rephrase disabled)
+    recipe = {
+        "recipes": {
+            "reasoning_traces": True,
+            "prompt_rephrase": False,
+            "deduplication": True,
+        }
+    }
+    print(f"  Estimating cost (prompt_rephrase disabled)...")
+    estimate = client.datasets.run(
+        dataset_id,
+        column_mapping={"prompt": "prompt", "completion": "completion"},
+        training_type="instruction_dataset",
+        recipe_specification=recipe,
+        estimate=True,
+    )
+    print(f"  Estimated credits: {estimate.estimated_credits_consumed}")
+    print(f"  Estimated time: {estimate.estimated_minutes} min")
+
+    if estimate_only:
+        return {"agent": "combined", "dataset_id": dataset_id,
+                "estimated_credits": estimate.estimated_credits_consumed,
+                "estimated_minutes": estimate.estimated_minutes}
+
+    print(f"  Starting augmentation run...")
+    run = client.datasets.run(
+        dataset_id,
+        column_mapping={"prompt": "prompt", "completion": "completion"},
+        training_type="instruction_dataset",
+        recipe_specification=recipe,
+        brand_controls={"length": "concise"},
+    )
+    print(f"  Run ID: {run.run_id}")
+    print(f"  Credits: {run.estimated_credits_consumed}")
+    print(f"  ETA: {run.estimated_minutes} min")
+
+    # Wait for completion
+    print(f"  Waiting for completion (timeout: 60 min)...")
+    try:
+        final = client.datasets.wait_for_completion(dataset_id, timeout=3600)
+        print(f"  Finished: {final.status}")
+        if hasattr(final, "error") and final.error:
+            return {"agent": "combined", "dataset_id": dataset_id, "status": "failed"}
+    except DatasetTimeout as e:
+        print(f"  Timed out (last status: {e.last_status})")
+        return {"agent": "combined", "dataset_id": dataset_id, "status": "timeout"}
+
+    # Download
+    print(f"  Downloading augmented data...")
+    url = client.datasets.download(dataset_id)
+    print(f"  Download URL: {url}")
+
+    return {"agent": "combined", "dataset_id": dataset_id, "status": "succeeded", "download_url": url}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run Adaption Adaptive Data augmentation pipeline")
     parser.add_argument("--agent", choices=AGENTS, help="Run single agent (default: all)")
+    parser.add_argument("--combined", action="store_true", help="Upload all 4 agents as one dataset")
     parser.add_argument("--estimate-only", action="store_true", help="Only get cost estimates, don't run")
     parser.add_argument("--n-rows", type=int, default=None, help="Limit to N rows (for testing)")
     args = parser.parse_args()
-
-    agents = [args.agent] if args.agent else AGENTS
 
     client = Adaption()  # reads ADAPTION_API_KEY
     print(f"Adaption client ready")
 
     results = []
-    for agent in agents:
-        result = run_agent(client, agent, args.n_rows, args.estimate_only)
+
+    if args.combined:
+        result = run_combined(client, args.n_rows, args.estimate_only)
         if result:
             results.append(result)
+    else:
+        agents = [args.agent] if args.agent else AGENTS
+        for agent in agents:
+            result = run_agent(client, agent, args.n_rows, args.estimate_only)
+            if result:
+                results.append(result)
 
     # Summary
     print(f"\n{'='*60}")

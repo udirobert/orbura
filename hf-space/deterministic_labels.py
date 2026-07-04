@@ -37,34 +37,34 @@ TIME_BLOCKS = [
 # Indexed by [system][block_index].
 SCHEDULE_ACTIONS = {
     "liver": [
-        "500ml water + electrolytes, no caffeine",
-        "Hydrate continues, light food only",
-        "Protein-rich lunch, no alcohol",
-        "No more alcohol, herbal tea, hydrate",
+        "500ml water + electrolytes, no caffeine to support hepatic clearance",
+        "Continue hydration, light protein only, avoid alcohol metabolites",
+        "Protein-rich lunch with no alcohol to sustain metabolic clearance",
+        "Herbal tea and hydration; no alcohol to let liver finish recovery",
     ],
     "brain": [
-        "No screens for 10 min, dim lights, breathe",
-        "Light walk outside, natural light exposure",
-        "No deep-focus work, gentle tasks only",
-        "Wind down early, no screens after 8pm",
+        "No screens for 10 min, dim lights, breathe to calm cortical activity",
+        "Light walk outside for natural light to reset circadian cortisol rhythm",
+        "Gentle tasks only; avoid deep-focus work while glymphatic clearance runs",
+        "Wind down early, no screens after 8pm to protect melatonin production",
     ],
     "muscular": [
-        "Gentle mobility, no lifting, protein within 2hrs",
-        "Light walk, dynamic stretching only",
-        "Protein-rich lunch, gentle movement",
-        "No re-training same group, foam roll, rest",
+        "Gentle mobility only, protein within 2hrs to support muscle synthesis",
+        "Light walk and dynamic stretching to promote blood flow for repair",
+        "Protein-rich lunch with gentle movement to sustain muscle protein synthesis",
+        "No re-training same group; foam roll and rest for fiber recovery",
     ],
     "cardiovascular": [
-        "No cardio, walk only, hydrate well",
-        "Light walk, no intervals or sauna",
-        "Gentle activity, no heart rate spikes",
-        "No intense activity, hydrate, rest",
+        "Walk only, no cardio; hydrate well to maintain blood volume",
+        "Light walk only; avoid intervals and sauna while HRV recovers",
+        "Gentle activity with no heart rate spikes to protect cardiac recovery",
+        "No intense activity; hydrate and rest to let cardiovascular system settle",
     ],
     "gut": [
-        "Bland foods only, no coffee on empty stomach",
-        "Probiotic-rich snack, ginger tea",
-        "Simple lunch, no sugar or dairy",
-        "Light dinner, no large meals, hydrate",
+        "Bland foods only, no coffee on empty stomach to reduce gastric irritation",
+        "Probiotic-rich snack and ginger tea to support microbiome and motility",
+        "Simple lunch with no sugar or dairy to let gut inflammation subside",
+        "Light dinner, no large meals; hydrate to support digestive lining repair",
     ],
 }
 
@@ -252,7 +252,7 @@ def apply_voice(coach_output: str, personality: str = "honest") -> str:
     return "\n".join(result)
 
 
-# ─── Triage Agent (re-export from health_coach for convenience) ───────────────
+# ─── Triage Agent ─────────────────────────────────────────────────────────────
 
 # System-key-based avoid mapping (more reliable than label matching).
 AVOID_MAP = {
@@ -263,28 +263,131 @@ AVOID_MAP = {
     "gut": "sugar, dairy, large meals",
 }
 
+# Health reasons per system, ~8 words. Used in the PRIORITY and
+# SECONDARY lines to match the system prompt format:
+#   PRIORITY: <system> <score> — <health reason in 8 words>
+HEALTH_REASONS = {
+    "brain": "Cognitive fatigue requires immediate neural rest",
+    "liver": "Metabolic clearance needs reduced toxin load",
+    "muscular": "Muscle damage needs protein and recovery time",
+    "cardiovascular": "Cardiac strain demands lower heart rate today",
+    "gut": "Digestive inflammation needs bland foods and rest",
+}
+
 
 def generate_triage(system_scores: list[dict]) -> str:
     """Produce the 3-line triage output matching the Triage Agent format.
 
-    Ranks systems by score, picks PRIORITY (highest) and SECONDARY
-    (next-highest with score > 10), and generates a system-specific
-    AVOID line. Uses the system key (not label) for avoid mapping
-    to avoid the label-mismatch bug in _fallback_plan.
+    Format (from system prompt):
+        PRIORITY: <system> <score>/100 — <health reason in 8 words>
+        SECONDARY: <system> <score>/100 — <health reason in 8 words>
+        AVOID: <one health thing to avoid + biological reason, 12 words max>
+
+    Always emits exactly 3 lines. If the second-highest score is ≤ 10,
+    still includes SECONDARY with the next-ranked system.
     """
     ranked = sorted(system_scores, key=lambda s: -s["score"])
     lines = []
     if ranked:
-        lines.append(f"PRIORITY: {ranked[0]['label']} {ranked[0]['score']}/100")
-    if len(ranked) > 1 and ranked[1]["score"] > 10:
-        lines.append(f"SECONDARY: {ranked[1]['label']} {ranked[1]['score']}/100")
+        top = ranked[0]
+        reason = HEALTH_REASONS.get(top["system"], "Recovery needed for this system")
+        lines.append(f"PRIORITY: {top['label']} {top['score']}/100 — {reason}")
+    if len(ranked) > 1:
+        sec = ranked[1]
+        reason = HEALTH_REASONS.get(sec["system"], "Secondary system needs attention")
+        lines.append(f"SECONDARY: {sec['label']} {sec['score']}/100 — {reason}")
     top_system = ranked[0]["system"] if ranked else "general"
     avoid = AVOID_MAP.get(top_system, "stress and stimulants")
     lines.append(f"AVOID: {avoid}")
     return "\n".join(lines)
 
 
-# ─── Coach Agent (re-export from health_coach for convenience) ────────────────
+# ─── Coach Agent ──────────────────────────────────────────────────────────────
+
+# System-specific coach advice, 12-18 words per line, with biological
+# reasons. Severity-tiered: high (>60), moderate (30-60), low (<=30).
+# The RIGHT NOW line is always hydration (matches the original fallback).
+# THIS MORNING, TODAY, and AVOID vary by severity tier and worst system.
+
+COACH_RIGHT_NOW = (
+    "Drink 500ml water with electrolytes now to restore cellular hydration and blood volume"
+)
+
+# THIS MORNING advice by severity + worst system
+COACH_THIS_MORNING = {
+    "high": {
+        "brain": "Delay caffeine 90 minutes to protect cortisol rhythm and allow glymphatic clearance to finish",
+        "liver": "Eat a protein-rich breakfast with no alcohol to support hepatic metabolic clearance pathways",
+        "muscular": "Take a light walk only; damaged muscle fibers need protein synthesis before any load returns",
+        "cardiovascular": "Avoid all cardio today; your heart rate variability indicates cardiac stress needs rest",
+        "gut": "Stick to bland easily digestible foods to reduce gastrointestinal inflammation and microbiome stress",
+    },
+    "moderate": {
+        "brain": "Have a protein-rich breakfast and take a short walk outside for natural light exposure",
+        "liver": "Eat protein and hydrate well; avoid alcohol to let your liver finish clearing metabolites",
+        "muscular": "Eat protein within two hours and do gentle mobility work to support muscle repair processes",
+        "cardiovascular": "Light walk only; avoid intervals or sauna while your cardiovascular system recovers",
+        "gut": "Choose simple whole foods and avoid sugar or dairy to let gut inflammation settle down",
+    },
+    "low": {
+        "brain": "Normal routine is fine; a short walk and good hydration will clear residual cognitive fog",
+        "liver": "Stay hydrated and eat normally; your liver is nearly clear and handling metabolism well",
+        "muscular": "Gentle movement or light training is fine; protein intake will support ongoing muscle repair",
+        "cardiovascular": "Light to moderate activity is fine; stay hydrated and listen to your heart rate",
+        "gut": "Normal eating is fine; include fermented foods to support microbiome diversity and gut lining",
+    },
+}
+
+# TODAY insight by severity + worst system
+COACH_TODAY = {
+    "high": {
+        "brain": "Your cognitive capacity is significantly reduced; avoid deep-focus work and major decisions today",
+        "liver": "Your liver is working hard on toxin clearance; prioritize sleep and hydration over everything else",
+        "muscular": "Your muscles need full rest; no training today and prioritize protein intake for tissue repair",
+        "cardiovascular": "Your cardiovascular system is under stress; no elevated heart rate activity until tomorrow",
+        "gut": "Your digestive system is inflamed; eat small bland meals and avoid triggering foods entirely today",
+    },
+    "moderate": {
+        "brain": "Light activity is fine but avoid heavy mental work; your brain is still clearing metabolic waste",
+        "liver": "Light activity is okay; avoid alcohol and fatty foods while your liver completes clearance",
+        "muscular": "Light movement is beneficial but avoid heavy lifts; give muscle fibers another day of repair",
+        "cardiovascular": "Gentle activity is fine; avoid heart rate spikes and stay well hydrated throughout",
+        "gut": "Light eating is fine; avoid sugar, dairy, and large meals while gut inflammation subsides",
+    },
+    "low": {
+        "brain": "You are in good shape; train and work normally but maintain hydration and sleep hygiene",
+        "liver": "Nearly recovered; normal activity is fine, just stay hydrated and avoid binge drinking tonight",
+        "muscular": "Good to train; warm up properly and keep protein intake high to support muscle adaptation",
+        "cardiovascular": "Good capacity today; normal training is fine, just stay hydrated and monitor effort",
+        "gut": "Digestion is recovering well; normal eating is fine, include fiber and fermented foods",
+    },
+}
+
+# AVOID by severity + worst system (12 words max, with biological reason)
+COACH_AVOID = {
+    "high": {
+        "brain": "Caffeine after noon — it blocks adenosine clearance and deep sleep tonight",
+        "liver": "Alcohol and fatty foods — they double hepatic workload during active clearance",
+        "muscular": "Heavy training — damaged fibers need protein synthesis, not more mechanical stress",
+        "cardiovascular": "Intense intervals — elevated heart rate stresses an already strained cardiac system",
+        "gut": "Sugar, dairy, and large meals — they feed inflammation and delay gut lining repair",
+    },
+    "moderate": {
+        "brain": "Deep-focus marathons — your prefrontal cortex needs rest not sustained high demand",
+        "liver": "Evening alcohol — it restarts hepatic clearance and delays metabolic recovery overnight",
+        "muscular": "Max-effort lifts — muscle fibers are still repairing and need another recovery day",
+        "cardiovascular": "Sauna and intervals — heat stress compounds cardiovascular load before full recovery",
+        "gut": "Processed sugar and fried foods — they trigger inflammation and slow microbiome recovery",
+    },
+    "low": {
+        "brain": "All-nighters — even a good brain needs sleep to maintain glymphatic waste clearance",
+        "liver": "Binge drinking — your liver is nearly clear, don't restart the metabolic clearance cycle",
+        "muscular": "Skipping protein — muscle repair continues even at low debt and needs amino acid supply",
+        "cardiovascular": "Dehydration — even light cardio needs adequate blood volume for safe heart function",
+        "gut": "Skipping meals — your gut lining needs regular food to maintain microbiome stability",
+    },
+}
+
 
 def generate_coach(
     debt_score: int,
@@ -293,29 +396,22 @@ def generate_coach(
 ) -> str:
     """Produce the 4-line coach output matching the Coach Agent format.
 
-    Uses _fallback_advice from health_coach.py, stripped to the 4
-    prescription lines (removes the debt level header and priority line).
-    """
-    from health_coach import _fallback_advice
+    Format (from system prompt):
+        RIGHT NOW: <one specific health action with quantity, 12-18 words>
+        THIS MORNING: <one specific health action for next 2-3 hours, 12-18 words>
+        TODAY: <one key insight about physical capacity today, 12-18 words>
+        AVOID: <one thing to avoid + biological reason, 12-18 words>
 
-    raw = _fallback_advice(debt_score, system_scores, stressor_summary)
-    # Extract only the 4 prescription lines, normalize to uppercase labels.
-    label_map = {
-        "right now": "RIGHT NOW",
-        "this morning": "THIS MORNING",
-        "today": "TODAY",
-        "avoid": "AVOID",
-    }
-    lines = []
-    for line in raw.splitlines():
-        stripped = line.strip()
-        if not stripped:
-            continue
-        clean = stripped.replace("**", "")
-        lower = clean.lower()
-        for key, label in label_map.items():
-            if lower.startswith(key):
-                content = clean[len(key):].lstrip(":").strip()
-                lines.append(f"{label}: {content}")
-                break
-    return "\n".join(lines)
+    Severity-tiered: high (>60), moderate (30-60), low (<=30).
+    Each line varies by severity tier and the worst-scoring system.
+    """
+    severity = "high" if debt_score > 60 else ("moderate" if debt_score > 30 else "low")
+    worst = max(system_scores, key=lambda s: s["score"]) if system_scores else None
+    worst_system = worst["system"] if worst else "general"
+
+    right_now = COACH_RIGHT_NOW
+    this_morning = COACH_THIS_MORNING[severity].get(worst_system, COACH_THIS_MORNING[severity]["brain"])
+    today = COACH_TODAY[severity].get(worst_system, COACH_TODAY[severity]["brain"])
+    avoid = COACH_AVOID[severity].get(worst_system, COACH_AVOID[severity]["brain"])
+
+    return f"RIGHT NOW: {right_now}\nTHIS MORNING: {this_morning}\nTODAY: {today}\nAVOID: {avoid}"
