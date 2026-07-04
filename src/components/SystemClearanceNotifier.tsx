@@ -80,7 +80,7 @@ async function scheduleWithBrowserAPI(
 
   // Determine if all systems clear within the same hour
   const futureClearTimes = systems
-    .filter(s => s.clearedAt && new Date(s.clearedAt).getTime() > now)
+    .filter(s => s.hasData && s.clearedAt && new Date(s.clearedAt).getTime() > now)
     .map(s => new Date(s.clearedAt).getTime());
 
   const allSameHour =
@@ -102,7 +102,7 @@ async function scheduleWithBrowserAPI(
 
   // Individual system notifications
   for (const sys of systems) {
-    if (!sys.clearedAt) continue;
+    if (!sys.hasData || !sys.clearedAt) continue;
     const fireAt = new Date(sys.clearedAt).getTime();
     const delay = fireAt - now;
 

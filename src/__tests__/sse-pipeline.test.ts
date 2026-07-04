@@ -67,7 +67,7 @@ describe("SSE Pipeline — event shape validation", () => {
       const result = validateSSEEvent("score", {
         debtScore: 62,
         stressorBreakdown: [{ stressor: "Alcohol", points: 18, insight: "test", icon: "🍺" }],
-        systemScores: [{ system: "liver", label: "Liver", icon: "🫡", score: 60, clearedAt: new Date().toISOString(), causeText: "test", actionText: "test" }],
+        systemScores: [{ system: "liver", label: "Liver", icon: "🫡", score: 60, clearedAt: new Date().toISOString(), causeText: "test", actionText: "test", hasData: true }],
         confidenceLevel: "medium",
         confidenceTier: "good",
         recoveryArc: { dangerEnds: new Date().toISOString(), partialEnds: new Date().toISOString(), clearedAt: new Date().toISOString() },

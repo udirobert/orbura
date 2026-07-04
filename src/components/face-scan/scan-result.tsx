@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { ShieldCheck, Loader2, CloudDownload, ExternalLink, WifiOff, Zap, Container, Cpu, ChevronDown } from "lucide-react";
+import { ShieldCheck, Loader2, CloudDownload, ExternalLink, WifiOff, Zap, Container, Cpu, ChevronDown, CheckCircle2 } from "lucide-react";
 import { getQvacAdvice } from "@/lib/api";
 import { ProofCircuitVisual } from "./ProofCircuitVisual";
 import type { QvacProgress } from "@/lib/api";
@@ -18,7 +18,20 @@ interface CircuitStep {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChainStatus?: OnChainVerificationStatus }) {
+interface ExtractedFeatures {
+  leftEyeAspect: number;
+  rightEyeAspect: number;
+  browTension: number;
+  mouthTension: number;
+  eyeSymmetry: number;
+  mouthOpening: number;
+}
+
+export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
+  txHash?: string;
+  onChainStatus?: OnChainVerificationStatus;
+  extractedFeatures?: ExtractedFeatures | null;
+}) {
   const router = useRouter();
   const { zkProof, selectedStressors } = useBodyDebtStore();
   const [advice, setAdvice] = useState<string | null>(null);
@@ -160,6 +173,37 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
       exit={{ opacity: 0 }}
       className="relative z-10 flex-1 flex flex-col gap-4 pb-10"
     >
+      {/* ── Photo cleared confirmation ───────────────────────────────
+          A brief, animated reassurance that the captured image has
+          been purged from memory. Shows once when the user arrives
+          at the result screen. Fades to a compact steady state. */}
+      <motion.div
+        initial={{ opacity: 0, y: -8, height: 0 }}
+        animate={{ opacity: 1, y: 0, height: "auto" }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="rounded-2xl px-4 py-3 flex items-center gap-3"
+        style={{
+          backgroundColor: "rgba(16, 185, 129, 0.08)",
+          border: "1px solid rgba(16, 185, 129, 0.2)",
+        }}
+      >
+        <motion.div
+          initial={{ scale: 0, rotate: -45 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 0.15, type: "spring", stiffness: 200, damping: 15 }}
+        >
+          <CheckCircle2 className="w-5 h-5" style={{ color: "var(--color-states-success)" }} />
+        </motion.div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-mono uppercase tracking-widest font-semibold" style={{ color: "var(--color-states-success)" }}>
+            Photo cleared from memory
+          </p>
+          <p className="text-[10px] mt-0.5 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+            Your image was discarded after measurement. Only the math proof remains.
+          </p>
+        </div>
+      </motion.div>
+
       {/* ── Unified verification + privacy + lifecycle panel ────────
           One card replaces three earlier siblings (lifecycle visual +
           status card + privacy footer). The ProofCircuitVisual is now
@@ -258,6 +302,63 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
           </div>
         </details>
       </div>
+
+      {/* ── Visual feature breakdown ───────────────────────────────── */}
+      {extractedFeatures && (
+        <div className="rounded-2xl p-4"
+          style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.1)" }}>
+          <p className="text-[9px] font-mono uppercase tracking-widest font-semibold mb-3" style={{ color: "var(--color-text-secondary)" }}>
+            What we measured
+          </p>
+          <div className="space-y-2.5">
+            {(() => {
+              const f = extractedFeatures;
+              const avgEAR = (f.leftEyeAspect + f.rightEyeAspect) / 2;
+              const features = [
+                { label: "Eye openness", value: avgEAR, min: 0.15, max: 0.40, icon: "👁", hint: avgEAR < 0.22 ? "Low — fatigue signal" : "Normal range" },
+                { label: "Brow tension", value: f.browTension, min: 0.05, max: 0.25, icon: "😤", hint: f.browTension > 0.18 ? "Elevated — stress signal" : "Relaxed" },
+                { label: "Mouth tension", value: f.mouthTension, min: 2.0, max: 8.0, icon: "👄", hint: f.mouthTension > 6.0 ? "Tight jaw" : "Relaxed" },
+                { label: "Eye symmetry", value: f.eyeSymmetry, min: 0.0, max: 0.15, icon: "⚖️", hint: f.eyeSymmetry > 0.08 ? "Asymmetric — fatigue" : "Symmetric" },
+                { label: "Jaw openness", value: f.mouthOpening, min: 0.05, max: 0.40, icon: "🫩", hint: f.mouthOpening > 0.25 ? "Open — breathing" : "Closed" },
+              ];
+              return features.map((feat) => {
+                const pct = Math.max(0, Math.min(100, ((feat.value - feat.min) / (feat.max - feat.min)) * 100));
+                const isElevated = feat.label === "Eye openness" ? feat.value < feat.min + (feat.max - feat.min) * 0.25
+                  : feat.label === "Eye symmetry" ? feat.value > feat.min + (feat.max - feat.min) * 0.6
+                  : feat.label === "Brow tension" ? feat.value > feat.min + (feat.max - feat.min) * 0.65
+                  : feat.label === "Mouth tension" ? feat.value > feat.min + (feat.max - feat.min) * 0.65
+                  : false;
+                const barColor = isElevated ? "var(--color-states-warning)" : "var(--color-states-success)";
+                return (
+                  <div key={feat.label}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[10px] flex items-center gap-1.5" style={{ color: "var(--color-text-secondary)" }}>
+                        <span className="text-xs">{feat.icon}</span>
+                        {feat.label}
+                      </span>
+                      <span className="text-[9px] font-mono" style={{ color: isElevated ? "var(--color-states-warning)" : "var(--color-text-faint)" }}>
+                        {feat.hint}
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(168,162,158,0.08)" }}>
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: barColor }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                      />
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+          <p className="text-[8px] font-mono mt-3 leading-relaxed" style={{ color: "var(--color-text-faint)" }}>
+            468 facial landmarks → 6 geometric features → ZK circuit. Raw image never leaves your device.
+          </p>
+        </div>
+      )}
 
       {/* ── Transaction + Gas ────────────────────────────────────── */}
       {txHash && (

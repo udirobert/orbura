@@ -7,6 +7,7 @@ import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { useRecoveryContext } from "@/lib/contexts/RecoveryContext";
 import { getContextConfig } from "@/lib/contexts";
 import type { SquadPlayer, DebtAnalysis } from "@/lib/types";
+import type { PaymentType, SquadPayment } from "@/lib/wdk/types";
 import { PrimaryButton } from "@/components/PrimaryButton";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -116,13 +117,20 @@ export function SquadPanel({ onSelect }: { onSelect: (id: string) => void }) {
 export function SquadScreen() {
   const ctx = useRecoveryContext();
   const router = useRouter();
-  const { squad, addPlayer, removePlayer, setMode } = useBodyDebtStore();
+  const {
+    squad, addPlayer, removePlayer, updatePlayer, setMode,
+    walletConnected, managerAddress, treasuryBalance, connecting,
+    refreshingBalance, payments, sendingPayment,
+    connectWallet, refreshBalance, sendPayment,
+  } = useBodyDebtStore();
   const scanPlayer = useScanPlayer();
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [position, setPosition] = useState<SquadPlayer["position"]>("MID");
   const [sharing, setSharing] = useState(false);
   const [shareLink, setShareLink] = useState<string | null>(null);
+  const [payingPlayer, setPayingPlayer] = useState<string | null>(null);
+  const [showPayments, setShowPayments] = useState(false);
 
   // Share squad — defined before early return so the hook call isn't conditional
   const hasData = squad.some((p) => p.analysis);
@@ -247,6 +255,14 @@ export function SquadScreen() {
                     >
                       {p.analysis ? "Re-scan" : "Scan"}
                     </button>
+                    {walletConnected && (
+                      <button
+                        onClick={() => setPayingPlayer(p.id)}
+                        className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded bg-amber-600/20 border border-amber-600/40 text-amber-300 hover:bg-amber-600/30"
+                      >
+                        💰 Pay
+                      </button>
+                    )}
                     <button
                       onClick={() => removePlayer(p.id)}
                       className="text-[10px] font-mono uppercase tracking-widest text-slate-600 hover:text-red-400"
@@ -381,8 +397,290 @@ export function SquadScreen() {
             </AnimatePresence>
           </div>
         )}
+
+        {/* ─── Player payment modal ─── */}
+        <AnimatePresence>
+          {payingPlayer && (
+            <PlayerPaymentModal
+              player={squad.find((p) => p.id === payingPlayer)!}
+              sending={sendingPayment}
+              onClose={() => setPayingPlayer(null)}
+              onSaveAddress={(address) => {
+                if (payingPlayer) {
+                  updatePlayer(payingPlayer, { walletAddress: address });
+                }
+              }}
+              onSend={async (type, amount, note) => {
+                const player = squad.find((p) => p.id === payingPlayer);
+                if (!player?.walletAddress) return;
+                const result = await sendPayment(
+                  type,
+                  player.walletAddress,
+                  amount,
+                  note,
+                  player.name,
+                );
+                if (result) setPayingPlayer(null);
+              }}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* ─── WDK Squad Treasury ─── */}
+        <div className="mt-6 pt-6 border-t border-slate-800">
+          <h2 className="text-xs font-mono uppercase tracking-widest text-emerald-400 mb-3">
+            💰 Squad Treasury
+          </h2>
+
+          {!walletConnected ? (
+            <button
+              onClick={() => void connectWallet()}
+              disabled={connecting}
+              className="w-full py-3 rounded-2xl border-2 border-dashed border-emerald-700/40 text-emerald-400 text-sm font-mono uppercase tracking-widest hover:border-emerald-600 hover:bg-emerald-950/30 transition-colors disabled:opacity-50"
+            >
+              {connecting ? "Connecting…" : "Connect USDt Treasury"}
+            </button>
+          ) : (
+            <div className="space-y-3">
+              {/* Treasury balance */}
+              <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                      Treasury Balance
+                    </p>
+                    <p className="text-lg font-bold tabular-nums text-emerald-400">
+                      {refreshingBalance ? "…" : `${treasuryBalance ?? "0.00"} USDt`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => void refreshBalance()}
+                    disabled={refreshingBalance}
+                    className="text-[10px] font-mono uppercase text-slate-500 hover:text-emerald-400 disabled:opacity-50"
+                  >
+                    ↻ Refresh
+                  </button>
+                </div>
+                {managerAddress && (
+                  <p className="text-[9px] font-mono text-slate-600 mt-1 truncate">
+                    {managerAddress}
+                  </p>
+                )}
+              </div>
+
+              {/* Payment history toggle */}
+              {payments.length > 0 && (
+                <button
+                  onClick={() => setShowPayments((v) => !v)}
+                  className="w-full text-[10px] font-mono uppercase tracking-widest text-slate-500 hover:text-slate-300 py-1"
+                >
+                  {showPayments ? "Hide" : "Show"} payment history ({payments.length})
+                </button>
+              )}
+
+              <AnimatePresence>
+                {showPayments && payments.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="space-y-1.5">
+                      {payments.slice(0, 10).map((p) => (
+                        <PaymentRow key={p.id} payment={p} />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
       </div>
     </div>
+  );
+}
+
+// ─── Payment row ─────────────────────────────────────────────────────────────
+
+function PaymentRow({ payment }: { payment: SquadPayment }) {
+  const icon = payment.type === "bonus" ? "🏆" : payment.type === "fine" ? "🟨" : "💚";
+  const color =
+    payment.type === "bonus" ? "var(--color-states-success)" :
+    payment.type === "fine"  ? "var(--color-states-warning)" :
+                               "var(--color-system-brain)";
+  return (
+    <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/50 border border-slate-800/50">
+      <div className="flex items-center gap-2">
+        <span className="text-sm">{icon}</span>
+        <div>
+          <p className="text-[10px] font-mono" style={{ color }}>
+            {payment.amount} USDt
+            {payment.playerName ? ` → ${payment.playerName}` : ""}
+          </p>
+          {payment.note && (
+            <p className="text-[9px] font-mono text-slate-600">{payment.note}</p>
+          )}
+        </div>
+      </div>
+      <div className="text-right">
+        <p className="text-[9px] font-mono text-slate-500">
+          {new Date(payment.createdAt).toLocaleDateString()}
+        </p>
+        {payment.txHash && (
+          <a
+            href={`https://sepolia.etherscan.io/tx/${payment.txHash}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[8px] font-mono text-slate-600 hover:text-emerald-400"
+          >
+            {payment.txHash.slice(0, 8)}…
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Player payment modal ────────────────────────────────────────────────────
+
+function PlayerPaymentModal({
+  player,
+  onClose,
+  onSend,
+  onSaveAddress,
+  sending,
+}: {
+  player: SquadPlayer;
+  onClose: () => void;
+  onSend: (type: PaymentType, amount: number, note?: string) => void;
+  onSaveAddress: (address: `0x${string}`) => void;
+  sending: boolean;
+}) {
+  const [type, setType] = useState<PaymentType>("bonus");
+  const [amount, setAmount] = useState("50");
+  const [note, setNote] = useState("");
+  const [addrInput, setAddrInput] = useState(player.walletAddress ?? "");
+
+  const handleSend = () => {
+    const amt = parseFloat(amount);
+    if (isNaN(amt) || amt <= 0) return;
+    onSend(type, amt, note.trim() || undefined);
+  };
+
+  const handleSaveAddress = () => {
+    if (/^0x[a-fA-F0-9]{40}$/.test(addrInput)) {
+      onSaveAddress(addrInput as `0x${string}`);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 10 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.95, y: 10 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm p-5 rounded-2xl bg-slate-900 border border-emerald-800"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-slate-100">
+            Send to {player.name}
+          </h3>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-300">
+            ✕
+          </button>
+        </div>
+
+        {/* Player address */}
+        {!player.walletAddress && (
+          <div className="mb-4">
+            <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-1">
+              Player EVM Address
+            </label>
+            <input
+              value={addrInput}
+              onChange={(e) => setAddrInput(e.target.value)}
+              placeholder="0x..."
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 text-xs font-mono focus:outline-none focus:border-emerald-500"
+            />
+            <button
+              onClick={handleSaveAddress}
+              disabled={!/^0x[a-fA-F0-9]{40}$/.test(addrInput)}
+              className="mt-2 w-full py-2 rounded-lg text-[10px] font-mono uppercase tracking-widest bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40"
+            >
+              Save Address
+            </button>
+          </div>
+        )}
+
+        {/* Payment type */}
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          {(["bonus", "fine", "tip"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setType(t)}
+              className={`py-2 rounded-lg text-[10px] font-mono uppercase ${
+                type === t
+                  ? "bg-emerald-600 text-white"
+                  : "bg-slate-950 border border-slate-800 text-slate-400"
+              }`}
+            >
+              {t === "bonus" ? "🏆 Bonus" : t === "fine" ? "🟨 Fine" : "💚 Tip"}
+            </button>
+          ))}
+        </div>
+
+        {/* Amount */}
+        <div className="mb-3">
+          <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-1">
+            Amount (USDt)
+          </label>
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            type="number"
+            min="1"
+            max="10000"
+            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 text-sm font-mono focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        {/* Note */}
+        <div className="mb-4">
+          <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-1">
+            Note (optional)
+          </label>
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Player of the match"
+            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <PrimaryButton
+          onClick={handleSend}
+          disabled={sending || !player.walletAddress}
+          className="w-full"
+        >
+          {sending ? "Sending…" : `Send ${amount} USDt`}
+        </PrimaryButton>
+
+        {!player.walletAddress && (
+          <p className="text-[9px] font-mono text-slate-600 mt-2 text-center">
+            Add player&apos;s EVM address first
+          </p>
+        )}
+      </motion.div>
+    </motion.div>
   );
 }
 

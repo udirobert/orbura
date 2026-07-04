@@ -119,6 +119,17 @@ export function computeSystemScores(
     gut:            0,
   };
 
+  // Track which systems were touched by stressor data.
+  // A system with hasData=false is "unknown" — we have no measurements
+  // for it, not "clear". This prevents false "✓ Clear" claims.
+  const touched: Record<RecoverySystem, boolean> = {
+    cardiovascular: false,
+    brain:          false,
+    liver:          false,
+    muscular:       false,
+    gut:            false,
+  };
+
   for (const s of stressors) {
     if (s.type === "alcohol") {
       const drinkMod  = DRINK_TYPE_MOD[s.alcoholType ?? "beer"] ?? DRINK_TYPE_MOD.beer;
@@ -129,6 +140,7 @@ export function computeSystemScores(
       raw.brain          += base * drinkMod.brain  * countMod;
       raw.gut            += base * drinkMod.gut    * countMod;
       raw.cardiovascular += base * drinkMod.cardio * countMod * 0.5;
+      touched.liver = touched.brain = touched.gut = touched.cardiovascular = true;
     }
 
     if (s.type === "training") {
@@ -139,18 +151,21 @@ export function computeSystemScores(
 
       raw.muscular       += 40 * cns;
       raw.cardiovascular += 35 * cardio;
+      touched.muscular = touched.cardiovascular = true;
     }
 
     if (s.type === "sleep") {
       const brainHit = SLEEP_BRAIN[s.sleepHours ?? "4-6"] ?? 0.75;
       raw.brain += 35 * brainHit;
       raw.gut   += 15 * brainHit;
+      touched.brain = touched.gut = true;
     }
 
     if (s.type === "stress") {
       const carried = s.stressCarried !== "mostly_gone";
       raw.brain          += carried ? 28 : 14;
       raw.cardiovascular += carried ? 15 : 7;
+      touched.brain = touched.cardiovascular = true;
     }
 
     if (s.type === "ill") {
@@ -159,6 +174,7 @@ export function computeSystemScores(
       raw.brain          += 20 * sevMod;
       raw.muscular       += 15 * sevMod;
       raw.cardiovascular += 12 * sevMod;
+      touched.gut = touched.brain = touched.muscular = touched.cardiovascular = true;
     }
 
     if (s.type === "care") {
@@ -167,6 +183,7 @@ export function computeSystemScores(
       raw.liver          -= 5;
       raw.muscular       -= 5;
       raw.gut            -= 5;
+      touched.brain = touched.cardiovascular = touched.liver = touched.muscular = touched.gut = true;
     }
 
     if (s.type === "match_minutes") {
@@ -176,12 +193,14 @@ export function computeSystemScores(
 
       raw.muscular       += 35 * cns;
       raw.cardiovascular += 30 * cardio;
+      touched.muscular = touched.cardiovascular = true;
     }
 
     if (s.type === "card_stress") {
       const brainHit = CARD_STRESS_BRAIN[s.cardType ?? "yellow"] ?? 0.4;
       raw.brain          += 20 * brainHit;
       raw.cardiovascular += 10 * brainHit;
+      touched.brain = touched.cardiovascular = true;
     }
 
     if (s.type === "travel_timezone") {
@@ -189,11 +208,13 @@ export function computeSystemScores(
       raw.brain          += tz.brain;
       raw.cardiovascular += tz.cardio;
       raw.gut            += tz.gut;
+      touched.brain = touched.cardiovascular = touched.gut = true;
     }
 
     if (s.type === "concussion_check") {
       const brainHit = CONCUSSION_BRAIN[s.concussionSeverity ?? "minor"] ?? 0.8;
       raw.brain += 50 * brainHit;
+      touched.brain = true;
     }
   }
 
@@ -201,6 +222,8 @@ export function computeSystemScores(
     const penalty = circadianPenaltyBrain(bedTime, wakeTime);
     raw.brain          += penalty.brainPts;
     raw.cardiovascular += penalty.cardioPts;
+    if (penalty.brainPts > 0) touched.brain = true;
+    if (penalty.cardioPts > 0) touched.cardiovascular = true;
   }
 
   return (Object.keys(SYSTEM_META) as RecoverySystem[]).map((system) => {
@@ -215,8 +238,9 @@ export function computeSystemScores(
       icon:         meta.icon,
       score,
       clearedAt,
-      causeText:    buildCauseText(system, stressors),
-      actionText:   buildActionText(system, stressors),
+      hasData:      touched[system],
+      causeText:    buildCauseText(system, stressors, touched[system]),
+      actionText:   buildActionText(system, stressors, touched[system]),
       scienceFact:  SCIENCE[system]?.fact,
       scienceCite:  SCIENCE[system]?.cite,
     };
@@ -248,7 +272,9 @@ const SCIENCE: Partial<Record<RecoverySystem, { fact: string; cite: string }>> =
   },
 };
 
-function buildCauseText(system: RecoverySystem, stressors: Stressor[]): string {
+function buildCauseText(system: RecoverySystem, stressors: Stressor[], hasData: boolean): string {
+  if (!hasData) return "Not assessed — no data for this system";
+
   const alcohol  = stressors.find((s) => s.type === "alcohol");
   const training = stressors.find((s) => s.type === "training");
   const sleep    = stressors.find((s) => s.type === "sleep");
@@ -307,7 +333,9 @@ function buildCauseText(system: RecoverySystem, stressors: Stressor[]): string {
   }
 }
 
-function buildActionText(system: RecoverySystem, stressors: Stressor[]): string {
+function buildActionText(system: RecoverySystem, stressors: Stressor[], hasData: boolean): string {
+  if (!hasData) return "Log relevant stressors or connect a wearable to assess this system.";
+
   const alcohol  = stressors.find((s) => s.type === "alcohol");
   const training = stressors.find((s) => s.type === "training");
   const match    = stressors.find((s) => s.type === "match_minutes");

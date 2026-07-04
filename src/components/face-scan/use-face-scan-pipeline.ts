@@ -18,7 +18,7 @@ import type { ZKProofResult, ZKVerifyMode, OnChainVerificationStatus } from "@/l
 import type { Hex } from "viem";
 
 export type ScanPhase =
-  | "privacy" | "prompt" | "camera"
+  | "privacy" | "prompt" | "camera" | "review"
   | "extracting" | "proving" | "verifying"
   | "result" | "error" | "skipped"
   | "mediapipe_error";
@@ -237,6 +237,15 @@ export function useFaceScanPipeline() {
   // actual frame grab. Reduces motion blur and gives the user a
   // clear "something is happening" signal.
   const [captureCountdown, setCaptureCountdown] = useState<number | null>(null);
+  // Captured frame as a data URL for the review-phase preview.
+  // Set after the countdown completes; cleared on retake or skip.
+  const [capturedImageUrl, setCapturedImageUrl] = useState<string | null>(null);
+  // Extracted stress features from the captured frame, for visual
+  // display on the result screen. Stored after successful extraction.
+  const [extractedFeatures, setExtractedFeatures] = useState<{
+    leftEyeAspect: number; rightEyeAspect: number; browTension: number;
+    mouthTension: number; eyeSymmetry: number; mouthOpening: number;
+  } | null>(null);
 
   const { isConnected, chainId } = useAccount();
   const { connectAsync } = useConnect();
@@ -492,9 +501,100 @@ export function useFaceScanPipeline() {
     ctx.translate(w, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, w, h);
-    // Detection loop is no longer useful — we've grabbed the frame and
-    // are about to run the proof. Stopping it avoids the 500ms timer
-    // chain racing with the capture retry loop below.
+
+    // Capture the frame as a data URL for the review preview.
+    // The stream is kept alive so the user can retake without
+    // re-initialising the camera.
+    const imageUrl = canvas.toDataURL("image/jpeg", 0.85);
+    setCapturedImageUrl(imageUrl);
+
+    // Pause the detection loop — we don't need it during review.
+    // The stream stays open so retake can resume the preview.
+    detectionCleanupRef.current?.();
+    detectionCleanupRef.current = null;
+
+    // Go to review phase — user decides whether to use or retake.
+    setPhase("review");
+  }, []);
+
+  // Retake: discard the captured frame and go back to camera phase.
+  // Restarts the detection loop so the live guidance works again.
+  const retakeCapture = useCallback(() => {
+    setCapturedImageUrl(null);
+    setFaceStatus("pending");
+    setLightingStatus("pending");
+    setBlurStatus("pending");
+    setDistanceStatus("pending");
+    setPhase("camera");
+
+    // Restart the detection loop if the stream is still alive.
+    if (streamRef.current && videoRef.current && faceMeshRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+      let cancelled = false;
+      const runContinuousDetection = async () => {
+        const check = async () => {
+          if (cancelled) return;
+          const v = videoRef.current;
+          if (v && v.readyState >= 2 && faceMeshRef.current) {
+            setLightingStatus(analyzeLighting(v));
+            setBlurStatus(analyzeBlur(v));
+            await new Promise<void>((resolve) => {
+              resultsListenerRef.current = (results: { multiFaceLandmarks?: { x: number; y: number; z: number }[][] }) => {
+                const landmarks = results.multiFaceLandmarks?.[0];
+                if (landmarks && landmarks.length >= 468) {
+                  setFaceStatus("detected");
+                  setDistanceStatus(analyzeDistance(landmarks));
+                } else {
+                  setFaceStatus("not_detected");
+                  setDistanceStatus("too_far");
+                }
+                resultsListenerRef.current = null;
+                resolve();
+              };
+              faceMeshRef.current!.send({ image: v }).catch(() => {
+                resultsListenerRef.current = null;
+                resolve();
+              });
+            });
+          }
+          if (!cancelled) setTimeout(check, 500);
+        };
+        await check();
+      };
+      runContinuousDetection();
+      detectionCleanupRef.current = () => { cancelled = true; };
+    }
+  }, []);
+
+  // Delete: user wants to discard the photo AND exit the face scan
+  // entirely. Distinct from retake (which goes back to camera) —
+  // delete means "I don't want to do this at all." Stops the camera
+  // stream, clears all captured data, and navigates to the next step.
+  const deletePhoto = useCallback(() => {
+    setCapturedImageUrl(null);
+    setExtractedFeatures(null);
+    detectionCleanupRef.current?.();
+    detectionCleanupRef.current = null;
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setFaceSkipped(true);
+    setFaceAnalysis(null);
+    setFaceStatus("pending");
+    setLightingStatus("pending");
+    setBlurStatus("pending");
+    setDistanceStatus("pending");
+    setCaptureCountdown(null);
+    router.push("/hrv-pull");
+  }, [router, setFaceAnalysis, setFaceSkipped]);
+
+  // Confirm: user accepted the captured frame. Now stop the stream
+  // and proceed to feature extraction + ZK proof generation.
+  const confirmCapture = useCallback(async () => {
+    if (!videoRef.current || !faceMeshRef.current) return;
+    const video = videoRef.current;
+
+    // Stop the stream and detection loop — we're committed now.
     detectionCleanupRef.current?.();
     detectionCleanupRef.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -543,6 +643,16 @@ export function useFaceScanPipeline() {
       if (!features) {
         throw new Error("No face detected across 3 attempts. Check the lighting note above and try again, or skip face scan.");
       }
+
+      // Store features for the visual breakdown on the result screen.
+      setExtractedFeatures({
+        leftEyeAspect: features.leftEyeAspect,
+        rightEyeAspect: features.rightEyeAspect,
+        browTension: features.browTension,
+        mouthTension: features.mouthTension,
+        eyeSymmetry: features.eyeSymmetry,
+        mouthOpening: features.mouthOpening,
+      });
 
       setPhase("proving");
       const proofResult = await new Promise<ProofResultShape>((resolve, reject) => {
@@ -655,12 +765,15 @@ export function useFaceScanPipeline() {
     setBlurStatus("pending");
     setDistanceStatus("pending");
     setCaptureCountdown(null);
+    setCapturedImageUrl(null);
+    setExtractedFeatures(null);
     router.push("/hrv-pull");
   }, [router, setFaceAnalysis, setFaceSkipped]);
 
   const retry = useCallback(() => {
     detectionCleanupRef.current?.();
     detectionCleanupRef.current = null;
+    streamRef.current?.getTracks().forEach((t) => t.stop());
     setCameraError(null);
     setAnalysisError(null);
     setFaceStatus("pending");
@@ -668,6 +781,8 @@ export function useFaceScanPipeline() {
     setBlurStatus("pending");
     setDistanceStatus("pending");
     setCaptureCountdown(null);
+    setCapturedImageUrl(null);
+    setExtractedFeatures(null);
     setPhase("prompt");
     startCamera();
   }, [startCamera]);
@@ -677,7 +792,8 @@ export function useFaceScanPipeline() {
     txHash, lastProof, isConfirmed,
     onChainStatus,
     faceStatus, lightingStatus, blurStatus, distanceStatus, captureCountdown,
+    capturedImageUrl, extractedFeatures,
     videoRef, canvasRef, streamRef,
-    startCamera, captureAndProve, handleSkip, retry,
+    startCamera, captureAndProve, confirmCapture, retakeCapture, deletePhoto, handleSkip, retry,
   };
 }

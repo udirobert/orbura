@@ -60,7 +60,8 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
   const [expanded, setExpanded] = useState(false);
   const wasClearedRef = useRef(false);
   const [justCleared, setJustCleared] = useState(false);
-  const isCleared = sys.score === 0 || new Date(sys.clearedAt) <= now;
+  const isCleared = sys.hasData && (sys.score === 0 || new Date(sys.clearedAt) <= now);
+  const isUnknown = !sys.hasData;
 
   // Detect transition to cleared for micro-celebration
   useEffect(() => {
@@ -87,7 +88,9 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
       style={{
         backgroundColor: "var(--color-bg-surface)",
         border: `1px solid ${
-          isCleared
+          isUnknown
+            ? "rgba(168,162,158,0.04)"
+            : isCleared
             ? "rgba(74,222,128,0.2)"
             : expanded
             ? "rgba(234,88,12,0.25)"
@@ -124,15 +127,27 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
           <div className="flex items-center justify-between gap-2">
             <span
               className="text-xs font-semibold"
-              style={{ color: isCleared ? "var(--color-states-success)" : "var(--color-text-primary)" }}
+              style={{
+                color: isUnknown
+                  ? "var(--color-text-disabled)"
+                  : isCleared
+                  ? "var(--color-states-success)"
+                  : "var(--color-text-primary)",
+              }}
             >
               {sys.label}
             </span>
             <span
               className="text-[10px] font-mono flex-shrink-0"
-              style={{ color: isCleared ? "var(--color-states-success)" : "var(--color-text-secondary)" }}
+              style={{
+                color: isUnknown
+                  ? "var(--color-text-disabled)"
+                  : isCleared
+                  ? "var(--color-states-success)"
+                  : "var(--color-text-secondary)",
+              }}
             >
-              {isCleared ? "✓ Clear" : countdown}
+              {isUnknown ? "— No data" : isCleared ? "✓ Clear" : countdown}
             </span>
           </div>
 
@@ -143,9 +158,9 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
           >
             <motion.div
               className="h-full rounded-full"
-              style={{ backgroundColor: barColor }}
+              style={{ backgroundColor: isUnknown ? "rgba(168,162,158,0.15)" : barColor }}
               initial={{ width: 0 }}
-              animate={{ width: `${pct}%` }}
+              animate={{ width: isUnknown ? "100%" : `${pct}%` }}
               transition={{ duration: 0.8, ease: "easeOut" }}
             />
           </div>
@@ -153,9 +168,9 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
           {/* Clearance time */}
           <div className="mt-1 flex items-center justify-between">
             <span className="text-[9px]" style={{ color: "var(--color-text-disabled)" }}>
-              {clearTime}
+              {isUnknown ? "Awaiting data" : clearTime}
             </span>
-            {!isCleared && (
+            {!isCleared && !isUnknown && (
               <motion.div
                 className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: barColor }}
@@ -259,12 +274,13 @@ function SystemScoreBar({ systems, now }: { systems: SystemScore[]; now: Date })
     <div className="flex items-center gap-3 px-1 py-2">
       {systems.map((sys) => {
         const meta = SYSTEM_ORDER[sys.system] ?? { icon: "•", accent: "rgba(168,162,158,0.2)" };
-        const isCleared = new Date(sys.clearedAt) <= now || sys.score === 0;
+        const isCleared = sys.hasData && (new Date(sys.clearedAt) <= now || sys.score === 0);
+        const isUnknown = !sys.hasData;
         const pct = maxScore > 0 ? (sys.score / maxScore) * 100 : 0;
-        const barHeight = Math.max(4, (pct / 100) * 24);
+        const barHeight = isUnknown ? 4 : Math.max(4, (pct / 100) * 24);
         return (
           <div key={sys.system} className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
-            <span className="text-sm">{meta.icon}</span>
+            <span className="text-sm" style={{ opacity: isUnknown ? 0.4 : 1 }}>{meta.icon}</span>
             <div
               className="w-full rounded-full flex items-end justify-center"
               style={{
@@ -275,7 +291,11 @@ function SystemScoreBar({ systems, now }: { systems: SystemScore[]; now: Date })
               <motion.div
                 className="w-2 rounded-full"
                 style={{
-                  backgroundColor: isCleared ? "var(--color-states-success)" : meta.accent,
+                  backgroundColor: isUnknown
+                    ? "rgba(168,162,158,0.15)"
+                    : isCleared
+                    ? "var(--color-states-success)"
+                    : meta.accent,
                   maxHeight: 24,
                 }}
                 initial={{ height: 0 }}
@@ -285,9 +305,15 @@ function SystemScoreBar({ systems, now }: { systems: SystemScore[]; now: Date })
             </div>
             <span
               className={`text-[9px] font-mono tabular-nums ${isCleared ? "" : "font-semibold"}`}
-              style={{ color: isCleared ? "var(--color-states-success)" : "var(--color-text-secondary)" }}
+              style={{
+                color: isUnknown
+                  ? "var(--color-text-disabled)"
+                  : isCleared
+                  ? "var(--color-states-success)"
+                  : "var(--color-text-secondary)",
+              }}
             >
-              {isCleared ? "✓" : sys.score}
+              {isUnknown ? "—" : isCleared ? "✓" : sys.score}
             </span>
           </div>
         );
@@ -309,13 +335,16 @@ export function SystemPanels({ systems }: SystemPanelsProps) {
   if (!systems || systems.length === 0) return null;
 
   const sorted = [...systems].sort((a, b) => {
+    // Systems with data sort above unknown systems
+    if (a.hasData !== b.hasData) return a.hasData ? -1 : 1;
     const aScore = new Date(a.clearedAt) <= now ? 0 : a.score;
     const bScore = new Date(b.clearedAt) <= now ? 0 : b.score;
     return bScore - aScore;
   });
 
-  const allClear = sorted.every((s) => new Date(s.clearedAt) <= now || s.score === 0);
-  const activeSystems = sorted.filter((s) => new Date(s.clearedAt) > now && s.score > 0);
+  const allClear = sorted.every((s) => !s.hasData || new Date(s.clearedAt) <= now || s.score === 0);
+  const activeSystems = sorted.filter((s) => s.hasData && new Date(s.clearedAt) > now && s.score > 0);
+  const unknownCount = sorted.filter((s) => !s.hasData).length;
   const visibleSystems = expanded ? sorted : sorted.slice(0, 2);
   const hiddenCount = sorted.length - visibleSystems.length;
 
@@ -335,7 +364,7 @@ export function SystemPanels({ systems }: SystemPanelsProps) {
               {activeSystems.length} active
             </span>
           )}
-          {allClear && (
+          {allClear && unknownCount === 0 && (
             <motion.span
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -344,6 +373,14 @@ export function SystemPanels({ systems }: SystemPanelsProps) {
             >
               All systems clear ●
             </motion.span>
+          )}
+          {allClear && unknownCount > 0 && (
+            <span
+              className="text-[8px] font-mono px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: "rgba(168,162,158,0.06)", color: "var(--color-text-faint)" }}
+            >
+              {unknownCount} unassessed
+            </span>
           )}
         </div>
       </div>

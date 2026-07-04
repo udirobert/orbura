@@ -20,6 +20,11 @@ import {
   type StreamSlice,
   type AgentEventState,
 } from "./slices/stream-slice";
+import {
+  createWalletSlice,
+  WALLET_PERSIST_FIELDS,
+  type WalletSlice,
+} from "./slices/wallet-slice";
 
 /**
  * Combined store type — flat API for backward compatibility with all
@@ -28,23 +33,25 @@ import {
  *   profile  — long-lived user state (mode, squad, streak, locale, etc.)
  *   session  — per-assessment state, expires at midnight
  *   stream   — ephemeral runtime state (zkProof, agent events, progress)
+ *   wallet   — WDK squad payment state (manager address, payments, balance)
  *
  * See `src/stores/slices/` for the individual slice definitions.
  */
-export type BodyDebtState = ProfileSlice & SessionSlice & StreamSlice & {
-  /** Reset session + stream, keep profile. */
+export type BodyDebtState = ProfileSlice & SessionSlice & StreamSlice & WalletSlice & {
+  /** Reset session + stream, keep profile + wallet. */
   reset: () => void;
 };
 
 // Re-export slice types and the agent event type for consumers.
-export type { ProfileSlice, SessionSlice, StreamSlice, AgentEventState };
+export type { ProfileSlice, SessionSlice, StreamSlice, WalletSlice, AgentEventState };
 
 export const useBodyDebtStore = create<BodyDebtState>()(
   persist(
     (set, get, store) => ({
       ...createProfileSlice(set as never, get as never, store as never),
       ...createSessionSlice(set as never, get as never, store as never),
-      ...createStreamSlice(set as never, store as never),
+      ...createStreamSlice(set as never, get as never, store as never),
+      ...createWalletSlice(set as never, get as never, store as never),
 
       /**
        * Reset session + stream, keep profile (mode, squad, streak, etc.).
@@ -75,13 +82,16 @@ export const useBodyDebtStore = create<BodyDebtState>()(
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? localStorage : ({} as Storage)
       ),
-      // Persist profile + session fields, never stream fields.
+      // Persist profile + session + wallet fields, never stream fields.
       partialize: (state) => {
         const persisted: Record<string, unknown> = {};
         for (const key of PROFILE_PERSIST_FIELDS) {
           persisted[key] = state[key];
         }
         for (const key of SESSION_PERSIST_FIELDS) {
+          persisted[key] = state[key];
+        }
+        for (const key of WALLET_PERSIST_FIELDS) {
           persisted[key] = state[key];
         }
         return persisted;

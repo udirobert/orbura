@@ -29,6 +29,8 @@ Browser camera
 - The circuit receives a small feature vector only.
 - `zkProof` is ephemeral Zustand state and is excluded from localStorage persistence.
 - On-chain data should remain minimal: proof hash, model identifier, and public result metadata.
+- The captured frame data URL (`capturedImageUrl`) is cleared on retake, delete, skip, or navigation. It is never persisted to Zustand or localStorage.
+- The `extractedFeatures` object (6 geometric scalars) is kept in pipeline state for the result-screen visual breakdown but is not persisted.
 
 ## Current Model
 

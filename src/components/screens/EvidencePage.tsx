@@ -602,6 +602,19 @@ export function EvidencePage() {
           <p className="text-[10px] font-mono" style={{ color: "var(--color-text-disabled)" }}>
             Three AI agents, one local model, zero cloud calls for the inference path.
           </p>
+          <div className="flex justify-center gap-3 pt-2">
+            <Link href="/autoscientist" className="text-[10px] font-mono underline" style={{ color: "var(--color-text-faint)" }}>
+              AutoScientist Challenge page
+            </Link>
+            <span style={{ color: "var(--color-text-disabled)" }}>·</span>
+            <Link href="/tether" className="text-[10px] font-mono underline" style={{ color: "var(--color-text-faint)" }}>
+              Tether Developers Cup page
+            </Link>
+            <span style={{ color: "var(--color-text-disabled)" }}>·</span>
+            <Link href="/" className="text-[10px] font-mono underline" style={{ color: "var(--color-text-faint)" }}>
+              Live app
+            </Link>
+          </div>
         </footer>
       </div>
     </div>

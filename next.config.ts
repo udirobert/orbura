@@ -86,6 +86,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     "@qvac/sdk",
     "@qvac/llm-llamacpp",
+    "@tetherto/wdk",
+    "@tetherto/wdk-wallet-evm",
+    "sodium-native",
     "bare-fs",
     "bare-url",
     "bare-stdio",

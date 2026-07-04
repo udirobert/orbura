@@ -262,8 +262,8 @@ describe("DashboardScreen — main dashboard", () => {
       },
       confidenceLevel: "medium" as const,
       systemScores: [
-        { system: "cardiovascular" as const, label: "Cardiovascular", icon: "🫀", score: 30, clearedAt: "", causeText: "", actionText: "" },
-        { system: "brain" as const, label: "Brain", icon: "🧠", score: 60, clearedAt: "", causeText: "", actionText: "" },
+        { system: "cardiovascular" as const, label: "Cardiovascular", icon: "🫀", score: 30, clearedAt: "", causeText: "", actionText: "", hasData: true },
+        { system: "brain" as const, label: "Brain", icon: "🧠", score: 60, clearedAt: "", causeText: "", actionText: "", hasData: true },
       ],
       agentTrace: { steps: [], source: "deterministic" as const },
     };

@@ -62,7 +62,7 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 
 | Domain | Location |
 |---|---|
-| State | `src/stores/useBodyDebtStore.ts` (3 slices: `profile-slice`, `session-slice`, `stream-slice`) |
+| State | `src/stores/useBodyDebtStore.ts` (4 slices: `profile-slice`, `session-slice`, `stream-slice`, `wallet-slice`) |
 | Types | `src/lib/types.ts` |
 | Design tokens | `src/lib/design-tokens.ts` (CSS vars in `globals.css`) |
 | Recovery contexts | `src/lib/contexts/` (registry: `index.ts`, configs: `personal.ts`, `football.ts`) |
@@ -71,7 +71,7 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 | SSE event schemas (Zod) | `src/lib/sse-schemas.ts` |
 | AI analysis (SSE stream) | `src/app/api/analyze/stream/route.ts` |
 | Streaming analysis hook | `src/hooks/useStreamingAnalysis.ts` |
-| Face scan UI | `src/components/screens/FaceScanScreen.tsx`, `src/components/face-scan/` |
+| Face scan UI | `src/components/screens/FaceScanScreen.tsx`, `src/components/face-scan/` (pipeline hook, `PrivacyBadge`, `ScanResult`, `PrivacyNotice`, `FaceScanFallback`) |
 | Face feature extraction | `src/lib/ai/face-mesh.ts` |
 | Mode toggle / squad UI | `src/components/ModeToggle.tsx`, `src/components/screens/SquadScreen.tsx`, `src/app/squad/page.tsx` |
 | EZKL prover worker | `src/workers/ezkl-prover.worker.ts` |
@@ -84,8 +84,10 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 | Evidence data | `src/components/screens/evidence/evidence-data.ts`, `systems-science.ts` |
 | Format utility | `src/lib/format-ms.ts` |
 | QVAC | `scripts/qvac-worker.mjs`, `src/lib/qvac/index.ts`, `src/app/api/qvac/infer/route.ts` |
+| WDK payments | `src/lib/wdk/` (`index.ts`, `types.ts`, `payments.ts`), `src/app/api/wallet/` (`connect`, `balance`, `send`), `src/stores/slices/wallet-slice.ts` |
 | Wearables | `src/app/api/terra/`, `src/app/api/google-fit/`, `src/app/api/garmin/parse/route.ts`, `src/app/api/hrv/resolve/route.ts` |
 | DB | `src/lib/db/schema/`, `src/lib/db/queries/`, `src/lib/db/client.ts` |
+| Judge pages | `/evidence` (QVAC Hackathon), `/autoscientist` (AutoScientist Challenge), `/tether` (Tether Developers Cup) |
 
 ## Hard Rules
 
@@ -99,6 +101,8 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 - Never send app-level rounded scores as verifier public inputs. On-chain verification must use exact public instances emitted by EZKL.
 - Never claim SKALE verification unless the `verifyAndLogCredential` transaction is confirmed.
 - Keep `zkProof` ephemeral. It is intentionally excluded from Zustand persistence.
+- Never expose `WDK_SEED_PHRASE` to the client. WDK wallet operations happen server-side in API routes only.
+- All WDK blockchain calls go through `src/lib/wdk/` — no inline WDK imports in components or routes.
 
 ## ZK/SKALE Flow
 
@@ -118,6 +122,16 @@ Camera frame
 `HealthCredentialVerifier` is the app-facing contract. It calls `Halo2VerifierReusable.verifyProof` internally and emits a credential event only after proof validation succeeds.
 
 Current reusable verifier address is defined in `src/lib/blockchain/skale-client.ts` and `scripts/deploy-standalone.mjs`. If you redeploy `EZKLVerifierReusable`, update both constants.
+
+## System Scoring
+
+`SystemScore` has a `hasData: boolean` field that distinguishes between systems that are genuinely clear (`hasData: true`, score 0) and systems with no relevant stressor data (`hasData: false`). The UI must never show "Clear" for a system that was never assessed — it shows "— No data" instead. The `computeSystemScores` function in `src/stressors/scoring.ts` tracks which systems were "touched" by logged stressors and sets `hasData` accordingly.
+
+## Face Scan Privacy UX
+
+The face scan flow has a review phase between capture and processing. After the 3-2-1 countdown, the user sees their captured photo and can: **Use this photo** (proceed to ZK proof), **Retake** (back to live camera), or **Delete photo & skip** (purge from memory, exit scan). The camera stream stays alive during review so retake is instant.
+
+A persistent `PrivacyBadge` floats below the header during all active phases, adapting its copy: "Live preview · Not recording" → "In memory only · Not saved" → "Processing locally · Nothing uploaded" → "Photo cleared · Nothing stored". The result screen shows an animated "Photo cleared from memory" confirmation card on entry.
 
 ## ZK Artifact Order
 
@@ -176,6 +190,9 @@ NEXT_PUBLIC_VERIFIER_ADDRESS=
 DEPLOYER_PRIVATE_KEY=
 NEXT_PUBLIC_APP_URL=
 QVAC_MODEL_PATH=
+WDK_SEED_PHRASE=
+ETH_RPC_URL=https://sepolia.drpc.org
+NEXT_PUBLIC_USDT_CONTRACT=0xd077A400968890Eacc75cdc901F0356c943e4fDb
 ```
 
 ## Implementation Preferences
@@ -194,3 +211,4 @@ QVAC_MODEL_PATH=
 - ZK pipeline details: `docs/zk-pipeline.md`
 - Demo notes: `docs/qvac-edge-ai-demo.md`, `docs/skale-privacy-demo.md`
 - Tether Developers Cup plan: `docs/tether-cup-plan.md`
+- AutoScientist Challenge plan: `docs/autoscientist-challenge.md`

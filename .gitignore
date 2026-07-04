@@ -236,3 +236,9 @@ public/storybook/
 .DS_Store
 Thumbs.db
 .blackboxcli/
+
+# Python virtualenvs
+.venv-challenge/
+
+# HF Space datasets (large, regenerable)
+hf-space/datasets/

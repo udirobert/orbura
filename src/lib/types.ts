@@ -47,6 +47,8 @@ export interface SquadPlayer {
   stressors: Stressor[];
   faceAnalysis?: FaceAnalysisResult | null;
   analysis?: DebtAnalysis | null;
+  /** Player's EVM address for receiving USDt payments (WDK) */
+  walletAddress?: `0x${string}` | null;
 }
 
 // ─── Five recovery systems ────────────────────────────────────────────────────
@@ -66,6 +68,7 @@ export interface SystemScore {
   clearedAt:   string;        // ISO datetime
   causeText:   string;
   actionText:  string;
+  hasData:     boolean;       // false = no stressors touched this system (unknown state)
   scienceFact?: string;       // one-sentence insight
   scienceCite?: string;       // "Author et al., Journal, Year"
 }

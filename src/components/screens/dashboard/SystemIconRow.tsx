@@ -22,9 +22,12 @@ export function SystemIconRow({ systems, onTap }: SystemIconRowProps) {
   return (
     <div className="flex items-center justify-center gap-5 mt-4">
       {SYSTEM_ORDER.map((sys) => {
-        const score = systems.find((s) => s.system === sys)?.score ?? 0;
-        const color =
-          score >= 70
+        const entry = systems.find((s) => s.system === sys);
+        const score = entry?.score ?? 0;
+        const hasData = entry?.hasData ?? false;
+        const color = !hasData
+          ? "rgba(168,162,158,0.2)"
+          : score >= 70
             ? "var(--color-states-error)"
             : score >= 40
               ? "var(--color-brand-primary)"
@@ -38,7 +41,7 @@ export function SystemIconRow({ systems, onTap }: SystemIconRowProps) {
             onClick={onTap}
             className="flex flex-col items-center gap-0.5"
           >
-            <span className="text-base">{SYSTEM_ICONS[sys]}</span>
+            <span className="text-base" style={{ opacity: hasData ? 1 : 0.4 }}>{SYSTEM_ICONS[sys]}</span>
             <div className="w-1 h-1 rounded-full" style={{ backgroundColor: color }} />
           </motion.button>
         );

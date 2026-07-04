@@ -74,6 +74,7 @@ export const SystemScoreSchema = z.object({
   clearedAt: z.string(),
   causeText: z.string(),
   actionText: z.string(),
+  hasData: z.boolean().default(true),
   scienceFact: z.string().optional(),
   scienceCite: z.string().optional(),
 });

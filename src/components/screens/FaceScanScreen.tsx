@@ -3,12 +3,13 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, AlertTriangle, ShieldCheck, Loader2 } from "lucide-react";
+import { Camera, AlertTriangle, ShieldCheck, Loader2, Check, RotateCcw, Trash2 } from "lucide-react";
 import { MiniOrb } from "@/components/MiniOrb";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { memory } from "@/lib/sdk/eazo-client";
 import { PrivacyNotice } from "@/components/face-scan/PrivacyNotice";
+import { PrivacyBadge } from "@/components/face-scan/PrivacyBadge";
 import {
   useFaceScanPipeline,
   cameraErrorCopy,
@@ -23,10 +24,11 @@ export function FaceScanScreen() {
   const {
     phase, setPhase, scanMessageIdx, cameraError, analysisError,
     faceStatus, lightingStatus, blurStatus, distanceStatus, captureCountdown,
+    capturedImageUrl, extractedFeatures,
     txHash, isConfirmed,
     onChainStatus,
     videoRef, canvasRef, streamRef,
-    startCamera, captureAndProve, handleSkip, retry,
+    startCamera, captureAndProve, confirmCapture, retakeCapture, deletePhoto, handleSkip, retry,
   } = useFaceScanPipeline();
   const router = useRouter();
   const { setFaceAnalysis } = useBodyDebtStore();
@@ -64,6 +66,15 @@ export function FaceScanScreen() {
           />
         }
       />
+
+      {/* Persistent privacy badge — visible during all active scan phases.
+          Floats below the header so it's always in the user's peripheral
+          vision. Adapts copy per phase to reinforce the current data state. */}
+      {(phase === "camera" || phase === "review" || isProcessing || phase === "result") && (
+        <div className="relative z-20 flex justify-center mb-2">
+          <PrivacyBadge phase={phase} />
+        </div>
+      )}
 
       <AnimatePresence mode="sync">
         {phase === "privacy" && (
@@ -118,6 +129,16 @@ export function FaceScanScreen() {
               <video ref={(el) => { videoRef.current = el; if (el && streamRef.current) { el.srcObject = streamRef.current; el.play().catch(() => {}); } }}
                 autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
               <canvas ref={canvasRef} className="hidden" />
+              {/* "Not recording" indicator — a small, always-on badge in
+                  the corner of the video preview. Counters the instinct
+                  to worry that the camera is recording. */}
+              <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full"
+                style={{ backgroundColor: "rgba(10,10,11,0.6)", backdropFilter: "blur(4px)" }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--color-states-success)" }} />
+                <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>
+                  Live · not recording
+                </span>
+              </div>
               <div className="absolute inset-0 pointer-events-none">
                 <motion.div className="absolute inset-0 rounded-2xl" style={{ border: "1px solid rgba(16, 185, 129, 0.3)" }}
                   animate={{ scale: [1, 1.025, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} />
@@ -253,6 +274,62 @@ export function FaceScanScreen() {
           </motion.div>
         )}
 
+        {/* ── Review phase: show captured photo, retake or confirm ── */}
+        {phase === "review" && (
+          <motion.div key="review" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="relative z-10 flex-1 flex flex-col">
+            <div className="text-center px-4 mb-4">
+              <h2 className="font-normal leading-snug" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.3rem, 5vw, 1.6rem)", color: "var(--color-text-primary)" }}>
+                Does this look right?
+              </h2>
+              <p className="text-xs mt-1.5" style={{ color: "var(--color-text-faint)" }}>
+                Your face was captured. Retake if it&apos;s blurry or misaligned.
+              </p>
+            </div>
+            <div className="mx-auto w-full max-w-xs rounded-2xl overflow-hidden mb-3" style={{ aspectRatio: "4/5", border: "1px solid rgba(168,162,158,0.12)" }}>
+              {capturedImageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={capturedImageUrl} alt="Captured face" className="w-full h-full object-cover" />
+              )}
+            </div>
+            {/* Memory nudge — reassures the user that the photo is
+                temporary and will be purged. Small, factual, not
+                alarmist. */}
+            <div className="mx-auto w-full max-w-xs mb-4 flex items-center gap-2 px-3 py-2 rounded-xl"
+              style={{ backgroundColor: "rgba(16, 185, 129, 0.06)", border: "1px solid rgba(16, 185, 129, 0.12)" }}>
+              <ShieldCheck className="w-3 h-3 flex-shrink-0" style={{ color: "var(--color-states-success)" }} />
+              <p className="text-[10px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+                This photo exists only in your device&apos;s temporary memory. It&apos;s deleted when you continue or leave this page.
+              </p>
+            </div>
+            <div className="mt-auto flex flex-col gap-2.5 pb-10">
+              <PrimaryButton size="lg" onClick={confirmCapture}>
+                <span className="inline-flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  Use this photo
+                </span>
+              </PrimaryButton>
+              <motion.button whileTap={{ scale: 0.98 }}
+                onClick={retakeCapture}
+                className="w-full font-semibold text-sm rounded-2xl flex items-center justify-center gap-2"
+                style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-primary)", border: "1px solid rgba(168,162,158,0.2)", minHeight: "52px" }}>
+                <RotateCcw className="w-4 h-4" />
+                Retake photo
+              </motion.button>
+              {/* Delete — distinct from retake. This means "I don't
+                  want to do this at all." Purges the photo and exits
+                  to the next step in the intake flow. */}
+              <motion.button whileTap={{ scale: 0.98 }}
+                onClick={deletePhoto}
+                className="w-full text-sm rounded-2xl flex items-center justify-center gap-2 py-2.5"
+                style={{ color: "var(--color-text-faint)", border: "1px solid rgba(168,162,158,0.08)" }}>
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete photo & skip
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+
         {isProcessing && (
           <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="relative z-10 flex-1 flex flex-col items-center justify-center gap-6 pb-10">
@@ -298,7 +375,7 @@ export function FaceScanScreen() {
         )}
 
         {(phase === "result" || isConfirmed) && (
-          <ScanResult txHash={txHash} onChainStatus={onChainStatus} />
+          <ScanResult txHash={txHash} onChainStatus={onChainStatus} extractedFeatures={extractedFeatures} />
         )}
 
         {phase === "error" && (

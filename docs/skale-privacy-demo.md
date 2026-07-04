@@ -34,13 +34,30 @@
 **Say:**
 > *"The raw pixel data never leaves this browser tab. Not stored, not uploaded, not logged. The only thing that is produced is a zero-knowledge proof — a cryptographic guarantee that the computation was correct."*
 
-**Click:** Accept privacy → Open camera → "Capture & Prove"
+**Click:** Accept privacy → Open camera
+
+**Show:** The persistent privacy badge floating below the header — "Live preview · Not recording" during camera, then "In memory only · Not saved" after capture
+
+**Say:**
+> *"Notice the badge — it adapts as we go. Right now it says 'Live preview, not recording.' The camera is a live view, not a recording. After capture, it switches to 'In memory only, not saved.'"*
+
+**Click:** "Capture & Prove" → 3-2-1 countdown → review screen appears with the captured photo
+
+**Show:** The review screen with three options: "Use this photo", "Retake photo", "Delete photo & skip"
+
+**Say:**
+> *"After capture, the user gets a review screen. They can retake if it's blurry, or delete the photo entirely — which purges it from memory and exits. The user is in control the whole time. The camera stream stays alive during review, so retake is instant."*
+
+**Click:** "Use this photo" → processing begins
 
 ---
 
 ## 0:35–1:00 — Proof Circuit Animation + Local Verification
 
-**Show:** The circuit-board proof lifecycle animates through 4 stages
+**Show:** The "Photo cleared from memory" confirmation card animates in on the result screen, then the circuit-board proof lifecycle animates through 4 stages
+
+**Say:**
+> *"First — see that confirmation? 'Photo cleared from memory.' The image was discarded after measurement. Only the math proof remains. Now watch the circuit board..."*
 
 **Say:**
 > *"Watch the circuit board. Four stages: Extract facial features, generate the ZK proof in a Web Worker using EZKL, cryptographically verify the proof locally, then commit the result to SKALE. Everything except the final commit happens inside this browser tab."*
