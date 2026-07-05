@@ -95,6 +95,12 @@ python app.py
 
 The training script has no PyTorch or scikit-learn dependency. It trains the 553-parameter MLP in pure NumPy using Adam, then re-exports the ONNX. Two seconds on a modern laptop.
 
+## Repo layout
+
+- [app.py](app.py) — the active Hugging Face Space entry point.
+- [train_stress_model.py](train_stress_model.py) — the lightweight ONNX training script.
+- [archive/](archive/) — historical experiment scripts and older publishing helpers.
+
 ## OpenAI Codex Track
 
 This Space was built end-to-end with **OpenAI Codex** as the coding agent. The full source repository, including Codex-attributed commits, is here:

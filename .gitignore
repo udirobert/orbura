@@ -237,8 +237,25 @@ public/storybook/
 Thumbs.db
 .blackboxcli/
 
+# AI coding assistants / local tooling
+.commandcode/
+.devin/
+.qoder/
+.claude/
+.eazo/
+
 # Python virtualenvs
 .venv-challenge/
 
 # HF Space datasets (large, regenerable)
 hf-space/datasets/
+
+# Local archive / scratch dirs
+archive/*
+!archive/
+!archive/README.md
+!archive/legacy-gradio/
+!archive/legacy-gradio/**
+hf-space/archive/*
+!hf-space/archive/
+!hf-space/archive/README.md

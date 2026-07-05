@@ -209,6 +209,7 @@ NEXT_PUBLIC_USDT_CONTRACT=0xd077A400968890Eacc75cdc901F0356c943e4fDb
 - Deployment & HTTPS: `docs/deployment.md`
 - Contract deployment: `contracts/README.md`
 - ZK pipeline details: `docs/zk-pipeline.md`
-- Demo notes: `docs/qvac-edge-ai-demo.md`, `docs/skale-privacy-demo.md`
+- Demo notes: `docs/skale-privacy-demo.md`
 - Tether Developers Cup plan: `docs/tether-cup-plan.md`
-- AutoScientist Challenge plan: `docs/autoscientist-challenge.md`
+- Archived legacy notes: `docs/legacy/`
+- Historical HF-space experiments: `hf-space/archive/`
