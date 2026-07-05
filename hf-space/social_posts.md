@@ -49,48 +49,116 @@ Sharing our experience with the Adaption platform: the Adaptive Data augmentatio
 
 ---
 
-## PHASE 2: Results post (post when training completes + eval runs)
+## PHASE 1.5: "Honest update" (post after v1 results, before v2 training)
 
-### X/Twitter Post 2 (results)
+### X/Twitter Thread 2
 
-Results are in! Our AutoScientist fine-tuned Llama-3.2-3B beats the baseline on structured health recovery coaching:
+Update on the @adaption_ai #AutoScientist Challenge 🧬
 
-[INSERT EVAL TABLE]
+Our first training run completed — 100% training success, but only 49% win rate against the baseline.
 
-Baseline: [X]% → Fine-tuned: [Y]%
-Improvement: [+Z]pp
-
-Dataset + weights: [HF link] [Kaggle link]
-Live demo: [HF Space link]
-
-#AutoScientistChallenge #HealthcareAI
-
-@adaption_ai
+Fine-tuning actually *hurt* the model. Here's what we got wrong, what we got right, and what we're doing now 🧵👇
 
 ---
 
-### LinkedIn Post 2 (results)
+What went right:
 
-Results from our AutoScientist Challenge submission are in 🧬
+✅ The deterministic Body Debt engine works — 5-system physiological scoring from sleep, alcohol, training, stress
+✅ 12,800 structured examples generated with zero human annotation
+✅ Adaption's Adaptive Data improved quality 7.0 → 9.23 (+31.9%)
+✅ Training pipeline ran clean on 4× H100s
 
-Our fine-tuned Llama-3.2-3B shows measurable improvement over the baseline on structured health recovery prescription generation:
+The concept is sound. The execution had three bugs.
 
-[INSERT EVAL TABLE]
+---
 
-What we learned:
-→ Small models (3B) can produce reliable structured medical output when trained on high-quality, deterministic data
-→ Adaption's data augmentation (reasoning traces + prompt rephrasing) made a bigger difference than we expected — quality went from C to A
-→ AutoScientist's co-optimized recipe outperformed our manually configured hyperparameters
-→ The entire pipeline — scoring, dataset generation, augmentation, training — took under a day
+Bug 1: The augmented dataset was 99% triage, 0% coach, 0% schedule.
 
-Dataset + weights released (Apache 2.0):
-🔗 Hugging Face: [link]
-🔗 Kaggle: [link]
-🔗 Live demo: [link]
+Somehow only the triage agent's examples made it through augmentation. The model overfit to one output format (PRIORITY/SECONDARY/AVOID) and forgot how to do general healthcare reasoning.
 
-#AutoScientistChallenge #HealthcareAI #SmallModels #FineTuning #OpenSource
+---
 
-@adaption-labs
+Bug 2: Our labels didn't match our own system prompts.
+
+The prompt said "PRIORITY: <system> <score> — <health reason in 8 words>"
+The label was just "PRIORITY: Liver 82/100"
+
+No health reason. Coach lines were 4-8 words when we asked for 12-18. The model learned to produce *worse* output than the zero-shot baseline.
+
+---
+
+Bug 3: Adaption's prompt_rephrase recipe rewrote our system prompts into different formats.
+
+At inference time the model sees the original prompts — not the rephrased ones. Train/inference mismatch. The model was confused before it even started reasoning.
+
+---
+
+What we're doing now (v2):
+
+🔧 Fixed all labels to match system prompt format — health reasons, biological mechanisms, 12-18 word lines
+🔧 Merged all 4 agents into one balanced dataset (3,000 each)
+🔧 Disabled prompt_rephrase — keeping reasoning traces + deduplication only
+🔧 Enriched schedule actions with biological reasons
+
+---
+
+v2 augmentation is running now — 12,000 examples, all 4 agents, prompt_rephrase off.
+
+12,800 examples pass format validation. All 4 agents score 100% when the eval harness parses their ground truth.
+
+Retraining next. Open source throughout:
+https://github.com/udirobert/bodydebt
+
+@adaption_ai #AutoScientistChallenge
+
+---
+
+## PHASE 2: Results post (post when training completes + eval runs)
+
+### X/Twitter Thread 3 (results)
+
+Results from v2 training: 66% win rate 🧬
+
+v1: 49% (fine-tuning hurt the model)
+v2: 66% (beats baseline 2 out of 3 times)
+
++17 point swing from fixing three bugs. Here's what changed 🧵👇
+
+@adaption_ai #AutoScientistChallenge
+
+---
+
+v1 had three fatal bugs:
+
+1. Dataset was 99% triage, 0% coach/schedule — model overfit to one format
+2. Labels didn't match system prompts — missing health reasons, wrong word counts
+3. Prompt rephrasing rewrote system prompts — train/inference mismatch
+
+---
+
+v2 fixes:
+- All 4 agents balanced (33/33/31/3)
+- Labels match system prompt format exactly (8-word health reasons, 12-18 word coach lines)
+- prompt_rephrase disabled
+- 28,036 rows (domain + general purpose augmentation)
+
+12,800 examples pass format validation. 100% eval score on ground truth.
+
+---
+
+The biggest lesson: fine-tuning amplifies your data quality. Bad data doesn't just fail to help — it actively degrades the model below baseline.
+
+Get the labels right, balance the tasks, preserve the prompts. Then augmentation does the rest.
+
+---
+
+Model: Mistral 7B Instruct, fine-tuned via @adaption_ai AutoScientist
+Dataset + weights: open source (Apache 2.0)
+Live app: https://bodydebt.thisyearnofear.com
+
+https://github.com/udirobert/bodydebt
+
+#AutoScientistChallenge #HealthcareAI #SmallModels
 
 ---
 

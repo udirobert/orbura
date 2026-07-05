@@ -553,7 +553,7 @@ Post on LinkedIn and X:
 | `hf-space/demo_autoscientist.py` | Before/after comparison demo (Gradio) | Done |
 | `hf-space/social_posts.md` | LinkedIn + X post templates (Phase 1 + Phase 2) | Done |
 | AutoScientist training (v1) | Llama-3.2-3B LoRA, 4x H100 | Completed, 49% win rate |
-| AutoScientist training (v2) | Retrain with fixed labels, all 4 agents, no prompt rephrase | Pending |
+| AutoScientist training (v2) | Mistral 7B Instruct, 28k rows (domain + general purpose) | Completed, 66% win rate |
 
 ---
 
@@ -623,3 +623,47 @@ All 12,800 examples pass format validation:
 
 All 4 agents score 100% when the eval harness parses and scores their
 own ground truth.
+
+---
+
+## 14. v2 results (66% win rate)
+
+### Training
+
+- **Model**: Mistral 7B Instruct (AutoScientist-selected)
+- **Training data**: 28,036 rows
+  - 5,618 domain (Body Debt 4-agent pipeline with reasoning traces)
+  - 22,418 general purpose (medical/healthcare Q&A to preserve general reasoning)
+- **Augmentation**: domain (14,440 points, 145 credits) + general purpose (8,000 points, 80 credits)
+- **Total credits**: 225
+
+### Results
+
+| Metric | v1 | v2 |
+|--------|----|----|
+| Win rate | 49% | **66%** |
+| Model | Llama-3.2-3B | Mistral 7B Instruct |
+| Training rows | 5,462 | 28,036 |
+| Agent balance | 99% triage | 33/33/31/3 |
+| prompt_rephrase | enabled | disabled |
+| Labels match prompts | no | yes |
+
+### What worked
+
+1. **All 4 agents represented** — the model learned all four output
+   formats instead of overfitting to one.
+2. **Labels match system prompts** — the model learned the correct
+   format (health reasons, word counts, biological mechanisms).
+3. **prompt_rephrase disabled** — no train/inference mismatch.
+4. **General purpose data** — 22k general medical Q&A rows prevented
+   the model from forgetting general healthcare reasoning.
+5. **Reasoning traces** — taught the model *how to think* about
+   physiological recovery, not just pattern-match.
+
+### Published artifacts
+
+- **Original dataset**: https://huggingface.co/datasets/Papajams/body-debt-finetune-dataset
+- **Augmented dataset**: https://huggingface.co/datasets/Papajams/body-debt-augmented-v2
+- **Model**: `adaption_mistral_7b_instruct_body_debt_triage_prescri_c6cf1230` (Together AI)
+- **Live app**: https://bodydebt.thisyearnofear.com
+- **Source code**: https://github.com/udirobert/bodydebt
