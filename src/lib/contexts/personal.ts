@@ -2,14 +2,6 @@ import type { RecoveryContextConfig } from "./types";
 
 export const personalContext: RecoveryContextConfig = {
   mode: "personal",
-  stressorCatalog: [
-    { type: "alcohol",  label: "Alcohol",       icon: "🍺", description: "Drinks last night" },
-    { type: "sleep",    label: "Poor sleep",    icon: "😴", description: "Under 7 hours" },
-    { type: "training", label: "Hard training",  icon: "💪", description: "Gym or intense exercise" },
-    { type: "stress",   label: "High stress",    icon: "😤", description: "Work or life pressure" },
-    { type: "ill",      label: "Illness",        icon: "🤒", description: "Fighting something off" },
-    { type: "care",     label: "Self-care",      icon: "✦",  description: "Active recovery day" },
-  ],
   scoringWeights: {
     baseWeights: {
       alcohol:  { min: 25, max: 35, label: "Alcohol" },

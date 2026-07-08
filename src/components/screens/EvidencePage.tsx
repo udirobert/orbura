@@ -1,9 +1,11 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { MetricCard } from "./evidence/MetricCard";
-import { SYSTEMS_SCIENCE } from "./evidence/systems-science";
+import { getSystemsScience } from "./evidence/systems-science";
 import {
   SAMPLE_BENCHMARK,
   SAMPLE_COUNTERFACTUAL,
@@ -37,7 +39,20 @@ import { formatMs } from "@/lib/format-ms";
 
 // formatMs imported from @/lib/format-ms
 
+// Hydration-safe mounted flag — false on the server snapshot, true on the
+// client — so the static prerender matches the first client paint.
+const emptySubscribe = () => () => {};
+
 export function EvidencePage() {
+  // Mode-aware science: fan mode surfaces the emotional-stress citations
+  // (NEJM World Cup, stress/sleep). The persisted mode is only applied after
+  // hydration so the prerender (default mode) and first client paint agree.
+  const mode = useBodyDebtStore((s) => s.mode);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const activeMode = mounted ? mode : "personal";
+  const isFan = activeMode === "fan";
+  const science = getSystemsScience(activeMode);
+
   return (
     <div className="min-h-svh px-5 py-10 overflow-x-hidden"
       style={{ backgroundColor: "var(--color-bg-base)", color: "var(--color-text-primary)" }}>
@@ -299,15 +314,17 @@ export function EvidencePage() {
         <section>
           <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "var(--color-text-faint)" }}>
             Science behind the scoring
+            {isFan && (
+              <span style={{ color: "#fb7185" }}> · Fan Recovery mode</span>
+            )}
           </h2>
           <p className="text-xs mb-4 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
-            The Body Debt scoring engine is a deterministic, rule-based system rooted in peer-reviewed
-            physiology research. Each of the five recovery systems accumulates debt independently based on
-            the type, intensity, and timing of user-reported stressors. Below is the scientific basis for
-            each system&apos;s scoring logic and the evidence that informs it.
+            {isFan
+              ? "In Fan Recovery mode the same deterministic engine models the physiological load of watching football. The cardiovascular and brain systems below carry the emotional-stress science — a documented, peer-reviewed effect, not a metaphor."
+              : "The Body Debt scoring engine is a deterministic, rule-based system rooted in peer-reviewed physiology research. Each of the five recovery systems accumulates debt independently based on the type, intensity, and timing of user-reported stressors. Below is the scientific basis for each system's scoring logic and the evidence that informs it."}
           </p>
 
-          {SYSTEMS_SCIENCE.map((s, i) => (
+          {science.map((s, i) => (
             <motion.div
               key={s.system}
               initial={{ opacity: 0, y: 12 }}
@@ -491,46 +508,82 @@ export function EvidencePage() {
             </div>
           </div>
 
-          {/* Football-specific stressors */}
-          <div className="rounded-2xl mb-3 overflow-hidden"
-            style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
-            <div className="px-4 py-2.5"
-              style={{ borderBottom: "1px solid rgba(168,162,158,0.06)" }}>
-              <span className="text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                Football-specific stressors (Match Fit mode)
-              </span>
-              <p className="text-[9px] mt-0.5 font-mono" style={{ color: "var(--color-text-faint)" }}>
-                Additional stressor types available when the app is in football/squad mode.
-              </p>
-            </div>
-            <div className="px-4 py-2.5 space-y-3">
-              <div>
-                <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Match minutes</span>
-                <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
-                  35 points on muscular/CNS × modifier, 30 on cardiovascular × modifier.
-                  Under 30 min: 0.3–0.4×, 30–60 min: 0.6–0.7×, 60–90 min: 0.9–1.0×, extra time: 1.2–1.3×.
+          {/* Mode-specific stressors — football (Match Fit) or fan (Fan Recovery) */}
+          {isFan ? (
+            <div className="rounded-2xl mb-3 overflow-hidden"
+              style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(251,113,133,0.15)" }}>
+              <div className="px-4 py-2.5"
+                style={{ borderBottom: "1px solid rgba(168,162,158,0.06)" }}>
+                <span className="text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  Fan-specific stressors (Fan Recovery mode)
+                </span>
+                <p className="text-[9px] mt-0.5 font-mono" style={{ color: "var(--color-text-faint)" }}>
+                  The emotional load of watching, mapped onto the same five-system engine.
                 </p>
               </div>
-              <div>
-                <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Card/disciplinary stress</span>
-                <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
-                  20 points on brain × modifier, 10 on cardiovascular. Yellow: 0.4×, heavy foul: 0.7×, red: 1.0×.
-                </p>
-              </div>
-              <div>
-                <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Travel / timezone shift</span>
-                <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
-                  1–2h shift adds +8 brain, +5 cardio, +3 gut. 3–5h adds +18 brain, +10 cardio, +8 gut. 6h+ adds +30 brain, +18 cardio, +15 gut.
-                </p>
-              </div>
-              <div>
-                <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Concussion check</span>
-                <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
-                  50 base points on brain × severity modifier. Minor: 0.8×, moderate: 1.0×, protocol: 1.5×.
-                </p>
+              <div className="px-4 py-2.5 space-y-3">
+                <div>
+                  <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>The result</span>
+                  <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                    Emotional-stress load on brain, cardiovascular, and gut.
+                    Comfortable win: +6/+4/+2, late/tight win: +14/+12/+5, draw: +16/+8/+6, loss: +32/+18/+14, knocked out: +45/+26/+22.
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Match tension</span>
+                  <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                    Cardiovascular-led, plus brain. Comfortable: +2 cardio/+2 brain, tense: +14/+8, nail-biter: +24/+14, penalty shootout: +34/+20.
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Post-match scroll</span>
+                  <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                    Brain load from blue light and rumination, plus gut. A few minutes: +6 brain, about an hour: +16/+4, couldn&apos;t stop: +28/+8.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-2xl mb-3 overflow-hidden"
+              style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
+              <div className="px-4 py-2.5"
+                style={{ borderBottom: "1px solid rgba(168,162,158,0.06)" }}>
+                <span className="text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  Football-specific stressors (Match Fit mode)
+                </span>
+                <p className="text-[9px] mt-0.5 font-mono" style={{ color: "var(--color-text-faint)" }}>
+                  Additional stressor types available when the app is in football/squad mode.
+                </p>
+              </div>
+              <div className="px-4 py-2.5 space-y-3">
+                <div>
+                  <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Match minutes</span>
+                  <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                    35 points on muscular/CNS × modifier, 30 on cardiovascular × modifier.
+                    Under 30 min: 0.3–0.4×, 30–60 min: 0.6–0.7×, 60–90 min: 0.9–1.0×, extra time: 1.2–1.3×.
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Card/disciplinary stress</span>
+                  <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                    20 points on brain × modifier, 10 on cardiovascular. Yellow: 0.4×, heavy foul: 0.7×, red: 1.0×.
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Travel / timezone shift</span>
+                  <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                    1–2h shift adds +8 brain, +5 cardio, +3 gut. 3–5h adds +18 brain, +10 cardio, +8 gut. 6h+ adds +30 brain, +18 cardio, +15 gut.
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[9px] font-mono font-semibold" style={{ color: "var(--color-text-primary)" }}>Concussion check</span>
+                  <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
+                    50 base points on brain × severity modifier. Minor: 0.8×, moderate: 1.0×, protocol: 1.5×.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* ── Confidence tier ladder ── */}

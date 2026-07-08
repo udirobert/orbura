@@ -10,7 +10,7 @@ import { MiniOrb } from "@/components/MiniOrb";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { StressorCard } from "./stressor-card";
-import { ACK_COPY, CONFIDENCE_CONFIG, computeLiveScore, byMode } from "@/stressors";
+import { ACK_COPY, CONFIDENCE_CONFIG, computeLiveScore, byMode, intakeStressors } from "@/stressors";
 import type { StressorDef } from "@/stressors/types";
 import { bandMeta } from "@/lib/debt-band";
 
@@ -84,6 +84,19 @@ export function DebtIntakeScreen() {
   const liveScore = computeLiveScore(selectedStressors);
   const confConfig = CONFIDENCE_CONFIG.find((c) => c.tier === confidenceTier) ?? CONFIDENCE_CONFIG[0];
 
+  const question =
+    mode === "fan"
+      ? "How did the match leave you?"
+      : "What did you put your body through last night?";
+  const questionHint =
+    mode === "fan"
+      ? "Log the result and how it felt · chevron to add detail"
+      : "Tap to log · chevron to add detail";
+
+  // Fan intake leads with the match itself (result, tension, scroll) before the
+  // shared lifestyle stressors; see `intakeStressors`.
+  const intakeDefs = intakeStressors(mode);
+
   return (
     <div
       className="relative min-h-svh flex flex-col px-5 overflow-hidden"
@@ -134,10 +147,10 @@ export function DebtIntakeScreen() {
             letterSpacing: "-0.01em",
           }}
         >
-          What did you put your body through last night?
+          {question}
         </motion.h2>
         <p className="text-xs mt-1.5" style={{ color: "var(--color-text-faint)" }}>
-          Tap to log · chevron to add detail
+          {questionHint}
         </p>
       </div>
 
@@ -169,7 +182,7 @@ export function DebtIntakeScreen() {
         />
       ) : (
         <div className="relative z-10 flex flex-col gap-2.5 flex-1">
-          {byMode(mode).map((def, i) => {
+          {intakeDefs.map((def, i) => {
             const stressor = selectedStressors.find((s) => s.type === def.type);
             return (
               <motion.div
@@ -231,8 +244,14 @@ function FootballStressorGrid({
   onSubOption: (type: StressorType, field: keyof Stressor, key: string) => void;
 }) {
   const all = byMode("football");
-  const general = all.filter((s) => !s.modes);
-  const matchLoad = all.filter((s) => s.modes?.includes("football"));
+  // "Match Load" = the football-only stressors; everything else is "General".
+  // Keyed by type (not the `modes` field) so restricting a general stressor to
+  // specific modes never reshuffles this layout.
+  const MATCH_LOAD_TYPES = new Set<StressorType>([
+    "match_minutes", "card_stress", "travel_timezone", "concussion_check",
+  ]);
+  const general = all.filter((s) => !MATCH_LOAD_TYPES.has(s.type));
+  const matchLoad = all.filter((s) => MATCH_LOAD_TYPES.has(s.type));
 
   return (
     <div className="relative z-10 flex flex-col gap-4 flex-1">

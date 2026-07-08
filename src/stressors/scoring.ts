@@ -7,7 +7,7 @@
  * Systems: cardiovascular · brain/cognition · liver · muscular/CNS · gut
  */
 
-import type { Stressor, SystemScore, RecoverySystem } from "@/lib/types";
+import type { Stressor, SystemScore, RecoverySystem, RecoveryMode } from "@/lib/types";
 import { STRESSORS } from "./catalog";
 import type { CounterfactualResult } from "./types";
 
@@ -103,13 +103,42 @@ const CONCUSSION_BRAIN: Record<string, number> = {
   protocol:  1.5,
 };
 
+// ─── Fan-specific modifiers (emotional / mental debt) ────────────────────────
+//
+// Watching football is a physiological event. Acute emotional stress — a loss,
+// a shootout, a late winner — drives cortisol and adrenaline, elevates heart
+// rate, and disrupts sleep. These tables translate the emotional weight of a
+// match into the same five-system model the rest of the app uses.
+
+const RESULT_LOAD: Record<string, { brain: number; cardio: number; gut: number }> = {
+  won_big:     { brain: 6,  cardio: 4,  gut: 2 },
+  won_tight:   { brain: 14, cardio: 12, gut: 5 },
+  draw:        { brain: 16, cardio: 8,  gut: 6 },
+  lost:        { brain: 32, cardio: 18, gut: 14 },
+  knocked_out: { brain: 45, cardio: 26, gut: 22 },
+};
+
+const TENSION_LOAD: Record<string, { cardio: number; brain: number }> = {
+  comfortable: { cardio: 2,  brain: 2 },
+  tense:       { cardio: 14, brain: 8 },
+  nail_biter:  { cardio: 24, brain: 14 },
+  shootout:    { cardio: 34, brain: 20 },
+};
+
+const DOOMSCROLL_BRAIN: Record<string, { brain: number; gut: number }> = {
+  a_bit:   { brain: 6,  gut: 0 },
+  an_hour: { brain: 16, gut: 4 },
+  hours:   { brain: 28, gut: 8 },
+};
+
 // ─── Main engine ──────────────────────────────────────────────────────────────
 
 export function computeSystemScores(
   stressors: Stressor[],
   now: Date,
   wakeTime?: string | null,
-  bedTime?: string | null
+  bedTime?: string | null,
+  mode: RecoveryMode = "personal"
 ): SystemScore[] {
   const raw: Record<RecoverySystem, number> = {
     cardiovascular: 0,
@@ -216,6 +245,29 @@ export function computeSystemScores(
       raw.brain += 50 * brainHit;
       touched.brain = true;
     }
+
+    if (s.type === "result") {
+      const load = RESULT_LOAD[s.matchResult ?? "lost"] ?? RESULT_LOAD.lost;
+      raw.brain          += load.brain;
+      raw.cardiovascular += load.cardio;
+      raw.gut            += load.gut;
+      touched.brain = touched.cardiovascular = touched.gut = true;
+    }
+
+    if (s.type === "match_tension") {
+      const load = TENSION_LOAD[s.matchTension ?? "tense"] ?? TENSION_LOAD.tense;
+      raw.cardiovascular += load.cardio;
+      raw.brain          += load.brain;
+      touched.cardiovascular = touched.brain = true;
+    }
+
+    if (s.type === "doomscroll") {
+      const load = DOOMSCROLL_BRAIN[s.doomscrollAmount ?? "an_hour"] ?? DOOMSCROLL_BRAIN.an_hour;
+      raw.brain += load.brain;
+      raw.gut   += load.gut;
+      touched.brain = true;
+      if (load.gut > 0) touched.gut = true;
+    }
   }
 
   if (bedTime && wakeTime) {
@@ -232,6 +284,10 @@ export function computeSystemScores(
     const recoveryHrs = (score / 100) * meta.baseWindowHrs;
     const clearedAt = new Date(now.getTime() + recoveryHrs * 3600000).toISOString();
 
+    // Fan mode surfaces the emotional-stress science (e.g. the NEJM World Cup
+    // cardiac-event finding) where it exists, falling back to the base cite.
+    const sci = (mode === "fan" && FAN_SCIENCE[system]) ? FAN_SCIENCE[system] : SCIENCE[system];
+
     return {
       system,
       label:        meta.label,
@@ -241,8 +297,8 @@ export function computeSystemScores(
       hasData:      touched[system],
       causeText:    buildCauseText(system, stressors, touched[system]),
       actionText:   buildActionText(system, stressors, touched[system]),
-      scienceFact:  SCIENCE[system]?.fact,
-      scienceCite:  SCIENCE[system]?.cite,
+      scienceFact:  sci?.fact,
+      scienceCite:  sci?.cite,
     };
   });
 }
@@ -272,6 +328,19 @@ const SCIENCE: Partial<Record<RecoverySystem, { fact: string; cite: string }>> =
   },
 };
 
+// Fan-mode science — the emotional load of watching is a documented
+// physiological event, not a metaphor.
+const FAN_SCIENCE: Partial<Record<RecoverySystem, { fact: string; cite: string }>> = {
+  cardiovascular: {
+    fact: "During the 2006 World Cup, cardiac emergencies more than doubled on days the German team played. The trigger was acute emotional stress from watching — not physical exertion.",
+    cite: "Wilbert-Lampen et al., New England Journal of Medicine, 2008",
+  },
+  brain: {
+    fact: "A stressful or disappointing match keeps cortisol and adrenaline elevated for hours, delaying sleep onset and prolonging rumination well past the final whistle.",
+    cite: "Åkerstedt, Sleep Medicine Reviews, 2006",
+  },
+};
+
 function buildCauseText(system: RecoverySystem, stressors: Stressor[], hasData: boolean): string {
   if (!hasData) return "Not assessed — no data for this system";
 
@@ -284,6 +353,9 @@ function buildCauseText(system: RecoverySystem, stressors: Stressor[], hasData: 
   const card     = stressors.find((s) => s.type === "card_stress");
   const travel   = stressors.find((s) => s.type === "travel_timezone");
   const concussion = stressors.find((s) => s.type === "concussion_check");
+  const result   = stressors.find((s) => s.type === "result");
+  const tension  = stressors.find((s) => s.type === "match_tension");
+  const scroll   = stressors.find((s) => s.type === "doomscroll");
 
   switch (system) {
     case "liver":
@@ -295,6 +367,10 @@ function buildCauseText(system: RecoverySystem, stressors: Stressor[], hasData: 
       return "No significant liver load";
 
     case "brain":
+      if (result && (result.matchResult === "lost" || result.matchResult === "knocked_out"))
+        return "Your team lost — cortisol and rumination are keeping your mind switched on.";
+      if (scroll) return "Post-match scrolling — blue light and hot takes are delaying your wind-down.";
+      if (result) return "Post-match adrenaline still clearing from the nervous system.";
       if (concussion) return `Head impact — ${concussion.concussionSeverity ?? "minor"} severity. Concussion protocol applies.`;
       if (alcohol?.alcoholType === "spirits" || alcohol?.alcoholType === "cocktails")
         return "Spirits/cocktails hit cognition hardest. Decision quality reduced.";
@@ -305,6 +381,11 @@ function buildCauseText(system: RecoverySystem, stressors: Stressor[], hasData: 
       return "Mild cognitive load from last night";
 
     case "cardiovascular":
+      if (tension && (tension.matchTension === "shootout" || tension.matchTension === "nail_biter"))
+        return `A ${tension.matchTension === "shootout" ? "penalty shootout" : "nail-biter"} — sustained emotional stress kept your heart rate up.`;
+      if (result && (result.matchResult === "lost" || result.matchResult === "knocked_out"))
+        return "Emotional stress from the result raised your heart rate and blood pressure.";
+      if (tension) return "A tense watch kept your heart rate elevated through the match.";
       if (match) return `${match.matchMinutesPlayed ?? "60-90"} match minutes — cardiovascular load from match`;
       if (training?.trainingArea === "hiit" || training?.trainingArea === "cardio")
         return `${capitalize(training.trainingArea)} session — heart rate recovery active`;
@@ -329,6 +410,7 @@ function buildCauseText(system: RecoverySystem, stressors: Stressor[], hasData: 
       if (alcohol?.alcoholType === "cocktails") return "Cocktail mixers adding fructose and gut load";
       if (sleep) return "Poor sleep disrupts gut microbiome rhythm";
       if (ill) return "Illness affecting gut barrier function";
+      if (result || tension) return "Match stress reaches the gut through the brain-gut axis — cortisol unsettles digestion";
       return "Minimal gut load";
   }
 }
@@ -341,6 +423,9 @@ function buildActionText(system: RecoverySystem, stressors: Stressor[], hasData:
   const match    = stressors.find((s) => s.type === "match_minutes");
   const concussion = stressors.find((s) => s.type === "concussion_check");
   const travel   = stressors.find((s) => s.type === "travel_timezone");
+  const result   = stressors.find((s) => s.type === "result");
+  const tension  = stressors.find((s) => s.type === "match_tension");
+  const scroll   = stressors.find((s) => s.type === "doomscroll");
 
   switch (system) {
     case "liver":
@@ -349,9 +434,11 @@ function buildActionText(system: RecoverySystem, stressors: Stressor[], hasData:
         : "Liver clear — no action needed.";
     case "brain":
       if (concussion) return "Concussion protocol. No training, no screens. Medical clearance required.";
+      if (result || scroll) return "Screens down and a 15-minute walk now — it burns cortisol before bed. The group chat can wait.";
       if (travel) return "Natural light exposure to reset circadian rhythm. No screens after 10pm.";
       return "No decisions requiring deep focus until your window opens.";
     case "cardiovascular":
+      if (tension || result) return "Bring your system down: a short walk, water, slow breaths. No more caffeine or replays before bed.";
       if (match?.matchMinutesPlayed === "extra_time" || match?.matchMinutesPlayed === "60-90")
         return "No cardio today. Walk only. Heart rate recovery still active.";
       return training?.trainingIntensity === "destroyed"
@@ -469,6 +556,7 @@ const COUNTERFACTUAL_FLIPS: Record<string, { field: keyof Stressor; fromTo: Reco
   card_stress:       { field: "cardType",             fromTo: { red: "yellow", heavy_foul: "yellow", yellow: "yellow" }, label: "avoided the card or heavy foul" },
   travel_timezone:   { field: "timezoneDelta",        fromTo: { "6+": "1-2", "3-5": "1-2", "1-2": "1-2" }, label: "arrived earlier to adjust to the timezone" },
   concussion_check:  { field: "concussionSeverity",   fromTo: { protocol: "minor", moderate: "minor", minor: "minor" }, label: "avoided the head impact" },
+  doomscroll:        { field: "doomscrollAmount",      fromTo: { hours: "a_bit", an_hour: "a_bit", a_bit: "a_bit" }, label: "logged off instead of doomscrolling" },
 };
 
 const SYSTEM_LABEL_NICE: Record<RecoverySystem, string> = {
@@ -545,6 +633,11 @@ export function computeLiveScore(stressors: Stressor[]): number {
     if (s.type === "alcohol" && s.alcoholType === "spirits") score += 6;
     if (s.type === "alcohol" && s.alcoholCount === "5+") score += 8;
     if (s.type === "alcohol" && s.alcoholCount === "lost_count") score += 12;
+    if (s.type === "result" && s.matchResult === "knocked_out") score += 12;
+    if (s.type === "result" && s.matchResult === "lost") score += 8;
+    if (s.type === "match_tension" && s.matchTension === "shootout") score += 10;
+    if (s.type === "match_tension" && s.matchTension === "nail_biter") score += 5;
+    if (s.type === "doomscroll" && s.doomscrollAmount === "hours") score += 8;
   }
   return Math.max(0, Math.min(100, score));
 }

@@ -9,6 +9,13 @@ import { memory } from "@/lib/sdk/eazo-client";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import type { RecoveryMode } from "@/lib/types";
 
+// Per-mode picker icon
+const MODE_ICON: Record<RecoveryMode, string> = {
+  personal: "🧘",
+  football: "⚽",
+  fan: "❤️",
+};
+
 // Turbulence frames for dormant orb
 const DORMANT_FRAMES = [
   "52% 48% 50% 50% / 50% 52% 48% 50%",
@@ -201,7 +208,7 @@ export function OpeningScreen() {
                     }}
                   >
                     <span className="text-xl flex-shrink-0 pt-0.5">
-                      {isDefault ? "🧘" : "⚽"}
+                      {MODE_ICON[c.mode] ?? "🧘"}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -231,6 +238,17 @@ export function OpeningScreen() {
                             }}
                           >
                             Squad mode
+                          </span>
+                        )}
+                        {c.mode === "fan" && (
+                          <span
+                            className="text-[8px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
+                            style={{
+                              backgroundColor: "rgba(251,113,133,0.1)",
+                              color: "#fb7185",
+                            }}
+                          >
+                            Fan mode
                           </span>
                         )}
                       </div>

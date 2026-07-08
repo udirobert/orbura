@@ -4,11 +4,14 @@
  * The Tether Cup is football-themed with 3 tracks:
  * Pears (P2P), QVAC (Local AI), WDK (Wallets).
  *
- * We're submitting to the QVAC track. The story is:
- * "Match Fit — the on-device team doctor.
- *  Scan a player, get a match-readiness score and
- *  return-to-play protocol. No cloud, no API keys,
- *  works in a locker room with no signal."
+ * The story: a football match is a physiological event — for the players who
+ * run 11km AND the billions who watch a shootout with their heart in their
+ * mouth. One on-device engine, two experiences:
+ *
+ *  • Match Fit    — the team doctor for players & coaches (+ WDK squad payments)
+ *  • Fan Recovery — an emotional-recovery coach for fans (the mass audience)
+ *
+ * All AI runs on-device via the QVAC SDK. No cloud, no API keys, no account.
  */
 
 // ─── Tournament timeline ─────────────────────────────────────────────────────
@@ -30,6 +33,77 @@ export const PITCH = {
   problem: "Football teams at every level — from Sunday league to World Cup — need to assess player readiness. Is your striker match-fit after a late night? Can your defender play through a concussion protocol? Today this requires a sports scientist, a cloud-connected app, or a gut call from the manager.",
   solution: "Match Fit runs a 4-agent AI pipeline entirely on the manager's phone. Scan a player's face, log their stressors (match minutes, training load, sleep, alcohol, travel, cards, concussion), and get a match-readiness score, return-to-play protocol, and time-blocked recovery schedule — all from a 1.7B model running locally via the QVAC SDK.",
   whyQvac: "The QVAC SDK makes this possible. A 1.7B Qwen3 model runs 4 agents (triage, coach, schedule, reflection) in ~21 seconds on a phone — no cloud AI, no API keys, no per-token cost. The model is cached after first inference, so subsequent scans work fully offline. This is the difference between a tool that works in a Premier League locker room and one that doesn't work in a World Cup basement changing room with no signal.",
+};
+
+// ─── Two experiences, one on-device engine ───────────────────────────────────
+
+export const HERO = {
+  eyebrow: "One on-device engine · two experiences",
+  headlineTop: "The match is over.",
+  headlineAccent: "Your body isn't.",
+  subheadline:
+    "A football match is a physiological event — for the players who run 11km and the billions who watch a shootout with their heart in their mouth. Body Debt quantifies the recovery either one needs, and runs every bit of AI on your own device. No cloud, no API keys, no account.",
+};
+
+export const EXPERIENCES = [
+  {
+    icon: "⚽",
+    name: "Match Fit",
+    audience: "Players & coaches",
+    line: "The team doctor in your pocket. Scan a player, get a match-readiness score and a return-to-play protocol — plus self-custodial USDt squad payments.",
+    color: "var(--color-states-success)",
+  },
+  {
+    icon: "❤️",
+    name: "Fan Recovery",
+    audience: "The billions who watch",
+    line: "The match is over — how are you? Log the result and get a private wind-down that clears the adrenaline and protects your sleep before the next late kickoff.",
+    color: "#fb7185",
+  },
+];
+
+// ─── Fan Recovery story (emotional / mental debt) ────────────────────────────
+
+export const FAN_STORY = {
+  problem:
+    "Watching football is physical too. A late winner, a knockout, a penalty shootout — they spike cortisol and adrenaline, raise heart rate, and wreck sleep, especially for the late kickoffs fans stay up for across time zones. Billions feel it every tournament, and nothing helps them recover. Ask any fan the morning after their team went out.",
+  solution:
+    "Fan Recovery reuses the exact same on-device engine. A fan logs how the match left them — the result, how tense it was to watch, the post-match doomscroll — and the QVAC coach returns a warm, practical wind-down: a short walk to burn the cortisol, water, screens down, sleep protected. And it's private by design: how you feel after your team loses never leaves your phone.",
+};
+
+export const FAN_SCIENCE = {
+  stat: "2×",
+  claim:
+    "Cardiac emergencies more than doubled on days the German team played at the 2006 World Cup. The trigger was the emotional stress of watching — not physical exertion. 'Your team losing is physiological debt' is a documented finding, not a metaphor.",
+  cite: "Wilbert-Lampen et al., New England Journal of Medicine, 2008",
+};
+
+export const FAN_STRESSORS = [
+  {
+    icon: "⚽",
+    name: "The result",
+    scoring: "brain + cardio + gut",
+    detail: "Won comfortably → knocked out. A loss drives cortisol and rumination for hours; a knockout is the heaviest emotional load in the model.",
+  },
+  {
+    icon: "😰",
+    name: "Match tension",
+    scoring: "cardio-led + brain",
+    detail: "Comfortable → penalty shootout. A shootout is peak cardiac stress — sustained adrenaline through the 90 and beyond.",
+  },
+  {
+    icon: "📱",
+    name: "Post-match scroll",
+    scoring: "brain (+ gut)",
+    detail: "Replays, hot takes, arguing online. Blue light plus rumination push back sleep onset — and it's the one lever the fan fully controls.",
+  },
+];
+
+export const FAN_QVAC_OUTPUT = {
+  triage:
+    "PRIORITY: Cardiovascular 61/100 — shootout kept heart rate elevated\nSECONDARY: Brain 58/100 — the loss and the doomscroll are delaying sleep\nAVOID: more caffeine, replays, arguing in the group chat",
+  coach:
+    "RIGHT NOW: Get up and take a 15-minute walk. Movement burns off the cortisol still running from the match.\nTHIS MORNING: Natural light and a real breakfast reset your nervous system faster than caffeine.\nTODAY: Be kind to yourself — the result stung, and your body is still catching up.\nAVOID: Rewatching the highlights before bed. The takes will still be there tomorrow; your sleep won't.",
 };
 
 // ─── Football-specific stressors ─────────────────────────────────────────────
@@ -216,23 +290,23 @@ export const PERFORMANCE = {
 export const JUDGING_CRITERIA = [
   {
     criterion: "Technical ambition",
-    score: "Two-track project: QVAC 4-agent pipeline on-device + WDK self-custodial USDt wallet. ZK face scan proof verified on SKALE. Deterministic fallback chain for every AI layer. Multi-context architecture (personal + football) from a single codebase.",
+    score: "Two-track project: QVAC 4-agent pipeline on-device + WDK self-custodial USDt wallet. ZK face scan proof verified on SKALE. Deterministic fallback chain for every AI layer. One engine, three contexts (personal + Match Fit + Fan Recovery) — a new audience is a data-driven registry entry, not a new codebase.",
   },
   {
     criterion: "User experience",
-    score: "Animated debt orb that morphs with score. Time-drum picker for sleep timing. Squad readiness board with traffic-light tiers. In-app USDt payments: bonus, fine, tip — no wallet extension needed. 3 orb personalities (honest / gentle / intense).",
+    score: "Animated debt orb that morphs with score. Time-drum picker for sleep timing. Squad readiness board with traffic-light tiers. In-app USDt payments: bonus, fine, tip — no wallet extension needed. And a full-time moment for fans: log how the match left you, get a wind-down. 3 coach personalities (honest / gentle / intense).",
   },
   {
     criterion: "Real-world use",
-    score: "Works in a locker room with no signal. Manager scans a player in 30 seconds, gets a return-to-play protocol, and can send a USDt match-day bonus from the same screen. No account required, no API keys, no cloud bills.",
+    score: "Two real audiences. Coaches scan a player in 30 seconds in a locker room with no signal and send a USDt bonus from the same screen. And the billions who only watch get something no one has built — recover from a loss, protect your sleep after a late kickoff. No account, no API keys, no cloud bills.",
   },
   {
     criterion: "Creativity",
-    score: "Body debt metaphor — physiological debt, not financial. Deterministic scoring engine as ground truth. Counterfactual engine: 'if you had slept 7+ hours, brain debt would drop from 67 to 22.' Football-specific stressors including concussion protocol. Squad treasury: manager holds USDt, sends bonuses/fines to players.",
+    score: "Body debt as physiological, not financial, debt — extended to the emotional load of watching football. 'Recover from your team losing' is a genuinely new idea, and it's grounded: the NEJM 2006 World Cup finding that cardiac events doubled from watching. Counterfactual engine ('log off instead of doomscrolling and brain debt drops'). Concussion protocol for players, penalty-shootout cardiac load for fans.",
   },
   {
     criterion: "Real use of QVAC track",
-    score: "All AI inference via @qvac/sdk. Qwen3-1.7B-Instruct Q4. 4 agents (triage, coach, schedule, reflection) chained via SSE streaming. Model cached locally after first run — subsequent scans fully offline. Zero cloud AI calls.",
+    score: "All AI inference via @qvac/sdk. Qwen3-1.7B-Instruct Q4. 4 agents (triage, coach, schedule, reflection) chained via SSE streaming. The same pipeline powers a private emotional-recovery coach — how you feel after your team loses never leaves the device, which is exactly why on-device matters here. Model cached after first run; subsequent runs fully offline. Zero cloud AI calls.",
   },
   {
     criterion: "Real use of WDK track",

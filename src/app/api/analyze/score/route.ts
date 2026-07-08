@@ -40,6 +40,9 @@ const BASE_WEIGHTS: Record<StressorType, { min: number; max: number; label: stri
   card_stress:       { min: 8,  max: 16, label: "Card / foul stress" },
   travel_timezone:   { min: 10, max: 20, label: "Travel fatigue" },
   concussion_check:  { min: 30, max: 45, label: "Head impact" },
+  result:            { min: 12, max: 34, label: "The result" },
+  match_tension:     { min: 8,  max: 26, label: "Match tension" },
+  doomscroll:        { min: 6,  max: 16, label: "Post-match scroll" },
 };
 
 // Context modifiers — context string → multiplier
@@ -105,6 +108,7 @@ function faceModifier(face: FaceAnalysisResult): { points: number; label: string
 const STRESSOR_ICONS: Record<StressorType, string> = {
   alcohol: "🍺", sleep: "😴", training: "💪", stress: "😤", ill: "🤒", care: "✦",
   match_minutes: "⚽", card_stress: "🟨", travel_timezone: "✈️", concussion_check: "🤕",
+  result: "⚽", match_tension: "😰", doomscroll: "📱",
 };
 
 // ─── Recovery arc from score ───────────────────────────────────────────────────
@@ -243,7 +247,7 @@ export function computeScore(body: AnalyzeBodyRequest) {
     "estimated";
 
   // Five-system scores
-  const systemScores = computeSystemScores(stressors, now, body.wakeTime, body.bedTime);
+  const systemScores = computeSystemScores(stressors, now, body.wakeTime, body.bedTime, mode);
 
   // Counterfactual: "If you had slept 7+ hours, Brain debt would drop from 67 to 22."
   const cf = computeCounterfactual(stressors, systemScores, body.wakeTime, body.bedTime);
@@ -280,8 +284,16 @@ function deterministicInsight(type: StressorType, locale: Locale = "en", _contex
     concussion_check: "Head impact requires concussion protocol — brain recovery is the priority.",
   };
 
-  // Mode is not passed here, but football stressors are unambiguous
+  // Fan-specific deterministic insights (emotional / mental debt)
+  const fanInsights: Partial<Record<StressorType, string>> = {
+    result:        "The result drives cortisol and adrenaline — a loss keeps the nervous system switched on for hours.",
+    match_tension: "A tense watch elevates heart rate and blood pressure, just like light exertion.",
+    doomscroll:    "Post-match scrolling adds blue light and rumination, pushing back sleep onset.",
+  };
+
+  // Mode is not passed here, but football and fan stressors are unambiguous
   if (footballInsights[type]) return footballInsights[type]!;
+  if (fanInsights[type]) return fanInsights[type]!;
 
   const s = getStrings(locale).prescription.insights;
   const insights: Partial<Record<StressorType, string>> = {
@@ -359,6 +371,9 @@ export function deterministicPrescription(
 ): { rightNow: string; thisMorning: string; today: string; avoid: string } {
   if (mode === "football") {
     return deterministicFootballPrescription(types, score);
+  }
+  if (mode === "fan") {
+    return deterministicFanPrescription(types, score);
   }
 
   const hasAlcohol  = types.includes("alcohol");
@@ -442,6 +457,38 @@ function deterministicFootballPrescription(
       : hasAlcohol
       ? "Any further alcohol. The player's liver is still processing and it will impair recovery."
       : "Late-night screen time. Protect sleep — it's the single biggest recovery lever.",
+  };
+}
+
+// ─── Fan-specific deterministic prescription (emotional wind-down) ────────────
+
+function deterministicFanPrescription(
+  types: StressorType[],
+  score: number,
+): { rightNow: string; thisMorning: string; today: string; avoid: string } {
+  const hasScroll  = types.includes("doomscroll");
+  const hasAlcohol = types.includes("alcohol");
+  const hasResult  = types.includes("result");
+  const hasTension = types.includes("match_tension");
+
+  return {
+    rightNow: score >= 55
+      ? "Get up and take a 15-minute walk. Movement burns off the cortisol still running from the match."
+      : hasAlcohol
+      ? "500ml water with electrolytes, then step outside for a few minutes of fresh air."
+      : "Stand up, take 5 slow breaths, and let your heart rate come down before bed.",
+
+    thisMorning: hasTension || hasResult
+      ? "Your nervous system took a hit last night. Natural light and a proper breakfast will reset it faster than caffeine."
+      : "Ease in gently — light, water, and a real breakfast before you reach for your phone.",
+
+    today: score >= 55
+      ? "Be kind to yourself today. The result stung, and your body is still catching up. Keep the day light."
+      : "You're mostly through it. A short walk and normal routine will clear the rest.",
+
+    avoid: hasScroll
+      ? "Rewatching the highlights and the group chat. Rumination keeps cortisol high and steals your sleep."
+      : "Doomscrolling the result before bed. The takes will still be there tomorrow — your sleep won't."
   };
 }
 

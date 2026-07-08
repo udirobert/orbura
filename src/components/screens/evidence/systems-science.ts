@@ -1,3 +1,5 @@
+import type { RecoveryMode } from "@/lib/types";
+
 export interface SystemScience {
   system: string;
   icon: string;
@@ -84,3 +86,49 @@ export const SYSTEMS_SCIENCE: SystemScience[] = [
     ],
   },
 ];
+
+// ─── Fan Recovery mode — emotional-stress science overrides ───────────────────
+//
+// In Fan mode the cardiovascular and brain cards surface the science of
+// *watching* football rather than alcohol/training. Facts and citations are
+// kept consistent with the scoring engine's FAN_SCIENCE (src/stressors/scoring).
+
+const FAN_SCIENCE_OVERRIDES: Record<
+  string,
+  Pick<SystemScience, "fact" | "cite" | "expanded" | "stressors">
+> = {
+  "Cardiovascular": {
+    fact: "During the 2006 World Cup, cardiac emergencies more than doubled on days the German team played. The trigger was the emotional stress of watching — not physical exertion.",
+    cite: "Wilbert-Lampen et al., New England Journal of Medicine, 2008",
+    expanded: "For a fan, the cardiovascular load comes from the match itself. A tense watch elevates heart rate and blood pressure for the full 90; a penalty shootout is sustained sympathetic arousal — the single highest cardiac-stress event in the model. A loss or knockout adds an acute emotional-stress spike. The engine weights match tension (up to +34) and result (up to +26) directly onto cardiovascular debt, with an 18-hour recovery window.",
+    stressors: [
+      { name: "Match tension", systems: "+2 comfortable → +34 penalty shootout" },
+      { name: "The result",    systems: "+4 comfortable win → +26 knocked out" },
+      { name: "Match-day drinks", systems: "Base 30 × drink-type × count × 0.5" },
+    ],
+  },
+  "Brain / Cognition": {
+    fact: "A stressful or disappointing match keeps cortisol and adrenaline elevated for hours, delaying sleep onset and prolonging rumination well past the final whistle.",
+    cite: "Åkerstedt, Sleep Medicine Reviews, 2006",
+    expanded: "The brain carries the emotional aftermath. A loss drives rumination and elevated cortisol (up to +45 for a knockout); post-match doomscrolling layers blue-light exposure and social conflict on top (up to +28), pushing sleep onset even later. Late kickoffs compound this through the same circadian penalty as any late night. The 24-hour recovery window reflects the time cortisol takes to normalise and sleep debt to clear.",
+    stressors: [
+      { name: "The result",       systems: "+6 comfortable win → +45 knocked out" },
+      { name: "Post-match scroll", systems: "+6 a few min → +28 couldn't stop" },
+      { name: "Match tension",     systems: "+2 comfortable → +20 penalty shootout" },
+      { name: "Late kickoff",      systems: "35 × sleep-hours modifier + circadian penalty" },
+    ],
+  },
+};
+
+/**
+ * Systems-science entries for the given mode. Fan mode swaps the cardiovascular
+ * and brain cards for their emotional-stress variants; all other modes get the
+ * base (alcohol/training-centric) science.
+ */
+export function getSystemsScience(mode: RecoveryMode): SystemScience[] {
+  if (mode !== "fan") return SYSTEMS_SCIENCE;
+  return SYSTEMS_SCIENCE.map((s) => {
+    const override = FAN_SCIENCE_OVERRIDES[s.system];
+    return override ? { ...s, ...override } : s;
+  });
+}

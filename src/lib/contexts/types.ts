@@ -1,14 +1,5 @@
 import type { StressorType, RecoveryMode } from "@/lib/types";
 
-// ─── Stressor catalog entry ──────────────────────────────────────────────────
-
-export interface StressorCatalogEntry {
-  type: StressorType;
-  label: string;
-  icon: string;
-  description: string;
-}
-
 // ─── Scoring weight overrides ────────────────────────────────────────────────
 
 export interface ScoringWeights {
@@ -45,7 +36,6 @@ export interface UIVocabulary {
 
 export interface RecoveryContextConfig {
   mode: RecoveryMode;
-  stressorCatalog: StressorCatalogEntry[];
   scoringWeights: ScoringWeights;
   agentPrompts: AgentPromptFragments;
   vocabulary: UIVocabulary;

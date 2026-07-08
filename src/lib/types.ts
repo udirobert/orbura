@@ -2,7 +2,7 @@
 
 // ─── Recovery mode ────────────────────────────────────────────────────────────
 
-export type RecoveryMode = "personal" | "football";
+export type RecoveryMode = "personal" | "football" | "fan";
 
 // ─── Stressors ────────────────────────────────────────────────────────────────
 
@@ -17,7 +17,11 @@ export type StressorType =
   | "match_minutes"
   | "card_stress"
   | "travel_timezone"
-  | "concussion_check";
+  | "concussion_check"
+  // Fan-specific (emotional / mental debt)
+  | "result"
+  | "match_tension"
+  | "doomscroll";
 
 export interface Stressor {
   type: StressorType;
@@ -34,6 +38,10 @@ export interface Stressor {
   cardType?:           "yellow" | "red" | "heavy_foul";
   timezoneDelta?:      "1-2" | "3-5" | "6+";
   concussionSeverity?: "minor" | "moderate" | "protocol";
+  // Fan-specific context (emotional / mental debt)
+  matchResult?:        "won_big" | "won_tight" | "draw" | "lost" | "knocked_out";
+  matchTension?:       "comfortable" | "tense" | "nail_biter" | "shootout";
+  doomscrollAmount?:   "a_bit" | "an_hour" | "hours";
   // Legacy flat context string — kept for backward compatibility
   context?: string;
 }

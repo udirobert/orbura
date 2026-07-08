@@ -2,18 +2,6 @@ import type { RecoveryContextConfig } from "./types";
 
 export const footballContext: RecoveryContextConfig = {
   mode: "football",
-  stressorCatalog: [
-    { type: "match_minutes",  label: "Match minutes",       icon: "⚽", description: "Minutes played in last match" },
-    { type: "training",       label: "Training load",        icon: "💪", description: "Session intensity today" },
-    { type: "sleep",          label: "Poor sleep",           icon: "😴", description: "Under 7 hours last night" },
-    { type: "alcohol",        label: "Alcohol",              icon: "🍺", description: "Drinks last night" },
-    { type: "card_stress",    label: "Card / foul stress",    icon: "🟨", description: "Yellow/red card or heavy foul" },
-    { type: "travel_timezone", label: "Travel fatigue",       icon: "✈️", description: "Timezone change from travel" },
-    { type: "stress",         label: "Mental stress",         icon: "😤", description: "Pressure, expectations, personal" },
-    { type: "ill",            label: "Illness",               icon: "🤒", description: "Fighting something off" },
-    { type: "concussion_check", label: "Head impact",         icon: "🤕", description: "Knock to the head — protocol check" },
-    { type: "care",           label: "Recovery day",          icon: "✦",  description: "Active recovery or rest day" },
-  ],
   scoringWeights: {
     baseWeights: {
       match_minutes:   { min: 15, max: 30, label: "Match load" },

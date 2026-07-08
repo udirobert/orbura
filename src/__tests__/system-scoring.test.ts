@@ -181,6 +181,50 @@ describe("computeSystemScores", () => {
     });
   });
 
+  describe("fan stressors (emotional / mental debt)", () => {
+    it("result adds brain, cardio, and gut debt", () => {
+      const { bySystem } = T([{ type: "result", matchResult: "lost" }]);
+      expect(bySystem.brain.score).toBeGreaterThan(0);
+      expect(bySystem.cardiovascular.score).toBeGreaterThan(0);
+      expect(bySystem.gut.score).toBeGreaterThan(0);
+      expect(bySystem.liver.score).toBe(0);
+    });
+
+    it("a knockout hurts more than a comfortable win", () => {
+      const out = T([{ type: "result", matchResult: "knocked_out" }]);
+      const win = T([{ type: "result", matchResult: "won_big" }]);
+      expect(out.bySystem.brain.score).toBeGreaterThan(win.bySystem.brain.score);
+      expect(out.bySystem.cardiovascular.score).toBeGreaterThan(win.bySystem.cardiovascular.score);
+    });
+
+    it("a shootout drives more cardiovascular load than a comfortable watch", () => {
+      const shootout = T([{ type: "match_tension", matchTension: "shootout" }]);
+      const comfy = T([{ type: "match_tension", matchTension: "comfortable" }]);
+      expect(shootout.bySystem.cardiovascular.score).toBeGreaterThan(comfy.bySystem.cardiovascular.score);
+    });
+
+    it("doomscrolling loads the brain and mentions screens/rumination in causeText", () => {
+      const { bySystem } = T([{ type: "doomscroll", doomscrollAmount: "hours" }]);
+      expect(bySystem.brain.score).toBeGreaterThan(0);
+      expect(bySystem.brain.causeText.toLowerCase()).toMatch(/scroll|blue light|takes/);
+    });
+
+    it("a loss produces emotional causeText and a 'walk' recovery action", () => {
+      const { bySystem } = T([{ type: "result", matchResult: "lost" }]);
+      expect(bySystem.brain.causeText.toLowerCase()).toContain("lost");
+      expect(bySystem.brain.actionText.toLowerCase()).toContain("walk");
+    });
+
+    it("surfaces fan-specific science (NEJM World Cup finding) in fan mode only", () => {
+      const fan = computeSystemScores([{ type: "match_tension", matchTension: "shootout" }], NOW, null, null, "fan");
+      const personal = computeSystemScores([{ type: "match_tension", matchTension: "shootout" }], NOW, null, null, "personal");
+      const fanCardio = fan.find((s) => s.system === "cardiovascular");
+      const personalCardio = personal.find((s) => s.system === "cardiovascular");
+      expect(fanCardio?.scienceCite).toContain("Wilbert-Lampen");
+      expect(personalCardio?.scienceCite).not.toContain("Wilbert-Lampen");
+    });
+  });
+
   describe("scores are clamped 0-100", () => {
     it("never exceeds 100 or goes below 0", () => {
       const many: Stressor[] = [

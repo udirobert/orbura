@@ -57,6 +57,12 @@ const CONTEXT_PROMPTS = {
     playerNoun: "player",
     recoveryNoun: "return-to-play",
   },
+  fan: {
+    domainContext: "This person is a football fan who just watched a match. Watching football causes real physiological stress — a loss, a penalty shootout, or a late winner drives cortisol and adrenaline, raises heart rate, and disrupts sleep, especially for late kickoffs. This is emotional and mental recovery debt from watching, NOT financial debt and NOT about playing. Be warm and human: acknowledge how the match felt, then give a practical wind-down (a short walk, water, screens down, breathing). The score represents how much wind-down the fan needs after the final whistle.",
+    domainNoun: "post-match recovery debt",
+    playerNoun: "fan",
+    recoveryNoun: "wind-down",
+  },
 };
 
 function getCtx(input) {

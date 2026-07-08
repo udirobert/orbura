@@ -5,6 +5,12 @@ import Link from "next/link";
 import {
   TOURNAMENT_DATES,
   PITCH,
+  HERO,
+  EXPERIENCES,
+  FAN_STORY,
+  FAN_SCIENCE,
+  FAN_STRESSORS,
+  FAN_QVAC_OUTPUT,
   FOOTBALL_STRESSORS,
   READINESS_TIERS,
   QVAC_PIPELINE,
@@ -20,10 +26,10 @@ import {
 /**
  * TetherPage — judge page for the Tether Developers Cup.
  *
- * Story: "Match Fit — the on-device team doctor.
- * Scan a player, get a match-readiness score and
- * return-to-play protocol. No cloud, no API keys,
- * works in a locker room with no signal."
+ * Story: a football match is a physiological event for the players AND the
+ * billions who watch. One on-device engine, two experiences — Match Fit (the
+ * team doctor for players & coaches, + WDK squad payments) and Fan Recovery
+ * (an emotional-recovery coach for fans). No cloud, no API keys, no account.
  */
 export function TetherPage() {
   return (
@@ -43,7 +49,7 @@ export function TetherPage() {
               className="text-sm font-bold tracking-widest uppercase"
               style={{ color: "var(--color-text-primary)" }}
             >
-              MATCH FIT
+              BODY DEBT
             </span>
             <span
               className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
@@ -65,14 +71,21 @@ export function TetherPage() {
             </span>
           </div>
 
+          <span
+            className="text-[10px] font-mono uppercase tracking-widest block"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            {HERO.eyebrow}
+          </span>
+
           <h1
             className="text-4xl font-normal leading-tight"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            The on-device
+            {HERO.headlineTop}
             <br />
             <span style={{ color: "var(--color-states-success)" }}>
-              team doctor.
+              {HERO.headlineAccent}
             </span>
           </h1>
 
@@ -80,7 +93,7 @@ export function TetherPage() {
             className="text-base leading-relaxed"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            {PITCH.subheadline} Now with self-custodial squad payments in USDt — match-day bonuses, player fines, and fan tipping, all from the same app.
+            {HERO.subheadline}
           </p>
 
           <div className="flex flex-wrap gap-2 pt-2">
@@ -146,6 +159,66 @@ export function TetherPage() {
             </a>
           </div>
         </header>
+
+        {/* ─── Two experiences, one engine ─── */}
+        <section>
+          <h2
+            className="text-[10px] font-mono uppercase tracking-widest mb-3"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            Two experiences · one on-device engine
+          </h2>
+          <div className="grid grid-cols-1 gap-2">
+            {EXPERIENCES.map((e, i) => (
+              <motion.div
+                key={e.name}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+                className="rounded-2xl p-4 flex items-start gap-3"
+                style={{
+                  backgroundColor: "var(--color-bg-surface)",
+                  border: `1px solid ${e.color}22`,
+                  borderLeft: `3px solid ${e.color}`,
+                }}
+              >
+                <span className="text-xl flex-shrink-0">{e.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className="text-sm font-semibold"
+                      style={{ color: e.color }}
+                    >
+                      {e.name}
+                    </span>
+                    <span
+                      className="text-[8px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded"
+                      style={{
+                        backgroundColor: "var(--color-bg-elevated)",
+                        color: "var(--color-text-faint)",
+                      }}
+                    >
+                      {e.audience}
+                    </span>
+                  </div>
+                  <p
+                    className="text-[11px] mt-1 leading-relaxed"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    {e.line}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          <p
+            className="text-[10px] mt-2 font-mono"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            Same scoring engine, same QVAC pipeline, same five-system model —
+            re-pointed at a new audience through a data-driven context, not a fork.
+          </p>
+        </section>
 
         {/* ─── The problem / solution ─── */}
         <section className="space-y-4">
@@ -389,6 +462,168 @@ export function TetherPage() {
                 {PERFORMANCE.totalPipeline} · on-device · zero cloud
               </span>
             </div>
+          </div>
+        </section>
+
+        {/* ─── Fan Recovery — emotional debt ─── */}
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">❤️</span>
+            <h2
+              className="text-sm font-bold tracking-widest uppercase"
+              style={{ color: "#fb7185" }}
+            >
+              Fan Recovery
+            </h2>
+            <span
+              className="text-[8px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded"
+              style={{ backgroundColor: "rgba(251,113,133,0.1)", color: "#fb7185" }}
+            >
+              The billions who watch
+            </span>
+          </div>
+
+          <div
+            className="rounded-2xl p-5"
+            style={{
+              backgroundColor: "var(--color-bg-surface)",
+              border: "1px solid rgba(251,113,133,0.15)",
+              borderLeft: "3px solid #fb7185",
+            }}
+          >
+            <span
+              className="text-[9px] font-mono font-bold uppercase tracking-widest block mb-2"
+              style={{ color: "#fb7185" }}
+            >
+              The problem no one builds for
+            </span>
+            <p
+              className="text-sm leading-relaxed"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              {FAN_STORY.problem}
+            </p>
+          </div>
+
+          {/* Science hook — the NEJM stat */}
+          <div
+            className="rounded-2xl p-5 flex items-start gap-4"
+            style={{
+              backgroundColor: "var(--color-bg-surface)",
+              border: "1px solid rgba(251,113,133,0.15)",
+            }}
+          >
+            <span
+              className="text-4xl font-bold leading-none flex-shrink-0"
+              style={{ color: "#fb7185", fontFamily: "var(--font-heading)" }}
+            >
+              {FAN_SCIENCE.stat}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p
+                className="text-[13px] leading-relaxed"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
+                {FAN_SCIENCE.claim}
+              </p>
+              <p
+                className="text-[10px] font-mono mt-1.5"
+                style={{ color: "var(--color-text-faint)" }}
+              >
+                {FAN_SCIENCE.cite}
+              </p>
+            </div>
+          </div>
+
+          <div
+            className="rounded-2xl p-5"
+            style={{
+              backgroundColor: "var(--color-bg-surface)",
+              border: "1px solid rgba(251,113,133,0.15)",
+              borderLeft: "3px solid #fb7185",
+            }}
+          >
+            <span
+              className="text-[9px] font-mono font-bold uppercase tracking-widest block mb-2"
+              style={{ color: "#fb7185" }}
+            >
+              The same engine, re-pointed at the fan
+            </span>
+            <p
+              className="text-sm leading-relaxed"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              {FAN_STORY.solution}
+            </p>
+          </div>
+
+          {/* Sample on-device wind-down output */}
+          <div
+            className="rounded-2xl p-4"
+            style={{
+              backgroundColor: "var(--color-bg-surface)",
+              border: "1px solid rgba(251,113,133,0.12)",
+            }}
+          >
+            <span
+              className="text-[9px] font-mono uppercase tracking-wider block mb-2"
+              style={{ color: "var(--color-text-faint)" }}
+            >
+              QVAC coach · after a shootout defeat · on-device
+            </span>
+            <pre
+              className="text-[10px] font-mono whitespace-pre-wrap leading-relaxed rounded-lg p-2 mb-2"
+              style={{ color: "var(--color-text-secondary)", backgroundColor: "var(--color-bg-elevated)" }}
+            >
+              {FAN_QVAC_OUTPUT.triage}
+            </pre>
+            <pre
+              className="text-[10px] font-mono whitespace-pre-wrap leading-relaxed rounded-lg p-2"
+              style={{ color: "var(--color-text-secondary)", backgroundColor: "var(--color-bg-elevated)" }}
+            >
+              {FAN_QVAC_OUTPUT.coach}
+            </pre>
+          </div>
+
+          {/* Fan stressor catalog */}
+          <div className="grid grid-cols-1 gap-2">
+            {FAN_STRESSORS.map((s, i) => (
+              <motion.div
+                key={s.name}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="rounded-xl p-3 flex items-start gap-3"
+                style={{
+                  backgroundColor: "var(--color-bg-surface)",
+                  border: "1px solid rgba(168,162,158,0.06)",
+                }}
+              >
+                <span className="text-base flex-shrink-0">{s.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className="text-xs font-semibold"
+                      style={{ color: "var(--color-text-primary)" }}
+                    >
+                      {s.name}
+                    </span>
+                    <span
+                      className="text-[9px] font-mono flex-shrink-0"
+                      style={{ color: "#fb7185" }}
+                    >
+                      {s.scoring}
+                    </span>
+                  </div>
+                  <p
+                    className="text-[10px] mt-0.5"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    {s.detail}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </section>
 
@@ -748,7 +983,7 @@ export function TetherPage() {
             className="text-[10px] font-mono"
             style={{ color: "var(--color-text-disabled)" }}
           >
-            Scan a player. Get a protocol. Send a bonus. No cloud. No API keys. Works in a locker room.
+            For the players and the billions who watch. Scan a player and send a bonus — or log a loss and get a wind-down. All on-device. No cloud. No API keys.
           </p>
           <div className="flex justify-center gap-3 pt-2">
             <Link

@@ -24,6 +24,7 @@ export const STRESSORS: StressorDef[] = [
   },
   {
     type: "training", label: "Trained", sublabel: "Gym, sport, intense activity", icon: "💪", basePoints: 18,
+    modes: ["personal", "football"],
     expansions: [
       { field: "trainingArea", question: "What?", options: [
         { key: "legs", label: "Legs" },
@@ -52,6 +53,7 @@ export const STRESSORS: StressorDef[] = [
   },
   {
     type: "stress", label: "High stress", sublabel: "Work, anxiety, hard decisions", icon: "😤", basePoints: 14,
+    modes: ["personal", "football"],
     expansions: [
       { field: "stressCarried", question: "Still carrying it?", options: [
         { key: "yes", label: "Yes" },
@@ -61,6 +63,7 @@ export const STRESSORS: StressorDef[] = [
   },
   {
     type: "ill", label: "Feeling ill", sublabel: "Cold, flu, or just off", icon: "🤒", basePoints: 35,
+    modes: ["personal", "football"],
     expansions: [
       { field: "illSeverity", question: "How bad?", options: [
         { key: "mild", label: "Mild" },
@@ -136,6 +139,57 @@ export const STRESSORS: StressorDef[] = [
       ]},
     ],
   },
+
+  // ─── Fan-only stressors (emotional / mental debt) ───────────────────────────
+
+  {
+    type: "result",
+    label: "The result",
+    sublabel: "How full-time left your team",
+    icon: "⚽",
+    basePoints: 20,
+    modes: ["fan"],
+    expansions: [
+      { field: "matchResult", question: "How did it end?", options: [
+        { key: "won_big",     label: "Won comfortably" },
+        { key: "won_tight",   label: "Won late / tight" },
+        { key: "draw",        label: "Draw" },
+        { key: "lost",        label: "Lost" },
+        { key: "knocked_out", label: "Knocked out" },
+      ]},
+    ],
+  },
+  {
+    type: "match_tension",
+    label: "How it felt",
+    sublabel: "How stressful it was to watch",
+    icon: "😰",
+    basePoints: 12,
+    modes: ["fan"],
+    expansions: [
+      { field: "matchTension", question: "How tense?", options: [
+        { key: "comfortable", label: "Comfortable" },
+        { key: "tense",       label: "Tense" },
+        { key: "nail_biter",  label: "Nail-biter" },
+        { key: "shootout",    label: "Went to penalties" },
+      ]},
+    ],
+  },
+  {
+    type: "doomscroll",
+    label: "Post-match scroll",
+    sublabel: "Replays, hot takes, arguing online",
+    icon: "📱",
+    basePoints: 10,
+    modes: ["fan"],
+    expansions: [
+      { field: "doomscrollAmount", question: "How long?", options: [
+        { key: "a_bit",  label: "A few minutes" },
+        { key: "an_hour", label: "About an hour" },
+        { key: "hours",  label: "Couldn't stop" },
+      ]},
+    ],
+  },
 ];
 
 // ─── Acknowledgement copy ────────────────────────────────────────────────────
@@ -193,6 +247,23 @@ export const ACK_COPY: Record<string, string> = {
   minor:            "Minor head impact. Monitoring, no protocol yet.",
   concussion_moderate: "Moderate impact — medical review required before return-to-play.",
   protocol:         "Concussion protocol activated. Medical clearance required to return.",
+
+  // Fan stressors (emotional / mental debt)
+  result:           "Full-time logged. Reading the emotional aftermath.",
+  match_tension:    "Match tension noted. Checking your heart and nerves.",
+  doomscroll:       "Post-match scroll logged. Blue light and rumination added.",
+  won_big:          "Comfortable win — mild buzz, easy wind-down.",
+  won_tight:        "Late winner — euphoria still spikes adrenaline before bed.",
+  draw:             "A draw — unresolved tension lingers in the nervous system.",
+  lost:             "Tough loss. Cortisol elevated — this is real physiological debt.",
+  knocked_out:      "Knocked out. Heavy emotional load across brain, heart, and gut.",
+  comfortable:      "Comfortable watch. Low cardiovascular strain.",
+  tense:            "Tense match — heart rate elevated through the 90.",
+  nail_biter:       "Nail-biter. Sustained adrenaline — cardiovascular load high.",
+  shootout:         "Penalties. Peak cardiac stress — the hardest way to watch.",
+  a_bit:            "A quick scroll. Minor mental load.",
+  an_hour:          "An hour of takes. Rumination keeping the brain switched on.",
+  hours:            "Couldn't stop. Blue light and arguments delaying your wind-down.",
 };
 
 // ─── Confidence tiers ────────────────────────────────────────────────────────
