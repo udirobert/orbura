@@ -136,6 +136,13 @@ function verdictFromScore(score: number, locale: Locale = "en", mode: RecoveryMo
     if (score >= 21) return "Mild load. Available for selection with a modified warm-up.";
     return "Match-fit. Cleared for full participation.";
   }
+  if (mode === "fan") {
+    if (score >= 81) return "That one really hurt. Your body is in damage control — be gentle with yourself tonight.";
+    if (score >= 61) return "Heavy toll. Your nervous system is still running on adrenaline from that match.";
+    if (score >= 41) return "You're still wired from the match. Give yourself a real wind-down before bed.";
+    if (score >= 21) return "Mild aftermath. A short walk will clear the rest of it.";
+    return "You're settled. The match didn't leave much of a mark tonight.";
+  }
 
   const s = getStrings(locale);
   if (score >= 81) {
