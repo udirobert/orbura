@@ -35,6 +35,8 @@ import { VerdictCard } from "./dashboard/VerdictCard";
 import { SystemIconRow } from "./dashboard/SystemIconRow";
 import { PatternLayer } from "./dashboard/PatternLayer";
 import { AgentSchedule } from "./dashboard/AgentSchedule";
+import { MemoryCard } from "./dashboard/MemoryCard";
+import { useMemoryContext } from "@/hooks/useMemoryContext";
 import type { DebtAnalysis, ConfidenceTier } from "@/lib/types";
 
 // ─── Fallback ─────────────────────────────────────────────────────────────────
@@ -84,6 +86,8 @@ export function DashboardScreen() {
 
   const ctx = useRecoveryContext();
   const user = useEazo((s) => s.auth.user);
+  const { data: memoryData, refetch: refetchMemory } = useMemoryContext();
+  const anonymousId = useBodyDebtStore((s) => s.anonymousId);
   const data: DebtAnalysis = analysis ?? FALLBACK_ANALYSIS;
   const isEmpty = !analysis && selectedStressors.length === 0;
   const hasData = !!analysis || selectedStressors.length > 0;
@@ -297,6 +301,13 @@ export function DashboardScreen() {
                   <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>Edge AI</span>
                 </span>
               )}
+              {memoryData?.enabled && (memoryData.profile || memoryData.memories.length > 0) && (
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.15)" }}>
+                  <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#a855f7" }} />
+                  <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#a855f7" }}>Remembers you</span>
+                </span>
+              )}
               {zkProof && zkProof.onChainStatus === "verified" && zkProof.txHash && (
                 <a
                   href={`https://juicy-low-small-testnet.explorer.skalenodes.com/tx/${zkProof.txHash}`}
@@ -474,6 +485,18 @@ export function DashboardScreen() {
         {/* System icon row — tap to scroll to panels */}
         <SystemIconRow systems={data.systemScores} onTap={scrollToSystems} />
       </div>
+
+      {/* ── Memory card — "Your coach remembers" ─────────────────────── */}
+      {memoryData?.enabled && (memoryData.profile || memoryData.memories.length > 0) && (
+        <div className="relative z-10 mb-6">
+          <MemoryCard
+            profile={memoryData.profile}
+            memories={memoryData.memories}
+            containerTag={anonymousId ?? undefined}
+            onForget={refetchMemory}
+          />
+        </div>
+      )}
 
       {/* Recovery arc timeline */}
       <div className="relative z-10 mb-6">

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { getAllContexts } from "@/lib/contexts";
 import { memory } from "@/lib/sdk/eazo-client";
+import { useMemoryContext } from "@/hooks/useMemoryContext";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import type { RecoveryMode } from "@/lib/types";
 
@@ -27,10 +28,16 @@ const DORMANT_FRAMES = [
 export function OpeningScreen() {
   const router = useRouter();
   const { analysis, setHasSeenOpening, setMode } = useBodyDebtStore();
+  const { data: memoryData } = useMemoryContext("user body debt recovery patterns and habits");
   const [orbVisible, setOrbVisible] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
+
+  const isReturning = memoryData?.enabled && (memoryData.profile || memoryData.memories.length > 0);
+  const memorySummary = isReturning
+    ? memoryData.memories.slice(0, 2).join(" · ")
+    : "";
 
   const allContexts = getAllContexts();
 
@@ -176,8 +183,21 @@ export function OpeningScreen() {
                   letterSpacing: "0.01em",
                 }}
               >
-                Your body keeps the score. Quantify the debt from last night&apos;s choices — alcohol, sleep, training, stress — and get a recovery plan that works offline.
+                {isReturning
+                  ? "Welcome back. Your coach remembers you — your patterns, past scores, and what actually worked."
+                  : "Your body keeps the score. Quantify the debt from last night's choices — alcohol, sleep, training, stress — and get a recovery plan that works offline."}
               </p>
+              {isReturning && memorySummary && (
+                <motion.p
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-[11px] mt-3 font-mono leading-relaxed"
+                  style={{ color: "#a855f7" }}
+                >
+                  🧠 {memorySummary.length > 120 ? memorySummary.slice(0, 120) + "…" : memorySummary}
+                </motion.p>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -272,7 +292,9 @@ export function OpeningScreen() {
                 className="text-center mt-4 text-[10px] tracking-widest uppercase font-mono"
                 style={{ color: "rgba(82,79,76,0.7)" }}
               >
-                No account · AI runs on-device
+                {isReturning
+                  ? "AI on-device · Memory on your machine"
+                  : "No account · AI runs on-device"}
               </p>
             </motion.div>
           )}

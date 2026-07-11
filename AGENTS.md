@@ -84,6 +84,7 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 | Evidence data | `src/components/screens/evidence/evidence-data.ts`, `systems-science.ts` |
 | Format utility | `src/lib/format-ms.ts` |
 | QVAC | `scripts/qvac-worker.mjs`, `src/lib/qvac/index.ts`, `src/app/api/qvac/infer/route.ts` |
+| Supermemory (user memory) | `src/lib/supermemory/index.ts`, `src/app/api/memory/` (`route.ts` POST, `context/route.ts` GET) |
 | WDK payments | `src/lib/wdk/` (`index.ts`, `types.ts`, `payments.ts`), `src/app/api/wallet/` (`connect`, `balance`, `send`), `src/stores/slices/wallet-slice.ts` |
 | Wearables | `src/app/api/terra/`, `src/app/api/google-fit/`, `src/app/api/garmin/parse/route.ts`, `src/app/api/hrv/resolve/route.ts` |
 | DB | `src/lib/db/schema/`, `src/lib/db/queries/`, `src/lib/db/client.ts` |
@@ -96,6 +97,7 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 - Use `auth.login()` from `@eazo/sdk` for login UI. Do not build a custom login form unless explicitly required.
 - In render, read Eazo auth/device state through `useEazo(selector)`. In event handlers/effects, use SDK singletons directly.
 - Fire-and-forget `memory.reportAction(...).catch(() => {})` after significant user actions. Never let memory failures block core flow.
+- All Supermemory calls go through `src/lib/supermemory/` — no direct `supermemory` SDK imports in components, hooks, or client code. The client-side `memory.reportAction()` POSTs to `/api/memory` which calls the server-only module. Forget operations (single + mass) go through `DELETE /api/memory`.
 - Never store face scan images, raw pixels, or full MediaPipe landmark arrays.
 - Never run EZKL proof generation on the main React thread. Always use `src/workers/ezkl-prover.worker.ts`.
 - Never send app-level rounded scores as verifier public inputs. On-chain verification must use exact public instances emitted by EZKL.
@@ -193,6 +195,8 @@ QVAC_MODEL_PATH=
 WDK_SEED_PHRASE=
 ETH_RPC_URL=https://sepolia.drpc.org
 NEXT_PUBLIC_USDT_CONTRACT=0xd077A400968890Eacc75cdc901F0356c943e4fDb
+SUPERMEMORY_API_KEY=
+SUPERMEMORY_BASE_URL=https://api.supermemory.ai
 ```
 
 ## Implementation Preferences

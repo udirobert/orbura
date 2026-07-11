@@ -46,6 +46,10 @@ export interface ProfileSlice {
   // Locale
   locale: Locale;
   setLocale: (l: Locale) => void;
+
+  // Stable anonymous ID — generated once, persisted, used as
+  // Supermemory containerTag for memory isolation per user.
+  anonymousId: string;
 }
 
 export const createProfileSlice: StateCreator<
@@ -103,6 +107,13 @@ export const createProfileSlice: StateCreator<
 
   locale: "en" as Locale,
   setLocale: (l) => set({ locale: l }),
+
+  // Generate a stable anonymous ID on first init. Persists across
+  // sessions via PROFILE_PERSIST_FIELDS. Used as Supermemory containerTag.
+  anonymousId:
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `anon_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
 });
 
 /** Fields from the profile slice that should be persisted to storage. */
@@ -115,4 +126,5 @@ export const PROFILE_PERSIST_FIELDS = [
   "locale",
   "squad",
   "activePlayerId",
+  "anonymousId",
 ] as const;

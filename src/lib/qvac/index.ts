@@ -20,6 +20,8 @@ export interface MultiAgentInput {
   recoveryTime?: string;
   personality?: "honest" | "gentle" | "scientific" | "sarcastic";
   mode?: RecoveryMode;
+  /** User history from Supermemory — injected into agent prompts */
+  memoryContext?: string | null;
 }
 
 export interface MultiAgentResult {
@@ -196,6 +198,7 @@ export function buildAgentTrace(result: MultiAgentResult): AgentTrace {
     source: result.source,
     totalDurationMs: result.totalDurationMs,
     model: result.model,
+    memoryContext: input.memoryContext ?? null,
   };
 }
 

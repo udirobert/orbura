@@ -14,6 +14,7 @@ import { MiniOrb } from "@/components/MiniOrb";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SecondaryButton } from "@/components/SecondaryButton";
 import { SignalUpsellCard } from "@/components/SignalUpsellCard";
+import { useMemoryContext } from "@/hooks/useMemoryContext";
 import { DebtGauge } from "./DebtGauge";
 import { RecoveryTimeline } from "./RecoveryTimeline";
 import { DonutChart, BarChartView } from "./StressorBreakdownChart";
@@ -41,6 +42,7 @@ export function PrescriptionScreen() {
   const router = useRouter();
   const { analysis, confidenceTier, orbPersonality } = useBodyDebtStore();
   const user = useEazo((s) => s.auth.user);
+  const { data: memoryData } = useMemoryContext("recovery prescription patterns what worked");
   const isGuest = !user && !!analysis;
   const personalityCopy = getOrbCopy(orbPersonality);
   const rx = analysis?.prescription ?? FALLBACK_PRESCRIPTION;
@@ -154,6 +156,52 @@ export function PrescriptionScreen() {
             scheduleLabel="Recovery Schedule"
           />
         </motion.div>
+
+        {/* Why this prescription — memory-backed reasoning */}
+        {memoryData?.enabled && (memoryData.profile || memoryData.memories.length > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65 }}
+            className="rounded-2xl p-4"
+            style={{
+              backgroundColor: "rgba(168,85,247,0.04)",
+              border: "1px solid rgba(168,85,247,0.15)",
+            }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm flex-shrink-0">💭</span>
+              <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "#a855f7" }}>
+                Why this prescription
+              </span>
+            </div>
+            <p className="text-[11px] leading-relaxed mb-3" style={{ color: "var(--color-text-secondary)" }}>
+              Your coach based this on your history:
+            </p>
+            <div className="space-y-1.5">
+              {memoryData.profile
+                .split("\n")
+                .map((l) => l.trim())
+                .filter(Boolean)
+                .slice(0, 3)
+                .map((fact, i) => (
+                  <p key={`p-${i}`} className="text-[11px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+                    <span style={{ color: "#a855f7" }}>•</span> {fact.length > 90 ? fact.slice(0, 90) + "…" : fact}
+                  </p>
+                ))}
+              {memoryData.memories.slice(0, 2).map((mem, i) => (
+                <p key={`m-${i}`} className="text-[11px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+                  <span style={{ color: "var(--color-text-faint)" }}>◦</span> {mem.length > 90 ? mem.slice(0, 90) + "…" : mem}
+                </p>
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5 mt-3 pt-2" style={{ borderTop: "1px solid rgba(168,85,247,0.1)" }}>
+              <span className="text-[8px] font-mono" style={{ color: "var(--color-text-faint)" }}>
+                🧠 From Supermemory Local · stays on your machine
+              </span>
+            </div>
+          </motion.div>
+        )}
 
         {/* Upsell — only at low confidence */}
         {(confidenceTier === "partial" || confidenceTier === "estimated") && (

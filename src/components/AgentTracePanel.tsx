@@ -161,6 +161,29 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                   </motion.div>
                 ))}
 
+                {/* Memory context injected from Supermemory */}
+                {trace.memoryContext && (
+                  <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: "rgba(168,85,247,0.04)", border: "1px solid rgba(168,85,247,0.1)" }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[8px] font-mono uppercase tracking-widest font-semibold" style={{ color: "#a855f7" }}>
+                        🧠 Memory Context
+                      </span>
+                      <span className="text-[8px] font-mono" style={{ color: "#a855f7" }}>
+                        Supermemory Local
+                      </span>
+                    </div>
+                    <div className="max-h-32 overflow-y-auto">
+                      <pre className="text-[10px] leading-relaxed whitespace-pre-wrap font-mono" style={{ color: "var(--color-text-secondary)", margin: 0 }}>
+                        {trace.memoryContext.slice(0, 600)}
+                        {trace.memoryContext.length > 600 ? "\n…" : ""}
+                      </pre>
+                    </div>
+                    <p className="text-[8px] font-mono mt-1.5" style={{ color: "var(--color-text-faint)" }}>
+                      Injected into triage + coach agent prompts
+                    </p>
+                  </div>
+                )}
+
                 {/* Triage result preview */}
                 {trace.triage && (
                   <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: "rgba(234,88,12,0.04)", border: "1px solid rgba(234,88,12,0.1)" }}>

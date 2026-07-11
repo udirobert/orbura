@@ -194,6 +194,8 @@ export interface AgentTrace {
   totalDurationMs?: number;
   cloudDurationMs?: number;
   model?: string;
+  /** Memory context injected into agent prompts from Supermemory */
+  memoryContext?: string | null;
 }
 
 export interface ScheduleBlock {
@@ -212,6 +214,8 @@ export interface AnalyzeBodyRequest {
   personality?: "honest" | "gentle" | "scientific" | "sarcastic";
   locale?: "en" | "es" | "fr";
   mode?: RecoveryMode;
+  /** Stable anonymous ID — used as Supermemory containerTag */
+  anonymousId?: string;
 }
 
 // ─── ZK Proof ─────────────────────────────────────────────────────────────────

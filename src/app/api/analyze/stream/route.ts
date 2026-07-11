@@ -7,6 +7,7 @@ import { ai } from "@/lib/sdk/eazo-client";
 import { runMultiAgentPipeline, buildAgentTrace } from "@/lib/qvac";
 import type { MultiAgentInput } from "@/lib/qvac";
 import { validateSSEEvent } from "@/lib/sse-schemas";
+import { getMemoryContext, logSession, isMemoryEnabled } from "@/lib/supermemory";
 
 // ─── Feature flags ───────────────────────────────────────────────────────────
 //
@@ -81,6 +82,15 @@ export async function POST(request: NextRequest) {
         _layer: "deterministic",
       });
 
+      // ── Memory context (parallel with Layer 2/3) ────────────────────────
+      // Fetch user history from Supermemory Local to enrich agent prompts.
+      // Falls back to null silently if memory is disabled or unavailable.
+      const containerTag = body.anonymousId ?? null;
+      const memoryQuery = `body debt recovery: ${body.stressors.map(s => s.type).join(", ")}`;
+      const memoryPromise = containerTag
+        ? getMemoryContext(containerTag, memoryQuery)
+        : Promise.resolve(null);
+
       // ── Layer 2: AI verdict (runs in parallel with agents) ──────────────
       // When NEXT_PUBLIC_ENABLE_CLOUD_VERDICT is off, skip the cloud AI
       // call and use the deterministic Layer 1 score as the verdict.
@@ -105,6 +115,16 @@ export async function POST(request: NextRequest) {
           });
 
       // ── Layer 3: QVAC multi-agent pipeline (primary AI path) ─────────────
+      // Resolve memory context before building the QVAC input — the agents
+      // need it in their prompts. This runs in parallel with Layer 1 + 2.
+      const memoryCtx = await memoryPromise;
+      const memoryContext = memoryCtx
+        ? [
+            memoryCtx.profile && `User profile:\n${memoryCtx.profile}`,
+            memoryCtx.memories && `Relevant past memories:\n${memoryCtx.memories}`,
+          ].filter(Boolean).join("\n\n") || null
+        : null;
+
       const qvacInput: MultiAgentInput = {
         debtScore:    layer1.debtScore,
         systemScores: layer1.systemScores ?? [],
@@ -114,6 +134,7 @@ export async function POST(request: NextRequest) {
         recoveryTime: layer1.recoveryTime,
         personality:  body.personality,
         mode:         body.mode ?? "personal",
+        memoryContext,
       };
 
       let prescriptionData: { prescription: DebtAnalysis["prescription"]; _layer: string; _agentTrace?: unknown; _schedule?: unknown };
@@ -222,6 +243,18 @@ export async function POST(request: NextRequest) {
           stressorBreakdown: final.stressorBreakdown,
         }).then((session) => {
           final.sessionId = Number(session.id);
+        }).catch(() => {});
+      }
+
+      // Store to Supermemory Local (non-blocking) — gives agents memory
+      // of past sessions for personalized recovery advice.
+      if (containerTag && isMemoryEnabled) {
+        logSession(containerTag, {
+          debtScore:    final.debtScore,
+          verdict:      final.verdict,
+          stressors:    body.stressors.map(s => s.type),
+          prescription: final.prescription,
+          mode:         body.mode ?? "personal",
         }).catch(() => {});
       }
 

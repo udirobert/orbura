@@ -26,8 +26,31 @@ export const auth = {
 };
 
 export const memory = {
-  reportAction(_payload: unknown): Promise<void> {
-    return Promise.resolve();
+  /**
+   * Reports a user action to Supermemory Local via /api/memory.
+   * Reads the anonymous user ID from the persisted Zustand store
+   * in localStorage to use as the Supermemory containerTag.
+   * Fire-and-forget — never blocks on memory failures.
+   */
+  async reportAction(payload: {
+    content: string;
+    event_type: string;
+  }): Promise<void> {
+    try {
+      if (typeof window === "undefined") return;
+      const raw = localStorage.getItem("body-debt-session");
+      if (!raw) return;
+      const state = JSON.parse(raw)?.state;
+      const containerTag = state?.anonymousId;
+      if (!containerTag) return;
+      await fetch("/api/memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, containerTag }),
+      });
+    } catch {
+      // Never let memory failures block core flow
+    }
   },
 };
 

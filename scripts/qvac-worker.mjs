@@ -69,6 +69,19 @@ function getCtx(input) {
   return CONTEXT_PROMPTS[input.mode ?? "personal"] ?? CONTEXT_PROMPTS.personal;
 }
 
+// ─── Memory context block ────────────────────────────────────────────────────
+//
+// If Supermemory provided user history, inject it into agent prompts so
+// the agents can reference patterns, past scores, and what worked before.
+// Kept compact — the 1.7B model has a 4096 token context window.
+
+function memoryBlock(input) {
+  if (!input.memoryContext) return "";
+  // Trim to ~500 chars to stay within context budget
+  const ctx = input.memoryContext.slice(0, 500);
+  return `\n\nUser history (use this to personalize — reference patterns, past scores, what worked):\n${ctx}\n`;
+}
+
 // ─── Tool definitions (simulated tool-calling for small models) ──────────────
 //
 // Qwen3-1.7B has native tool-calling support, but we keep the structured-prompt
@@ -88,8 +101,7 @@ const AGENTS = {
 
 Their ${ctx.domainNoun} score: ${input.debtScore}/100 (higher = more ${ctx.recoveryNoun} needed)
 Body systems affected:
-${JSON.stringify(input.systemScores?.map(s => ({ system: s.system, label: s.label, score: s.score, clearedAt: s.clearedAt })) ?? [])}
-
+${JSON.stringify(input.systemScores?.map(s => ({ system: s.system, label: s.label, score: s.score, clearedAt: s.clearedAt })) ?? [])}${memoryBlock(input)}
 Output EXACTLY three lines, no other text:
 PRIORITY: <body system name> <score> — <health reason in 8 words>
 SECONDARY: <body system name> <score> — <health reason in 8 words>
@@ -109,8 +121,7 @@ ${triageResult || "No triage available — use the system scores directly."}
 
 ${ctx.domainNoun === "match-readiness debt" ? "Match-readiness" : "Body debt"} score: ${input.debtScore}/100 (higher = more ${ctx.recoveryNoun} needed)
 Stressors: ${(input.stressors ?? []).join(", ") || "None reported"}
-${input.faceStress !== null && input.faceStress !== undefined ? `Face scan stress: ${input.faceStress}/100` : ""}
-
+${input.faceStress !== null && input.faceStress !== undefined ? `Face scan stress: ${input.faceStress}/100` : ""}${memoryBlock(input)}
 Write a ${ctx.recoveryNoun} prescription for this ${ctx.playerNoun}. Output EXACTLY four lines:
 RIGHT NOW: <one specific health action with quantity, 12-18 words>
 THIS MORNING: <one specific health action for next 2-3 hours, 12-18 words>

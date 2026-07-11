@@ -8,6 +8,7 @@ import { bandMeta } from "@/lib/debt-band";
 const SIGNALS = [
   { id: "stressors", label: "Stressor intake",     icon: "📋", doneAt: 0.12 },
   { id: "context",   label: "Context depth",        icon: "🔍", doneAt: 0.25 },
+  { id: "memory",    label: "Recalling your history", icon: "🧠", doneAt: 0.35 },
   { id: "face",      label: "Face biomarkers",       icon: "👁", doneAt: 0.45 },
   { id: "hrv",       label: "Autonomic signals",     icon: "❤️", doneAt: 0.62 },
   { id: "timeline",  label: "Recovery arc",          icon: "📈", doneAt: 0.78 },
@@ -206,6 +207,26 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, a
             />
             <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>
               QVAC · Qwen3-1.7B · on-device
+            </span>
+          </motion.div>
+        )}
+
+        {/* Memory badge — shown during the recall phase */}
+        {!hasLiveAgents && elapsed >= 0.25 && elapsed < 0.45 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+            style={{ backgroundColor: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)" }}
+          >
+            <motion.span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: "#a855f7" }}
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+            <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "#a855f7" }}>
+              Recalling from Supermemory
             </span>
           </motion.div>
         )}

@@ -70,6 +70,7 @@ export function useStreamingAnalysis() {
       personality: useBodyDebtStore.getState().orbPersonality,
       locale:     useBodyDebtStore.getState().locale,
       mode:       useBodyDebtStore.getState().mode,
+      anonymousId: useBodyDebtStore.getState().anonymousId,
     };
 
     try {
