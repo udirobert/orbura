@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { bandMeta } from "@/lib/debt-band";
 
 // ─── Signals being "processed" — animate through these ───────────────────────

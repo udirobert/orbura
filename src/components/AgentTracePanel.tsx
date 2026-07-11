@@ -155,7 +155,7 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
 
                       {/* Raw LLM output — collapsible */}
                       {step.raw && step.status === "done" && (
-                        <RawOutput raw={step.raw} agent={step.agent} />
+                        <RawOutput raw={step.raw} />
                       )}
                     </div>
                   </motion.div>
@@ -279,7 +279,7 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
   );
 }
 
-function RawOutput({ raw, agent }: { raw: string; agent: string }) {
+function RawOutput({ raw }: { raw: string }) {
   const [open, setOpen] = useState(false);
   const preview = raw.slice(0, 80).trim();
   return (

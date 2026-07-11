@@ -7,7 +7,6 @@ import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { getAllContexts } from "@/lib/contexts";
 import { memory } from "@/lib/sdk/eazo-client";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
-import { PrimaryButton } from "@/components/PrimaryButton";
 import type { RecoveryMode } from "@/lib/types";
 
 // Per-mode picker icon

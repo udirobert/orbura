@@ -195,12 +195,22 @@ contracts/artifacts/
 contracts/cache/
 contracts/out/
 broadcast/
-*.json
+# Ignore Solidity/Foundry JSON outputs (not all JSON)
+contracts/**/*.json
+broadcast/**/*.json
+# Keep app config and tracked JSON files
 !package.json
 !tsconfig.json
+!components.json
+!vercel.json
 !public/ezkl/vk-chunks.json
 !public/ezkl/vk-digest.json
+!public/ezkl/settings.json
+!public/verifier_abi.json
+!public/ezkl-verifier-abi.json
+!public/ezkl-verifier-config.json
 !hf-space/models/stress_metrics.json
+!src/lib/db/migrations/meta/*.json
 
 # ZK / EZKL generated files (can be large or regenerated)
 *.zk
@@ -259,3 +269,9 @@ archive/*
 hf-space/archive/*
 !hf-space/archive/
 !hf-space/archive/README.md
+
+# Demo video project (separate HyperFrames project, large binaries)
+demo-video/
+
+# Drizzle migration SQL (generated, tracked via meta journal)
+!src/lib/db/migrations/*.sql
