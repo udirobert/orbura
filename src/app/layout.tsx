@@ -9,6 +9,7 @@ import { UserSyncEffect } from "@/components/user-profile/user-sync-effect";
 import { PageTransition } from "@/components/PageTransition";
 import { WagmiProviderWrapper } from "@/components/providers/WagmiProviderWrapper";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { DemoModeInit } from "@/components/DemoModeInit";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -90,6 +91,7 @@ export default function RootLayout({
             <RecoveryContextProvider>
               <UserSyncEffect />
               <ServiceWorkerRegister />
+              <DemoModeInit />
               <PageTransition>
                 {children}
               </PageTransition>
