@@ -234,10 +234,6 @@ witness.json
 # EZKL temporary test directory
 public/ezkl-test/
 
-# EZKL large regeneratable artifacts (proving key, SRS, verification key)
-public/ezkl/*.key
-public/ezkl/*.bytes
-
 # Storybook build artifacts
 storybook-static/
 public/storybook/
@@ -253,6 +249,20 @@ Thumbs.db
 .qoder/
 .claude/
 .eazo/
+.agents/
+.cursor/
+skills-lock.json
+
+# npm lockfile — this repo uses Bun (see packageManager in package.json)
+package-lock.json
+
+# EZKL large regeneratable artifacts (proving key, SRS, verification key)
+public/ezkl/*.key
+public/ezkl/*.bytes
+# Local prover scratch / fixtures (not part of the shipped artifact set)
+public/ezkl/input.json
+public/ezkl/proof*.json
+public/ezkl/witness.json
 
 # Python virtualenvs
 .venv-challenge/

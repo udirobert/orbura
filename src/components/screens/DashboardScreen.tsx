@@ -25,6 +25,7 @@ import { useRecoveryContext } from "@/lib/contexts/RecoveryContext";
 import { ModeToggle } from "@/components/ModeToggle";
 import { SquadPanel } from "./SquadScreen";
 import { GuestAuthCard } from "@/components/GuestAuthCard";
+import { AuthLockedTeaser } from "@/components/AuthLockedTeaser";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SecondaryButton } from "@/components/SecondaryButton";
 import { SignalUpsellCard } from "@/components/SignalUpsellCard";
@@ -602,11 +603,25 @@ export function DashboardScreen() {
       {/* ── Layer 5: Patterns ────────────────────────────────────────── */}
       <PatternLayer streakDays={streakDays} />
 
-      {/* ── Layer 5b: Score heatmap (collapsible, auth-only) ───────── */}
-      {user && <ScoreHeatmap />}
+      {/* ── Layer 5b: Score heatmap (auth) / locked teaser (guest) ─── */}
+      {user ? (
+        <ScoreHeatmap />
+      ) : (
+        <AuthLockedTeaser
+          title="Heatmap"
+          body="Sign in to see your 30-day debt heatmap across sessions."
+        />
+      )}
 
-      {/* ── Layer 6: Past history (collapsible, auth-only) ─────────── */}
-      {user && <DebtHistory />}
+      {/* ── Layer 6: Past history (auth) / locked teaser (guest) ───── */}
+      {user ? (
+        <DebtHistory />
+      ) : (
+        <AuthLockedTeaser
+          title="Past scores"
+          body="Sign in to keep a recoverable history of verdicts and stressors."
+        />
+      )}
 
       {/* ── Layer 7: Notifications (auth-only) ──────────────────────── */}
       {user && <NotificationsToggle />}

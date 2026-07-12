@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 import Link from "next/link";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { MetricCard } from "./evidence/MetricCard";
@@ -126,7 +127,7 @@ export function EvidencePage() {
               <motion.div key={step.id}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.06 }}
+                transition={{ delay: i * 0.06, ease: EASE_PROTOCOL }}
                 className="flex items-center gap-3">
                 <span className="text-sm flex-shrink-0 w-6 text-center">{step.icon}</span>
                 <div className="flex-1 flex items-center gap-2">
@@ -207,7 +208,7 @@ export function EvidencePage() {
                 <motion.div className="h-full rounded-full" style={{ backgroundColor: "var(--color-states-success)" }}
                   initial={{ width: "0%" }}
                   animate={{ width: `${(SAMPLE_BENCHMARK.edgeTotalMs / SAMPLE_BENCHMARK.cloudVerdictMs) * 100}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }} />
+                  transition={{ duration: 1, ease: EASE_PROTOCOL }} />
               </div>
             </div>
             <div>
@@ -329,7 +330,7 @@ export function EvidencePage() {
               key={s.system}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
+              transition={{ delay: i * 0.08, ease: EASE_PROTOCOL }}
               className="rounded-2xl mb-3 overflow-hidden"
               style={{ backgroundColor: "var(--color-bg-surface)", border: `1px solid ${s.accent}22` }}
             >
@@ -603,7 +604,7 @@ export function EvidencePage() {
                 key={t.tier}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.07 }}
+                transition={{ delay: i * 0.07, ease: EASE_PROTOCOL }}
                 className="flex items-start gap-3 px-4 py-3"
                 style={{ borderBottom: i < CONFIDENCE_TIERS.length - 1 ? "1px solid rgba(168,162,158,0.04)" : "none" }}>
                 {/* Step indicator */}

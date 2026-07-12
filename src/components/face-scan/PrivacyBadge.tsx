@@ -3,13 +3,14 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
 import type { ScanPhase } from "./use-face-scan-pipeline";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 
 const PHASE_COPY: Partial<Record<ScanPhase, { label: string; sublabel?: string }>> = {
   camera:    { label: "Live preview", sublabel: "Not recording" },
   review:    { label: "In memory only", sublabel: "Not saved" },
   extracting: { label: "Processing locally", sublabel: "Nothing uploaded" },
-  proving:   { label: "Processing locally", sublabel: "Nothing uploaded" },
-  verifying: { label: "Processing locally", sublabel: "Nothing uploaded" },
+  proving:   { label: "Proving locally", sublabel: "Nothing uploaded" },
+  verifying: { label: "Verifying proof", sublabel: "Credential only" },
   result:    { label: "Photo cleared", sublabel: "Nothing stored" },
 };
 
@@ -37,7 +38,7 @@ export function PrivacyBadge({ phase }: PrivacyBadgeProps) {
         initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -4 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.2, ease: EASE_PROTOCOL }}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full"
         style={{
           backgroundColor: "rgba(16, 185, 129, 0.08)",

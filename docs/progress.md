@@ -38,6 +38,10 @@ MediaPipe init + manual fallback CTA. Docs: [face-scan.md](./face-scan.md)
 Auth is **NextAuth.js (Auth.js v5)** — self-hosted; Eazo SDK stubs delegate to
 it. Guest-first API routes still fall through when `requireAuth` is false.
 
+**Guest upgrade (landed):** `GuestAuthCard` is a real sign-in CTA (not
+“coming soon”). Dashboard shows locked heatmap / past-scores teasers that
+route into `/auth/signin`. Preferences + squad sync still hydrate after login.
+
 Also landed alongside this pass: user preferences sync, patterns hooks, squad
 API/schema, memory migrate path, and related Drizzle migrations. Env template
 documents `AUTH_SECRET`, `AUTH_URL`, email magic-link SMTP, and GitHub OAuth.

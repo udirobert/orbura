@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 import Link from "next/link";
 import {
   TOURNAMENT_DATES,
@@ -174,7 +175,7 @@ export function TetherPage() {
                 key={e.name}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
+                transition={{ delay: i * 0.08, ease: EASE_PROTOCOL }}
                 className="rounded-2xl p-4 flex items-start gap-3"
                 style={{
                   backgroundColor: "var(--color-bg-surface)",
@@ -345,7 +346,7 @@ export function TetherPage() {
                 key={i}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
+                transition={{ delay: i * 0.05, ease: EASE_PROTOCOL }}
                 className="flex items-start gap-3"
               >
                 <span className="text-sm flex-shrink-0 w-6 text-center mt-0.5">
@@ -403,7 +404,7 @@ export function TetherPage() {
                 key={a.agent}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
+                transition={{ delay: i * 0.08, ease: EASE_PROTOCOL }}
                 className="rounded-2xl p-4"
                 style={{
                   backgroundColor: "var(--color-bg-surface)",
@@ -592,7 +593,7 @@ export function TetherPage() {
                 key={s.name}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
+                transition={{ delay: i * 0.05, ease: EASE_PROTOCOL }}
                 className="rounded-xl p-3 flex items-start gap-3"
                 style={{
                   backgroundColor: "var(--color-bg-surface)",
@@ -641,7 +642,7 @@ export function TetherPage() {
                 key={p.type}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
+                transition={{ delay: i * 0.06, ease: EASE_PROTOCOL }}
                 className="rounded-xl p-3 flex items-start gap-3"
                 style={{
                   backgroundColor: "var(--color-bg-surface)",
@@ -788,7 +789,7 @@ export function TetherPage() {
                 key={t.label}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.06 }}
+                transition={{ delay: i * 0.06, ease: EASE_PROTOCOL }}
                 className="flex items-center gap-3 px-4 py-3"
                 style={{
                   borderBottom:
@@ -846,7 +847,7 @@ export function TetherPage() {
                 key={s.name}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
+                transition={{ delay: i * 0.04, ease: EASE_PROTOCOL }}
                 className="rounded-xl p-3 flex items-start gap-3"
                 style={{
                   backgroundColor: "var(--color-bg-surface)",
@@ -895,7 +896,7 @@ export function TetherPage() {
                 key={c.criterion}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
+                transition={{ delay: i * 0.06, ease: EASE_PROTOCOL }}
                 className="rounded-2xl p-4"
                 style={{
                   backgroundColor: "var(--color-bg-surface)",

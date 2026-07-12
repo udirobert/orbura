@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 import Link from "next/link";
 import {
   PIPELINE_STEPS,
@@ -205,7 +206,7 @@ export function AutoScientistPage() {
                 key={step.id}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
+                transition={{ delay: i * 0.05, ease: EASE_PROTOCOL }}
                 className="flex items-start gap-3"
               >
                 <span className="text-sm flex-shrink-0 w-6 text-center mt-0.5">
@@ -263,7 +264,7 @@ export function AutoScientistPage() {
                 key={a.agent}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
+                transition={{ delay: i * 0.08, ease: EASE_PROTOCOL }}
                 className="rounded-2xl p-4"
                 style={{
                   backgroundColor: "var(--color-bg-surface)",
@@ -412,7 +413,7 @@ export function AutoScientistPage() {
                 }}
                 initial={{ width: "0%" }}
                 animate={{ width: `${QUALITY_METRICS.improvement}%` }}
-                transition={{ duration: 1.2, ease: "easeOut" }}
+                transition={{ duration: 1.2, ease: EASE_PROTOCOL }}
               />
             </div>
             <p
@@ -581,7 +582,7 @@ export function AutoScientistPage() {
               key={s.system}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
+              transition={{ delay: i * 0.08, ease: EASE_PROTOCOL }}
               className="rounded-2xl mb-3 overflow-hidden"
               style={{
                 backgroundColor: "var(--color-bg-surface)",
