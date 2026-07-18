@@ -36,6 +36,7 @@ describe("sendEmail", () => {
     expect(createTransport).toHaveBeenCalledWith({
       host: "smtp.example.com",
       port: 587,
+      secure: false,
       auth: { user: "user", pass: "pass" },
     });
     expect(mockedSendMail).toHaveBeenCalledWith({
@@ -45,5 +46,18 @@ describe("sendEmail", () => {
       text: "Hello",
       html: undefined,
     });
+  });
+
+  it("uses secure=true for port 465", async () => {
+    process.env.EMAIL_SERVER_HOST = "smtp.example.com";
+    process.env.EMAIL_SERVER_PORT = "465";
+    process.env.EMAIL_SERVER_USER = "user";
+    process.env.EMAIL_SERVER_PASSWORD = "pass";
+
+    await sendEmail({ to: "care@example.com", subject: "Test", text: "Hello" });
+
+    expect(createTransport).toHaveBeenCalledWith(
+      expect.objectContaining({ secure: true }),
+    );
   });
 });

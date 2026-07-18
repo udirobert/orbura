@@ -27,6 +27,7 @@ export async function sendEmail({ to, subject, text, html }: SendEmailInput): Pr
   const transport = createTransport({
     host,
     port,
+    secure: port === 465,
     auth: user && pass ? { user, pass } : undefined,
   });
 
