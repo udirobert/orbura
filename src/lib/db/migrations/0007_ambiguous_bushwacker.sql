@@ -1,0 +1,1 @@
+ALTER TABLE "care_observations" ALTER COLUMN "weight_kg" SET DATA TYPE real;

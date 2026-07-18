@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, Clock, Info, ArrowRight, Stethoscope } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Info, ArrowRight, Stethoscope, HeartHandshake } from "lucide-react";
 
 export interface CareCheckInResponse {
   ok?: boolean;
@@ -37,7 +37,9 @@ function formatDate(iso?: string) {
 }
 
 export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
-  const symptoms = result.observation.symptoms.map(symptomLabel).join(", ");
+  const symptoms = result.observation.symptoms[0] === "none"
+    ? "no symptoms"
+    : result.observation.symptoms.map(symptomLabel).join(", ");
   const severity = result.observation.symptomSeverity;
 
   if (result.action.type === "escalate") {
@@ -55,7 +57,7 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
             <AlertTriangle className="h-5 w-5" style={{ color: "var(--color-states-error)" }} />
           </div>
           <div>
-            <h2 className="font-semibold text-base">Your care team has been notified</h2>
+            <h2 className="font-semibold text-base">We&apos;ve flagged this for your care team</h2>
             <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
               {result.action.reason}
             </p>
@@ -64,8 +66,9 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
 
         <div className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
           <p>
-            You reported <span className="font-medium" style={{ color: "var(--color-text-primary)" }}>{symptoms}</span> with{" "}
-            <span className="font-medium" style={{ color: "var(--color-states-error)" }}>{severity}</span> severity. A clinician will review this and reach out if needed.
+            You reported <span className="font-medium" style={{ color: "var(--color-text-primary)" }}>{symptoms}</span>{" "}
+            {symptoms !== "no symptoms" && <>at <span className="font-medium" style={{ color: "var(--color-states-error)" }}>{severity}</span> severity. </>}
+            Your check-in is in the care record for a clinician to review.
           </p>
         </div>
 
@@ -122,19 +125,15 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
           )}
         </div>
         <div>
-          <h2 className="font-semibold text-base">
-            {severity === "severe" ? "You&apos;re on the right track — keep monitoring" : "You&apos;re on track"}
-          </h2>
+          <h2 className="font-semibold text-base">Your next step is ready</h2>
           <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
-            {severity === "severe" ? "Your symptoms are notable but manageable right now." : "No red flags detected."}
+            We&apos;ve saved today&apos;s check-in and selected one clinic-approved action.
           </p>
         </div>
       </div>
 
-      <div
-        className="rounded-xl p-4 space-y-2"
-        style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-primary)", border: "1px solid rgba(168,162,158,0.08)" }}
-      >
+      <div className="rounded-2xl p-4 space-y-2" style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-primary)", border: "1px solid rgba(168,162,158,0.08)" }}>
+        <p className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-brand-secondary)" }}><HeartHandshake className="h-3.5 w-3.5" /> Do this next</p>
         <p className="text-sm font-medium">{actionText}</p>
         {explanation && (
           <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
@@ -149,8 +148,8 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
         )}
       </div>
 
-      <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-        This guidance is based on your reported symptoms, medication, and dose. Check in again tomorrow or if anything changes.
+      <p className="text-xs leading-5" style={{ color: "var(--color-text-secondary)" }}>
+        If this is difficult to do, or anything changes, tell us in your next check-in. This support does not replace urgent medical care.
       </p>
 
       <Link

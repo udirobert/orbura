@@ -30,6 +30,8 @@ export type AdherenceStatus =
   | "stopped"
   | "not_started";
 
+export type GlucoseUnit = "mmol/L" | "mg/dL";
+
 export interface CareObservationInput {
   patientId: string;
   symptoms: CareSymptom[];
@@ -37,6 +39,7 @@ export interface CareObservationInput {
   adherence: AdherenceStatus;
   weightKg?: number | null;
   fastingGlucose?: number | null;
+  fastingGlucoseUnit?: GlucoseUnit | null;
   notes?: string | null;
   medication?: string | null;
   currentDose?: string | null;
@@ -51,6 +54,7 @@ export interface CareObservation {
   adherence: AdherenceStatus;
   weightKg: number | null;
   fastingGlucose: number | null;
+  fastingGlucoseUnit: string | null;
   notes: string | null;
 }
 

@@ -23,6 +23,7 @@ function inputToObservation(input: CareObservationInput): CareObservation {
     adherence: input.adherence,
     weightKg: input.weightKg ?? null,
     fastingGlucose: input.fastingGlucose ?? null,
+    fastingGlucoseUnit: input.fastingGlucoseUnit ?? null,
     notes: input.notes ?? null,
   };
 }

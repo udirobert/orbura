@@ -4,11 +4,10 @@ import {
   getCarePatientByUserId,
   getCareObservationsForPatient,
   getPendingInterventionsForPatient,
+  getRecentInterventionOutcomesForPatient,
   getOpenEscalationsForPatient,
+  getCareClinicById,
 } from "@/lib/db/queries/care";
-import { carePatients } from "@/lib/db/schema/care";
-import { db } from "@/lib/db/client";
-import { randomUUID } from "node:crypto";
 
 export const maxDuration = 30;
 
@@ -22,31 +21,26 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth(request);
   if (!auth.ok) return auth.response;
 
-  let patient = await getCarePatientByUserId(auth.user.id);
-  if (!patient) {
-    const [created] = await db
-      .insert(carePatients)
-      .values({
-        id: randomUUID(),
-        userId: auth.user.id,
-        enrolledAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
-    patient = created;
+  const patient = await getCarePatientByUserId(auth.user.id);
+  if (!patient?.clinicId) {
+    return NextResponse.json({ error: "Care access has not been set up by your clinic" }, { status: 403 });
   }
 
-  const [observations, pendingInterventions, openEscalations] = await Promise.all([
+  const [observations, pendingInterventions, recentOutcomes, openEscalations] = await Promise.all([
     getCareObservationsForPatient(patient.id, 10),
     getPendingInterventionsForPatient(patient.id),
+    getRecentInterventionOutcomesForPatient(patient.id),
     getOpenEscalationsForPatient(patient.id),
   ]);
+  const clinic = patient.clinicId ? await getCareClinicById(patient.clinicId) : undefined;
 
   return NextResponse.json({
     ok: true,
     patient,
+    clinic: clinic ? { id: clinic.id, name: clinic.name } : null,
     observations,
     pendingInterventions,
+    recentOutcomes,
     openEscalations,
   });
 }

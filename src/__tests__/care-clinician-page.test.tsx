@@ -63,13 +63,16 @@ describe("ClinicianPage", () => {
     expect(screen.getByTestId("auth-locked")).toBeDefined();
   });
 
-  it("prompts for a clinic ID when none is provided", () => {
+  it("prompts for clinic access when none is provided", async () => {
     setUser({ id: "user-1", email: "doc@example.com" });
     setSearchParams({});
+    mockFetch({ ok: true, clinics: [] });
     render(<ClinicianPage />);
 
     expect(screen.getByText("Clinic dashboard")).toBeDefined();
-    expect(screen.getByPlaceholderText("e.g. demo-clinic")).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText("No clinic access yet")).toBeDefined();
+    });
   });
 
   it("fetches and displays escalations and interventions", async () => {

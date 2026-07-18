@@ -1,4 +1,4 @@
-import { eq, desc, and, getTableColumns } from "drizzle-orm";
+import { eq, ne, desc, and, getTableColumns } from "drizzle-orm";
 import { db } from "../client";
 import {
   careObservations,
@@ -13,7 +13,6 @@ import {
   type CarePatient,
   type CareClinician,
   type CareClinic,
-  type NewCareClinic,
   type NewCareClinician,
   type NewCarePatient,
 } from "../schema/care";
@@ -60,7 +59,7 @@ export async function createCareEscalation(
 export async function getOpenEscalationsForClinic(
   clinicId: string,
   limit = 50,
-): Promise<(CareEscalationRow & { patient: CarePatient; userName: string | null; userEmail: string | null })[]> {
+): Promise<(CareEscalationRow & { patient: CarePatient; userName: string | null; userEmail: string | null; observation: Pick<CareObservationRow, "symptoms" | "symptomSeverity" | "adherence" | "checkInAt" | "notes"> | null })[]> {
   return db
     .select({
       id: careEscalations.id,
@@ -73,13 +72,21 @@ export async function getOpenEscalationsForClinic(
       patient: carePatients,
       userName: users.name,
       userEmail: users.email,
+      observation: {
+        symptoms: careObservations.symptoms,
+        symptomSeverity: careObservations.symptomSeverity,
+        adherence: careObservations.adherence,
+        checkInAt: careObservations.checkInAt,
+        notes: careObservations.notes,
+      },
     })
     .from(careEscalations)
     .innerJoin(carePatients, eq(carePatients.id, careEscalations.patientId))
     .innerJoin(users, eq(users.id, carePatients.userId))
+    .leftJoin(careObservations, eq(careObservations.id, careEscalations.observationId))
     .where(and(eq(carePatients.clinicId, clinicId), eq(careEscalations.status, "open")))
     .orderBy(desc(careEscalations.createdAt))
-    .limit(limit) as unknown as (CareEscalationRow & { patient: CarePatient; userName: string | null; userEmail: string | null })[];
+    .limit(limit) as unknown as (CareEscalationRow & { patient: CarePatient; userName: string | null; userEmail: string | null; observation: Pick<CareObservationRow, "symptoms" | "symptomSeverity" | "adherence" | "checkInAt" | "notes"> | null })[];
 }
 
 export async function getPendingInterventionsForPatient(
@@ -90,6 +97,19 @@ export async function getPendingInterventionsForPatient(
     .from(careInterventions)
     .where(and(eq(careInterventions.patientId, patientId), eq(careInterventions.status, "pending")))
     .orderBy(desc(careInterventions.dueAt));
+}
+
+/** Recent completed or declined actions form the patient's outcome trail. */
+export async function getRecentInterventionOutcomesForPatient(
+  patientId: string,
+  limit = 10,
+): Promise<CareInterventionRow[]> {
+  return db
+    .select()
+    .from(careInterventions)
+    .where(and(eq(careInterventions.patientId, patientId), ne(careInterventions.status, "pending")))
+    .orderBy(desc(careInterventions.completedAt))
+    .limit(limit);
 }
 
 export async function getOpenEscalationsForPatient(
@@ -124,6 +144,32 @@ export async function getPendingInterventionsForClinic(
     .innerJoin(users, eq(users.id, carePatients.userId))
     .where(and(eq(carePatients.clinicId, clinicId), eq(careInterventions.status, "pending")))
     .orderBy(desc(careInterventions.dueAt))
+    .limit(limit) as unknown as (CareInterventionRow & { patient: CarePatient; userName: string | null; userEmail: string | null })[];
+}
+
+/** A clinician-readable record of whether recommended actions were attempted. */
+export async function getRecentInterventionOutcomesForClinic(
+  clinicId: string,
+  limit = 20,
+): Promise<(CareInterventionRow & { patient: CarePatient; userName: string | null; userEmail: string | null })[]> {
+  return db
+    .select({
+      id: careInterventions.id,
+      patientId: careInterventions.patientId,
+      observationId: careInterventions.observationId,
+      action: careInterventions.action,
+      status: careInterventions.status,
+      dueAt: careInterventions.dueAt,
+      completedAt: careInterventions.completedAt,
+      patient: carePatients,
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(careInterventions)
+    .innerJoin(carePatients, eq(carePatients.id, careInterventions.patientId))
+    .innerJoin(users, eq(users.id, carePatients.userId))
+    .where(and(eq(carePatients.clinicId, clinicId), ne(careInterventions.status, "pending")))
+    .orderBy(desc(careInterventions.completedAt))
     .limit(limit) as unknown as (CareInterventionRow & { patient: CarePatient; userName: string | null; userEmail: string | null })[];
 }
 
@@ -282,7 +328,7 @@ export async function updateCarePatientClinic(
 
 export async function updateCarePatient(
   patientId: string,
-  input: Partial<Pick<CarePatient, "clinicId" | "medication" | "currentDose">>,
+  input: Partial<Pick<CarePatient, "clinicId" | "medication" | "currentDose" | "startedAt">>,
 ): Promise<CarePatient> {
   const [row] = await db
     .update(carePatients)

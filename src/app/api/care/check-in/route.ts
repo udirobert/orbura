@@ -8,8 +8,8 @@ import { processCheckIn } from "@/application/care/check-in";
 import { careObservations, careInterventions, careEscalations, carePatients } from "@/lib/db/schema/care";
 import { users } from "@/lib/db/schema/users";
 import { db } from "@/lib/db/client";
+import { getCarePatientByUserId } from "@/lib/db/queries/care";
 import { eq, desc } from "drizzle-orm";
-import { randomUUID } from "node:crypto";
 import type { CareObservation, CareIntervention, CareEscalation, CareObservationInput } from "@/domain/care/types";
 
 export const maxDuration = 30;
@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
     adherence: string;
     weightKg?: number | null;
     fastingGlucose?: number | null;
+    fastingGlucoseUnit?: "mmol/L" | "mg/dL" | null;
     notes?: string | null;
     medication?: string | null;
     currentDose?: string | null;
@@ -45,33 +46,20 @@ export async function POST(request: NextRequest) {
   if (!body.adherence) {
     return NextResponse.json({ error: "adherence is required" }, { status: 400 });
   }
+  if (body.weightKg != null && (!Number.isFinite(body.weightKg) || body.weightKg <= 0 || body.weightKg > 1000)) {
+    return NextResponse.json({ error: "weight must be a valid value in kilograms" }, { status: 400 });
+  }
+  if (body.fastingGlucose != null && (!Number.isFinite(body.fastingGlucose) || body.fastingGlucose < 0 || body.fastingGlucose > 2000)) {
+    return NextResponse.json({ error: "fasting glucose must be a valid value" }, { status: 400 });
+  }
+  if (body.fastingGlucose != null && body.fastingGlucoseUnit !== "mmol/L" && body.fastingGlucoseUnit !== "mg/dL") {
+    return NextResponse.json({ error: "choose the unit used for fasting glucose" }, { status: 400 });
+  }
 
-  // Find or create the care patient for this user and update medication/dose if supplied.
-  let [patient] = await db.select().from(carePatients).where(eq(carePatients.userId, auth.user.id)).limit(1);
-  if (!patient) {
-    const [created] = await db
-      .insert(carePatients)
-      .values({
-        id: randomUUID(),
-        userId: auth.user.id,
-        medication: body.medication ?? null,
-        currentDose: body.currentDose ?? null,
-        enrolledAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
-    patient = created;
-  } else if (body.medication || body.currentDose) {
-    const [updated] = await db
-      .update(carePatients)
-      .set({
-        medication: body.medication ?? patient.medication,
-        currentDose: body.currentDose ?? patient.currentDose,
-        updatedAt: new Date(),
-      })
-      .where(eq(carePatients.id, patient.id))
-      .returning();
-    patient = updated;
+  // Care Companion is clinic-enrolled: an unassigned check-in cannot promise a care-team response.
+  const patient = await getCarePatientByUserId(auth.user.id);
+  if (!patient?.clinicId) {
+    return NextResponse.json({ error: "Care access has not been set up by your clinic" }, { status: 403 });
   }
 
   const input: CareObservationInput = {
@@ -81,6 +69,7 @@ export async function POST(request: NextRequest) {
     adherence: body.adherence as CareObservationInput["adherence"],
     weightKg: body.weightKg ?? null,
     fastingGlucose: body.fastingGlucose ?? null,
+    fastingGlucoseUnit: body.fastingGlucoseUnit ?? null,
     notes: body.notes ?? null,
     medication: patient.medication,
     currentDose: patient.currentDose,
@@ -110,6 +99,7 @@ export async function POST(request: NextRequest) {
           adherence: obs.adherence,
           weightKg: obs.weightKg,
           fastingGlucose: obs.fastingGlucose,
+          fastingGlucoseUnit: obs.fastingGlucoseUnit,
           notes: obs.notes,
         })
         .returning();

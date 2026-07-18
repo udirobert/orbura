@@ -5,16 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { AuthLockedTeaser } from "@/components/AuthLockedTeaser";
-import { Building2, Plus, Pill, ExternalLink, Mail, User, Inbox } from "lucide-react";
-
-const MEDICATIONS = ["Semaglutide", "Tirzepatide", "Liraglutide", "Oral Semaglutide", "Orforglipron"] as const;
-const DOSE_OPTIONS: Record<string, string[]> = {
-  Semaglutide: ["2.4mg weekly"],
-  Tirzepatide: ["15mg weekly"],
-  Liraglutide: ["3mg daily"],
-  "Oral Semaglutide": ["50mg daily"],
-  Orforglipron: ["45mg daily"],
-};
+import { Building2, Plus, Pill, ExternalLink, Mail, User, Inbox, CheckCircle2 } from "lucide-react";
 
 type Patient = {
   id: string;
@@ -22,6 +13,7 @@ type Patient = {
   clinicId: string | null;
   medication: string | null;
   currentDose: string | null;
+  startedAt: string | null;
   enrolledAt: string;
   userName?: string | null;
   userEmail?: string | null;
@@ -50,10 +42,12 @@ export function ClinicAdminPage() {
   const [selectedClinicId, setSelectedClinicId] = useState("");
   const [email, setEmail] = useState("");
   const [patientName, setPatientName] = useState("");
-  const [medication, setMedication] = useState("Semaglutide");
-  const [currentDose, setCurrentDose] = useState("2.4mg weekly");
+  const [medication, setMedication] = useState("");
+  const [currentDose, setCurrentDose] = useState("");
+  const [startedAt, setStartedAt] = useState("");
   const [enrolling, setEnrolling] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [enrollmentSuccess, setEnrollmentSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -103,6 +97,7 @@ export function ClinicAdminPage() {
     if (!selectedClinicId || !email.trim()) return;
     setEnrolling(true);
     setError(null);
+    setEnrollmentSuccess(null);
     try {
       const res = await fetch(`/api/care/clinics/${encodeURIComponent(selectedClinicId)}/patients`, {
         method: "POST",
@@ -110,14 +105,19 @@ export function ClinicAdminPage() {
         body: JSON.stringify({
           email: email.trim(),
           name: patientName.trim() || undefined,
-          medication,
-          currentDose,
+          medication: medication.trim() || undefined,
+          currentDose: currentDose.trim() || undefined,
+          startedAt: startedAt || undefined,
         }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to enroll patient");
       setEmail("");
       setPatientName("");
+      setMedication("");
+      setCurrentDose("");
+      setStartedAt("");
+      setEnrollmentSuccess(json.patient.userId ? "Patient enrolled. Their next check-in will be routed to this clinic." : "Patient enrolled.");
       await loadClinics();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to enroll patient");
@@ -139,11 +139,9 @@ export function ClinicAdminPage() {
     );
   }
 
-  const selectedClinic = clinics.find((c) => c.id === selectedClinicId);
-
   return (
     <main className="min-h-svh px-5 py-8" style={{ backgroundColor: "var(--color-bg-base)", color: "var(--color-text-primary)" }}>
-      <div className="max-w-2xl mx-auto space-y-8">
+      <div className="max-w-5xl mx-auto space-y-8">
         <div>
           <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-text-faint)" }}>
             Care Companion
@@ -151,8 +149,8 @@ export function ClinicAdminPage() {
           <h1 className="text-2xl font-normal" style={{ fontFamily: "var(--font-heading)" }}>
             Clinic admin
           </h1>
-          <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
-            Create clinics, enroll patients, and open the dashboard to track check-ins.
+          <p className="text-xs mt-1 leading-5" style={{ color: "var(--color-text-secondary)" }}>
+            Set up the care record once. Patients receive simple support; your team sees only the exceptions that need judgement.
           </p>
         </div>
 
@@ -162,7 +160,8 @@ export function ClinicAdminPage() {
           </div>
         )}
 
-        <form onSubmit={createClinic} className="space-y-4">
+        <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+        <form onSubmit={createClinic} className="space-y-4 rounded-[1.5rem] p-5" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}>
           <h2 className="text-sm font-semibold flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             Create clinic
@@ -181,11 +180,12 @@ export function ClinicAdminPage() {
         </form>
 
         {clinics.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-4 rounded-[1.5rem] p-5" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}>
             <h2 className="text-sm font-semibold flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Enroll patient
             </h2>
+            <p className="-mt-2 text-xs leading-5" style={{ color: "var(--color-text-secondary)" }}>Use the medication and dose exactly as recorded in the patient&apos;s existing clinical plan. This does not change a prescription.</p>
             <form onSubmit={enrollPatient} className="space-y-4">
               <select
                 value={selectedClinicId}
@@ -220,46 +220,46 @@ export function ClinicAdminPage() {
               />
 
               <div className="grid grid-cols-2 gap-3">
-                <select
+                <label className="text-[11px]" style={{ color: "var(--color-text-secondary)" }}>
+                  Medication <span style={{ color: "var(--color-text-faint)" }}>(optional)</span>
+                  <input
+                  type="text"
                   value={medication}
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    setMedication(next);
-                    setCurrentDose(DOSE_OPTIONS[next]?.[0] ?? "");
-                  }}
-                  className="w-full text-sm rounded-xl px-3 py-2.5 border bg-transparent"
+                  onChange={(e) => setMedication(e.target.value)}
+                  placeholder="As recorded"
+                  className="mt-1.5 w-full text-sm rounded-xl px-3 py-2.5 border bg-transparent"
                   style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
-                >
-                  {MEDICATIONS.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-
-                <select
+                />
+                </label>
+                <label className="text-[11px]" style={{ color: "var(--color-text-secondary)" }}>
+                  Current dose <span style={{ color: "var(--color-text-faint)" }}>(optional)</span>
+                  <input
+                  type="text"
                   value={currentDose}
                   onChange={(e) => setCurrentDose(e.target.value)}
-                  className="w-full text-sm rounded-xl px-3 py-2.5 border bg-transparent"
+                  placeholder="As recorded"
+                  className="mt-1.5 w-full text-sm rounded-xl px-3 py-2.5 border bg-transparent"
                   style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
-                >
-                  {(DOSE_OPTIONS[medication] ?? []).map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
+                />
+                </label>
               </div>
+
+              <label className="block text-[11px]" style={{ color: "var(--color-text-secondary)" }}>
+                Treatment start date <span style={{ color: "var(--color-text-faint)" }}>(optional)</span>
+                <input type="date" value={startedAt} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setStartedAt(e.target.value)} className="mt-1.5 w-full rounded-xl px-3 py-2.5 text-sm" style={{ backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-primary)" }} />
+              </label>
 
               <PrimaryButton type="submit" disabled={enrolling || !selectedClinicId || !email.trim()}>
                 {enrolling ? "Enrolling…" : "Enroll patient"}
               </PrimaryButton>
             </form>
+            {enrollmentSuccess && <p className="flex items-center gap-2 rounded-xl p-3 text-xs" style={{ backgroundColor: "rgba(74,222,128,0.08)", color: "var(--color-states-success)" }}><CheckCircle2 className="h-4 w-4" />{enrollmentSuccess}</p>}
           </div>
         )}
+        </div>
 
         {clinics.map((clinic) => (
-          <div key={clinic.id} className="space-y-4">
+          <div key={clinic.id} className="space-y-4 rounded-[1.5rem] p-5" style={{ backgroundColor: "rgba(20,20,22,0.45)", border: "1px solid var(--color-border-subtle)" }}>
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
@@ -271,7 +271,7 @@ export function ClinicAdminPage() {
                 className="text-xs flex items-center gap-1 font-medium"
                 style={{ color: "var(--color-brand-primary)" }}
               >
-                Dashboard
+                Review exceptions
                 <ExternalLink className="h-3 w-3" />
               </button>
             </div>
@@ -316,6 +316,7 @@ export function ClinicAdminPage() {
                               {p.medication}{p.currentDose ? ` — ${p.currentDose}` : ""}
                             </span>
                           )}
+                          {p.startedAt && <span>Treatment started {formatDate(p.startedAt)}</span>}
                         </div>
                         <p className="text-[10px] mt-2 font-mono uppercase tracking-wider" style={{ color: "var(--color-text-faint)" }}>
                           Enrolled {formatDate(p.enrolledAt)} · ID {p.id}

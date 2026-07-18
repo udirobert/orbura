@@ -39,7 +39,7 @@ vi.mock("next/link", () => ({
 describe("EvidencePage — page structure", () => {
   it("renders the page title", () => {
     render(<EvidencePage />);
-    expect(screen.getByText("Evidence bundle for QVAC Hackathon judges")).toBeDefined();
+    expect(screen.getByText("QVAC Hackathon evidence bundle")).toBeDefined();
   });
 
   it("renders the app name badge", () => {

@@ -1,0 +1,1 @@
+ALTER TABLE "care_observations" ADD COLUMN "fasting_glucose_unit" varchar(16);

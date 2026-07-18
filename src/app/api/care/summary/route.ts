@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import {
   getOpenEscalationsForClinic,
   getPendingInterventionsForClinic,
+  getRecentInterventionOutcomesForClinic,
   getCareClinician,
 } from "@/lib/db/queries/care";
 
@@ -29,10 +30,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "not authorized" }, { status: 403 });
   }
 
-  const [openEscalations, pendingInterventions] = await Promise.all([
+  const [openEscalations, pendingInterventions, recentOutcomes] = await Promise.all([
     getOpenEscalationsForClinic(clinicId),
     getPendingInterventionsForClinic(clinicId),
+    getRecentInterventionOutcomesForClinic(clinicId),
   ]);
 
-  return NextResponse.json({ ok: true, openEscalations, pendingInterventions });
+  return NextResponse.json({ ok: true, openEscalations, pendingInterventions, recentOutcomes });
 }

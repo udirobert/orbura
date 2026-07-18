@@ -1,5 +1,5 @@
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
-import { pgTable, varchar, text, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, timestamp, integer, real, pgEnum } from "drizzle-orm/pg-core";
 
 export const careSymptomEnum = pgEnum("care_symptom", [
   "nausea",
@@ -68,8 +68,9 @@ export const careObservations = pgTable("care_observations", {
   symptoms: careSymptomEnum("symptoms").array().notNull(),
   symptomSeverity: careSeverityEnum("symptom_severity").notNull(),
   adherence: careAdherenceEnum("adherence").notNull(),
-  weightKg: integer("weight_kg"),
+  weightKg: real("weight_kg"),
   fastingGlucose: integer("fasting_glucose"),
+  fastingGlucoseUnit: varchar("fasting_glucose_unit", { length: 16 }),
   notes: text("notes"),
 });
 

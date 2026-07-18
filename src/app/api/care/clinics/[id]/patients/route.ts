@@ -27,9 +27,13 @@ export async function POST(
   if (!auth.ok) return auth.response;
 
   const { id: clinicId } = await params;
-  const body = (await request.json()) as { email?: string; name?: string; medication?: string; currentDose?: string };
+  const body = (await request.json()) as { email?: string; name?: string; medication?: string; currentDose?: string; startedAt?: string };
   if (!body.email || typeof body.email !== "string") {
     return NextResponse.json({ error: "email is required" }, { status: 400 });
+  }
+  const startedAt = body.startedAt ? new Date(`${body.startedAt}T00:00:00.000Z`) : undefined;
+  if (body.startedAt && (Number.isNaN(startedAt?.getTime()) || startedAt! > new Date())) {
+    return NextResponse.json({ error: "treatment start date must be a valid past date" }, { status: 400 });
   }
 
   const clinician = await getCareClinician(auth.user.id, clinicId);
@@ -47,12 +51,14 @@ export async function POST(
     const needsUpdate =
       patient.clinicId !== clinicId ||
       (body.medication && patient.medication !== body.medication) ||
-      (body.currentDose && patient.currentDose !== body.currentDose);
+      (body.currentDose && patient.currentDose !== body.currentDose) ||
+      (!!startedAt && patient.startedAt?.getTime() !== startedAt.getTime());
     if (needsUpdate) {
       patient = await updateCarePatient(patient.id, {
         clinicId,
         medication: body.medication ?? patient.medication,
         currentDose: body.currentDose ?? patient.currentDose,
+        startedAt: startedAt ?? patient.startedAt,
       });
     }
     return NextResponse.json({ ok: true, patient });
@@ -65,6 +71,7 @@ export async function POST(
     clinicId,
     medication: body.medication ?? null,
     currentDose: body.currentDose ?? null,
+    startedAt: startedAt ?? null,
     enrolledAt: now,
     updatedAt: now,
   });
