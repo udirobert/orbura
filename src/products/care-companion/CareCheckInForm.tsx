@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { CareCheckInResult, type CareCheckInResponse } from "./CareCheckInResult";
 
 const SYMPTOMS = [
   "nausea",
@@ -49,11 +50,7 @@ export function CareCheckInForm() {
   const [notes, setNotes] = useState("");
   const [medication, setMedication] = useState("Semaglutide");
   const [currentDose, setCurrentDose] = useState("2.4mg weekly");
-  const [result, setResult] = useState<{
-    action: { type: string; reason?: string; action?: string; explanation?: string };
-    intervention?: { action: string };
-    escalation?: { reason: string };
-  } | null>(null);
+  const [result, setResult] = useState<CareCheckInResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
   const toggleSymptom = (s: string) => {
@@ -246,32 +243,7 @@ export function CareCheckInForm() {
         {loading ? "Checking in…" : "Check in"}
       </PrimaryButton>
 
-      {result && (
-        <div
-          className="rounded-2xl p-4 text-sm"
-          style={{
-            backgroundColor: result.action.type === "escalate" ? "rgba(239,68,68,0.08)" : "rgba(34,197,94,0.08)",
-            border: `1px solid ${result.action.type === "escalate" ? "rgba(239,68,68,0.2)" : "rgba(34,197,94,0.2)"}`,
-            color: "var(--color-text-primary)",
-          }}
-        >
-          {result.action.type === "escalate" ? (
-            <>
-              <p className="font-semibold">Clinic review needed</p>
-              <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
-                {result.escalation?.reason}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="font-semibold">Next step</p>
-              <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
-                {result.action.explanation || result.intervention?.action}
-              </p>
-            </>
-          )}
-        </div>
-      )}
+      {result && <CareCheckInResult result={result} />}
     </form>
   );
 }

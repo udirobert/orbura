@@ -60,7 +60,7 @@ export async function createCareEscalation(
 export async function getOpenEscalationsForClinic(
   clinicId: string,
   limit = 50,
-): Promise<(CareEscalationRow & { patient: CarePatient })[]> {
+): Promise<(CareEscalationRow & { patient: CarePatient; userName: string | null; userEmail: string | null })[]> {
   return db
     .select({
       id: careEscalations.id,
@@ -71,12 +71,15 @@ export async function getOpenEscalationsForClinic(
       createdAt: careEscalations.createdAt,
       resolvedAt: careEscalations.resolvedAt,
       patient: carePatients,
+      userName: users.name,
+      userEmail: users.email,
     })
     .from(careEscalations)
     .innerJoin(carePatients, eq(carePatients.id, careEscalations.patientId))
+    .innerJoin(users, eq(users.id, carePatients.userId))
     .where(and(eq(carePatients.clinicId, clinicId), eq(careEscalations.status, "open")))
     .orderBy(desc(careEscalations.createdAt))
-    .limit(limit) as unknown as (CareEscalationRow & { patient: CarePatient })[];
+    .limit(limit) as unknown as (CareEscalationRow & { patient: CarePatient; userName: string | null; userEmail: string | null })[];
 }
 
 export async function getPendingInterventionsForPatient(
@@ -102,7 +105,7 @@ export async function getOpenEscalationsForPatient(
 export async function getPendingInterventionsForClinic(
   clinicId: string,
   limit = 50,
-): Promise<(CareInterventionRow & { patient: CarePatient })[]> {
+): Promise<(CareInterventionRow & { patient: CarePatient; userName: string | null; userEmail: string | null })[]> {
   return db
     .select({
       id: careInterventions.id,
@@ -113,12 +116,15 @@ export async function getPendingInterventionsForClinic(
       dueAt: careInterventions.dueAt,
       completedAt: careInterventions.completedAt,
       patient: carePatients,
+      userName: users.name,
+      userEmail: users.email,
     })
     .from(careInterventions)
     .innerJoin(carePatients, eq(carePatients.id, careInterventions.patientId))
+    .innerJoin(users, eq(users.id, carePatients.userId))
     .where(and(eq(carePatients.clinicId, clinicId), eq(careInterventions.status, "pending")))
     .orderBy(desc(careInterventions.dueAt))
-    .limit(limit) as unknown as (CareInterventionRow & { patient: CarePatient })[];
+    .limit(limit) as unknown as (CareInterventionRow & { patient: CarePatient; userName: string | null; userEmail: string | null })[];
 }
 
 export async function getCareInterventionById(id: string): Promise<CareInterventionRow | undefined> {

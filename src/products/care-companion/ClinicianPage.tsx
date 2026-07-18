@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { AuthLockedTeaser } from "@/components/AuthLockedTeaser";
+import { AlertTriangle, CheckCircle2, Clock, User, Mail, Pill, Inbox } from "lucide-react";
 
 function resolveEscalation(id: string, clinicId: string, status: "resolved" | "clinic_reviewed") {
   return fetch(`/api/care/escalations/${id}`, {
@@ -21,7 +22,9 @@ type Escalation = {
   reason: string;
   status: string;
   createdAt: string;
-  patient?: { medication?: string | null };
+  userName?: string | null;
+  userEmail?: string | null;
+  patient?: { medication?: string | null; currentDose?: string | null };
 };
 
 type Intervention = {
@@ -31,7 +34,9 @@ type Intervention = {
   action: string;
   status: string;
   dueAt: string;
-  patient?: { medication?: string | null };
+  userName?: string | null;
+  userEmail?: string | null;
+  patient?: { medication?: string | null; currentDose?: string | null };
 };
 
 function formatRelative(date: string) {
@@ -43,6 +48,33 @@ function formatRelative(date: string) {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
+}
+
+function PatientMeta({ item }: { item: Escalation | Intervention }) {
+  const name = item.userName ?? "Unknown";
+  const email = item.userEmail;
+  const med = item.patient?.medication;
+  const dose = item.patient?.currentDose;
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-[11px]" style={{ color: "var(--color-text-faint)" }}>
+      <span className="flex items-center gap-1">
+        <User className="h-3 w-3" />
+        {name}
+      </span>
+      {email && (
+        <span className="flex items-center gap-1">
+          <Mail className="h-3 w-3" />
+          {email}
+        </span>
+      )}
+      {med && (
+        <span className="flex items-center gap-1">
+          <Pill className="h-3 w-3" />
+          {med}{dose ? ` — ${dose}` : ""}
+        </span>
+      )}
+    </div>
+  );
 }
 
 function ClinicSelector({ onSelect }: { onSelect: (clinicId: string) => void }) {
@@ -149,7 +181,7 @@ export function ClinicianPage() {
               Clinic dashboard
             </h1>
             <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
-              Enter a clinic ID to see open escalations and pending interventions.
+              Enter a clinic ID to review open escalations and pending patient actions.
             </p>
           </div>
           <ClinicSelector onSelect={(id) => router.replace(`/care/clinician?clinicId=${encodeURIComponent(id)}`)} />
@@ -165,7 +197,7 @@ export function ClinicianPage() {
           <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-text-faint)" }}>
             Care Companion
           </p>
-          <h1 className="text-2xl font-normal" style={{ fontFamily: "var(--font-heading)" }}>
+          <h1 className="text-2xl font-normal" style={{ fontFamily: "var(--color-heading)" }}>
             Clinic dashboard
           </h1>
           <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
@@ -180,12 +212,27 @@ export function ClinicianPage() {
           </div>
         )}
 
-        <section>
-          <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--color-text-primary)" }}>
-            Needs review ({escalations.length})
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: "var(--color-text-primary)" }}>
+            <AlertTriangle className="h-4 w-4" />
+            Needs review
+            <span
+              className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-faint)" }}
+            >
+              {escalations.length}
+            </span>
           </h2>
           {escalations.length === 0 ? (
-            <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>No open escalations.</p>
+            <div
+              className="rounded-2xl p-5 text-sm"
+              style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}
+            >
+              <div className="flex items-center gap-2" style={{ color: "var(--color-text-secondary)" }}>
+                <Inbox className="h-4 w-4" />
+                No open escalations. New severe or red-flag check-ins will appear here.
+              </div>
+            </div>
           ) : (
             <div className="space-y-3">
               {escalations.map((e) => (
@@ -197,29 +244,40 @@ export function ClinicianPage() {
                     border: "1px solid rgba(239,68,68,0.15)",
                   }}
                 >
-                  <p className="text-sm font-semibold">{e.reason}</p>
-                  <p className="text-[10px] mt-1 font-mono uppercase tracking-wider" style={{ color: "var(--color-text-faint)" }}>
-                    Patient {e.patientId} {e.patient?.medication ? `· ${e.patient.medication}` : ""} · {formatRelative(e.createdAt)}
-                  </p>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      type="button"
-                      disabled={updating === e.id}
-                      onClick={() => handleResolveEscalation(e.id, "resolved")}
-                      className="text-[11px] px-2.5 py-1.5 rounded-full border bg-transparent disabled:opacity-50"
-                      style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
-                    >
-                      Resolve
-                    </button>
-                    <button
-                      type="button"
-                      disabled={updating === e.id}
-                      onClick={() => handleResolveEscalation(e.id, "clinic_reviewed")}
-                      className="text-[11px] px-2.5 py-1.5 rounded-full border bg-transparent disabled:opacity-50"
-                      style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-secondary)" }}
-                    >
-                      Mark reviewed
-                    </button>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 p-1.5 rounded-full" style={{ backgroundColor: "rgba(239,68,68,0.12)" }}>
+                      <AlertTriangle className="h-5 w-5" style={{ color: "#dc2626" }} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">{e.reason}</p>
+                      <div className="mt-2">
+                        <PatientMeta item={e} />
+                      </div>
+                      <p className="text-[10px] mt-2 font-mono uppercase tracking-wider" style={{ color: "var(--color-text-faint)" }}>
+                        <Clock className="h-3 w-3 inline mr-1" />
+                        {formatRelative(e.createdAt)}
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <button
+                          type="button"
+                          disabled={updating === e.id}
+                          onClick={() => handleResolveEscalation(e.id, "clinic_reviewed")}
+                          className="text-[11px] px-3 py-1.5 rounded-full font-medium disabled:opacity-50"
+                          style={{ backgroundColor: "#dc2626", color: "white" }}
+                        >
+                          Mark reviewed
+                        </button>
+                        <button
+                          type="button"
+                          disabled={updating === e.id}
+                          onClick={() => handleResolveEscalation(e.id, "resolved")}
+                          className="text-[11px] px-3 py-1.5 rounded-full border bg-transparent disabled:opacity-50"
+                          style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-secondary)" }}
+                        >
+                          Resolve
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -227,12 +285,27 @@ export function ClinicianPage() {
           )}
         </section>
 
-        <section>
-          <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--color-text-primary)" }}>
-            Pending actions ({interventions.length})
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: "var(--color-text-primary)" }}>
+            <CheckCircle2 className="h-4 w-4" />
+            Pending actions
+            <span
+              className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-faint)" }}
+            >
+              {interventions.length}
+            </span>
           </h2>
           {interventions.length === 0 ? (
-            <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>No pending interventions.</p>
+            <div
+              className="rounded-2xl p-5 text-sm"
+              style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}
+            >
+              <div className="flex items-center gap-2" style={{ color: "var(--color-text-secondary)" }}>
+                <Inbox className="h-4 w-4" />
+                No pending interventions. Patients see their next steps in the app.
+              </div>
+            </div>
           ) : (
             <div className="space-y-3">
               {interventions.map((i) => (
@@ -244,10 +317,21 @@ export function ClinicianPage() {
                     border: "1px solid var(--color-border-subtle)",
                   }}
                 >
-                  <p className="text-sm">{i.action}</p>
-                  <p className="text-[10px] mt-1 font-mono uppercase tracking-wider" style={{ color: "var(--color-text-faint)" }}>
-                    Patient {i.patientId} {i.patient?.medication ? `· ${i.patient.medication}` : ""} · due {formatRelative(i.dueAt)}
-                  </p>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 p-1.5 rounded-full" style={{ backgroundColor: "rgba(34,197,94,0.12)" }}>
+                      <CheckCircle2 className="h-5 w-5" style={{ color: "#16a34a" }} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm">{i.action}</p>
+                      <div className="mt-2">
+                        <PatientMeta item={i} />
+                      </div>
+                      <p className="text-[10px] mt-2 font-mono uppercase tracking-wider" style={{ color: "var(--color-text-faint)" }}>
+                        <Clock className="h-3 w-3 inline mr-1" />
+                        due {formatRelative(i.dueAt)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
