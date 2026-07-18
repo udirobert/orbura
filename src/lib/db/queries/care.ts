@@ -1,4 +1,4 @@
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, getTableColumns } from "drizzle-orm";
 import { db } from "../client";
 import {
   careObservations,
@@ -210,8 +210,19 @@ export async function getClinicsForUser(userId: string): Promise<CareClinic[]> {
   return rows as CareClinic[];
 }
 
-export async function getPatientsForClinic(clinicId: string): Promise<CarePatient[]> {
-  return db.select().from(carePatients).where(eq(carePatients.clinicId, clinicId));
+export async function getPatientsForClinic(
+  clinicId: string,
+): Promise<(CarePatient & { userName: string | null; userEmail: string | null })[]> {
+  return db
+    .select({
+      ...getTableColumns(carePatients),
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(carePatients)
+    .innerJoin(users, eq(users.id, carePatients.userId))
+    .where(eq(carePatients.clinicId, clinicId))
+    .orderBy(desc(carePatients.enrolledAt)) as unknown as (CarePatient & { userName: string | null; userEmail: string | null })[];
 }
 
 export async function getCareClinicById(id: string): Promise<CareClinic | undefined> {

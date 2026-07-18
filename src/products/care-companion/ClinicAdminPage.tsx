@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { AuthLockedTeaser } from "@/components/AuthLockedTeaser";
+import { Building2, Plus, Pill, ExternalLink, Mail, User, Inbox } from "lucide-react";
 
 const MEDICATIONS = ["Semaglutide", "Tirzepatide", "Liraglutide", "Oral Semaglutide", "Orforglipron"] as const;
 const DOSE_OPTIONS: Record<string, string[]> = {
@@ -22,6 +23,8 @@ type Patient = {
   medication: string | null;
   currentDose: string | null;
   enrolledAt: string;
+  userName?: string | null;
+  userEmail?: string | null;
 };
 
 type Clinic = {
@@ -30,6 +33,10 @@ type Clinic = {
   createdAt: string;
   patients: Patient[];
 };
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 export function ClinicAdminPage() {
   const user = useEazo((s) => s.auth.user);
@@ -145,7 +152,7 @@ export function ClinicAdminPage() {
             Clinic admin
           </h1>
           <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
-            Create a clinic and enroll patients so their check-ins appear on your dashboard.
+            Create clinics, enroll patients, and open the dashboard to track check-ins.
           </p>
         </div>
 
@@ -156,7 +163,10 @@ export function ClinicAdminPage() {
         )}
 
         <form onSubmit={createClinic} className="space-y-4">
-          <h2 className="text-sm font-semibold">Create clinic</h2>
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            Create clinic
+          </h2>
           <input
             type="text"
             value={newClinicName}
@@ -172,7 +182,10 @@ export function ClinicAdminPage() {
 
         {clinics.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-sm font-semibold">Enroll patient</h2>
+            <h2 className="text-sm font-semibold flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Enroll patient
+            </h2>
             <form onSubmit={enrollPatient} className="space-y-4">
               <select
                 value={selectedClinicId}
@@ -245,47 +258,76 @@ export function ClinicAdminPage() {
           </div>
         )}
 
-        {selectedClinic && (
-          <div className="space-y-4">
+        {clinics.map((clinic) => (
+          <div key={clinic.id} className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold">{selectedClinic.name}</h2>
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                {clinic.name}
+              </h2>
               <button
                 type="button"
-                onClick={() => router.push(`/care/clinician?clinicId=${encodeURIComponent(selectedClinic.id)}`)}
-                className="text-xs underline"
+                onClick={() => router.push(`/care/clinician?clinicId=${encodeURIComponent(clinic.id)}`)}
+                className="text-xs flex items-center gap-1 font-medium"
                 style={{ color: "var(--color-brand-primary)" }}
               >
-                Open dashboard
+                Dashboard
+                <ExternalLink className="h-3 w-3" />
               </button>
             </div>
 
-            {selectedClinic.patients.length === 0 ? (
-              <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-                No patients enrolled yet.
-              </p>
+            {clinic.patients.length === 0 ? (
+              <div
+                className="rounded-2xl p-5 text-sm"
+                style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}
+              >
+                <div className="flex items-center gap-2" style={{ color: "var(--color-text-secondary)" }}>
+                  <Inbox className="h-4 w-4" />
+                  No patients enrolled yet.
+                </div>
+              </div>
             ) : (
               <ul className="space-y-3">
-                {selectedClinic.patients.map((p) => (
+                {clinic.patients.map((p) => (
                   <li
                     key={p.id}
                     className="rounded-2xl p-4 text-sm"
                     style={{
-                      backgroundColor: "var(--color-surface-elevated)",
+                      backgroundColor: "var(--color-bg-surface)",
                       border: "1px solid var(--color-border-subtle)",
                     }}
                   >
-                    <p className="font-mono text-xs" style={{ color: "var(--color-text-faint)" }}>
-                      {p.id}
-                    </p>
-                    <p className="mt-1" style={{ color: "var(--color-text-secondary)" }}>
-                      {p.medication} {p.currentDose ? `· ${p.currentDose}` : ""}
-                    </p>
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 p-1.5 rounded-full" style={{ backgroundColor: "rgba(234,88,12,0.1)" }}>
+                        <User className="h-4 w-4" style={{ color: "var(--color-brand-primary)" }} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{p.userName ?? "Unnamed patient"}</p>
+                        <div className="flex flex-wrap items-center gap-3 mt-1 text-[11px]" style={{ color: "var(--color-text-faint)" }}>
+                          {p.userEmail && (
+                            <span className="flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {p.userEmail}
+                            </span>
+                          )}
+                          {p.medication && (
+                            <span className="flex items-center gap-1">
+                              <Pill className="h-3 w-3" />
+                              {p.medication}{p.currentDose ? ` — ${p.currentDose}` : ""}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] mt-2 font-mono uppercase tracking-wider" style={{ color: "var(--color-text-faint)" }}>
+                          Enrolled {formatDate(p.enrolledAt)} · ID {p.id}
+                        </p>
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-        )}
+        ))}
 
         {loading && <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>Loading…</p>}
       </div>
