@@ -164,7 +164,7 @@ export function HRVPullScreen() {
                 Your score is ready
               </h2>
               <p className="text-xs mt-1.5" style={{ color: "var(--color-text-faint)" }}>
-                Optional: connect a wearable to sharpen it — or see your debt now
+                Optional: connect a wearable to sharpen the score — or see it now
               </p>
             </div>
 

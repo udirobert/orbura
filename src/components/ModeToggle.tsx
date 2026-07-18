@@ -11,7 +11,13 @@ export function ModeToggle() {
   const { mode, setMode } = useBodyDebtStore();
 
   return (
-    <div className="relative inline-flex p-1 rounded-full bg-slate-900/80 border border-slate-800">
+    <div
+      className="relative inline-flex p-1 rounded-full"
+      style={{
+        backgroundColor: "var(--color-bg-surface)",
+        border: "1px solid rgba(168,162,158,0.08)",
+      }}
+    >
       {MODES.map((m) => {
         const isActive = mode === m;
         const ctx = getContextConfig(m);
@@ -19,14 +25,14 @@ export function ModeToggle() {
           <button
             key={m}
             onClick={() => setMode(m)}
-            className={`relative px-4 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest transition-colors ${
-              isActive ? "text-white" : "text-slate-500 [@media(hover:hover)]:hover:text-slate-300"
-            }`}
+            className="relative px-4 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest transition-colors"
+            style={{ color: isActive ? "var(--color-text-primary)" : "var(--color-text-faint)" }}
           >
             {isActive && (
               <motion.div
                 layoutId="mode-pill"
-                className="absolute inset-0 rounded-full bg-emerald-600"
+                className="absolute inset-0 rounded-full"
+                style={{ backgroundColor: "var(--color-brand-primary)" }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               />
             )}
