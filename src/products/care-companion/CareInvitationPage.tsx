@@ -9,6 +9,25 @@ import { useEazo } from "@/lib/sdk/eazo-react";
 
 type Invitation = { clinic: { id: string; name: string }; expiresAt: string };
 
+function invitationErrorBody(error: string, code?: string) {
+  if (code === "not_recipient") {
+    return "This invitation is linked to a different email address. Make sure you are signed in with the email address your clinic invited, then open the link again.";
+  }
+  if (code === "accepted") {
+    return "You have already accepted this invitation. You can start your first check-in.";
+  }
+  if (code === "expired") {
+    return "This invitation has expired. Ask your clinic to send a fresh secure link.";
+  }
+  if (code === "revoked") {
+    return "This invitation has been replaced by a newer one. Ask your clinic to send the latest secure link.";
+  }
+  if (code === "invalid") {
+    return "This invitation link is no longer available. Ask your clinic for a new secure link.";
+  }
+  return error;
+}
+
 export function CareInvitationPage() {
   const user = useEazo((state) => state.auth.user);
   const params = useSearchParams();
@@ -23,10 +42,13 @@ export function CareInvitationPage() {
     fetch(`/api/care/invitations/validate?token=${encodeURIComponent(token)}`)
       .then(async (response) => {
         const json = await response.json();
-        if (!response.ok) throw new Error(json.error || "Unable to verify invitation");
+        if (!response.ok) {
+          setError(invitationErrorBody(json.error || "Unable to verify invitation", json.code));
+          return;
+        }
         setInvitation(json);
       })
-      .catch((reason) => setError(reason instanceof Error ? reason.message : "Unable to verify invitation"));
+      .catch(() => setError(invitationErrorBody("Unable to verify invitation")));
   }, [token, user]);
 
   async function acceptInvitation() {
@@ -36,10 +58,13 @@ export function CareInvitationPage() {
     try {
       const response = await fetch("/api/care/invitations/accept", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) });
       const json = await response.json();
-      if (!response.ok) throw new Error(json.error || "Unable to accept invitation");
+      if (!response.ok) {
+        setError(invitationErrorBody(json.error || "Unable to accept invitation", json.code));
+        return;
+      }
       router.replace("/care");
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to accept invitation");
+    } catch {
+      setError(invitationErrorBody("Unable to accept invitation"));
     } finally {
       setAccepting(false);
     }

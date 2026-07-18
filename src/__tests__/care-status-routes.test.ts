@@ -15,6 +15,7 @@ vi.mock("@/lib/db/queries/care", () => ({
   updateCareEscalationStatus: vi.fn(),
   getCareClinician: vi.fn(),
   createCareAuditLog: vi.fn(),
+  getActiveCareAcknowledgement: vi.fn(),
 }));
 
 import { requireAuth } from "@/lib/auth";
@@ -26,6 +27,7 @@ import {
   updateCareEscalationStatus,
   getCareClinician,
   createCareAuditLog,
+  getActiveCareAcknowledgement,
 } from "@/lib/db/queries/care";
 
 function mockAuth(userId = "user-1") {
@@ -45,6 +47,7 @@ function mockGuest() {
 describe("PATCH /api/care/interventions/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (getActiveCareAcknowledgement as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "ack-1", patientId: "patient-1", revokedAt: null });
   });
 
   afterEach(() => {

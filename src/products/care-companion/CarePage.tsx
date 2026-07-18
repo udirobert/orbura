@@ -97,7 +97,7 @@ export function CarePage() {
           ) : (
             <>
               <AuthLockedTeaser title="Sign in to check in" body="Your check-in becomes part of the care record shared with your clinic." />
-              <Link href="/care/summary" className="inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: "var(--color-brand-primary)" }}>
+              <Link href="/care/summary" className="min-h-11 inline-flex items-center gap-1.5 px-2 text-xs font-semibold" style={{ color: "var(--color-brand-primary)" }}>
                 I already have a care plan <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </>

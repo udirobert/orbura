@@ -198,7 +198,7 @@ export function CareSummaryPage() {
             One clear next step, with your recent care in one place.
           </p>
           </div>
-          <Link href="/care" className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-xs font-semibold" style={{ backgroundColor: "var(--color-brand-primary)", color: "var(--color-text-primary)" }}>
+          <Link href="/care" className="min-h-11 inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-xs font-semibold" style={{ backgroundColor: "var(--color-brand-primary)", color: "var(--color-text-primary)" }}>
             New check-in <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
@@ -219,7 +219,7 @@ export function CareSummaryPage() {
           </div>
           <p className="mt-3 text-[10px] leading-4" style={{ color: "var(--color-text-faint)" }}>Medication details are shown from your clinic record. Contact your clinic if they do not look right.</p>
           <div className="mt-4 border-t pt-3" style={{ borderColor: "var(--color-border-subtle)" }}>
-            {withdrawPrompt ? <div className="rounded-xl p-3" style={{ backgroundColor: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.16)" }}><p className="text-xs font-semibold">Stop sharing future check-ins?</p><p className="mt-1 text-[11px] leading-4" style={{ color: "var(--color-text-secondary)" }}>You won&apos;t be able to check in here until your clinic sends a new invitation. This does not replace contacting your clinic about ongoing care.</p><div className="mt-3 flex items-center gap-3"><button type="button" disabled={withdrawing} onClick={withdrawAcknowledgement} className="rounded-full px-3 py-1.5 text-[11px] font-medium disabled:opacity-50" style={{ backgroundColor: "var(--color-states-error)", color: "var(--color-text-primary)" }}>{withdrawing ? "Stopping…" : "Stop sharing"}</button><button type="button" onClick={() => setWithdrawPrompt(false)} className="text-[11px]" style={{ color: "var(--color-text-secondary)" }}>Keep sharing</button></div></div> : <button type="button" onClick={() => setWithdrawPrompt(true)} className="inline-flex items-center gap-1.5 text-[11px]" style={{ color: "var(--color-text-secondary)" }}><ShieldOff className="h-3.5 w-3.5" />Stop sharing future check-ins with this clinic</button>}
+            {withdrawPrompt ? <div className="rounded-xl p-3" style={{ backgroundColor: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.16)" }}><p className="text-xs font-semibold">Stop sharing future check-ins?</p><p className="mt-1 text-[11px] leading-4" style={{ color: "var(--color-text-secondary)" }}>You won&apos;t be able to check in here until your clinic sends a new invitation. This does not replace contacting your clinic about ongoing care.</p><div className="mt-3 flex items-center gap-3"><button type="button" disabled={withdrawing} onClick={withdrawAcknowledgement} className="min-h-11 rounded-full px-3 py-1.5 text-[11px] font-medium disabled:opacity-50" style={{ backgroundColor: "var(--color-states-error)", color: "var(--color-text-primary)" }}>{withdrawing ? "Stopping…" : "Stop sharing"}</button><button type="button" onClick={() => setWithdrawPrompt(false)} className="min-h-11 px-2 text-[11px]" style={{ color: "var(--color-text-secondary)" }}>Keep sharing</button></div></div> : <button type="button" onClick={() => setWithdrawPrompt(true)} className="min-h-11 inline-flex items-center gap-1.5 px-2 text-[11px]" style={{ color: "var(--color-text-secondary)" }}><ShieldOff className="h-3.5 w-3.5" />Stop sharing future check-ins with this clinic</button>}
           </div>
         </section>}
 
@@ -235,7 +235,7 @@ export function CareSummaryPage() {
               action={
                 <Link
                   href="/care"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold"
+                  className="min-h-11 inline-flex items-center gap-1.5 px-2 text-xs font-semibold"
                   style={{ color: "var(--color-brand-primary)" }}
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -271,7 +271,7 @@ export function CareSummaryPage() {
                               <button key={code} type="button" disabled={updating === i.id} onClick={() => handleInterventionStatus(i.id, outcomePrompt.status, code)} className="min-h-11 rounded-full px-3 py-1.5 text-[11px]" style={{ backgroundColor: "rgba(234,88,12,0.1)", color: "var(--color-brand-primary)", border: "1px solid rgba(234,88,12,0.25)" }}>{label}</button>
                             ))}
                           </div>
-                          <input value={outcomeNote} onChange={(event) => setOutcomeNote(event.target.value)} maxLength={500} placeholder="Optional note" className="mt-3 w-full rounded-lg px-2.5 py-2 text-xs" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-primary)" }} />
+                          <input value={outcomeNote} onChange={(event) => setOutcomeNote(event.target.value)} maxLength={500} placeholder="Optional note" className="mt-3 min-h-11 w-full rounded-lg px-2.5 py-2 text-xs" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-primary)" }} />
                         </div>
                       ) : <div className="flex gap-2 mt-3">
                         <button
@@ -364,7 +364,7 @@ export function CareSummaryPage() {
               action={
                 <Link
                   href="/care"
-                  className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold"
+                  className="min-h-11 inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold"
                   style={{ backgroundColor: "var(--color-brand-primary)", color: "var(--color-text-primary)" }}
                 >
                   Start your first check-in

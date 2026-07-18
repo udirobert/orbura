@@ -90,7 +90,7 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
 
         <Link
           href="/care/summary"
-          className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
+          className="min-h-11 inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-opacity hover:opacity-90"
           style={{ backgroundColor: "var(--color-states-error)", color: "var(--color-text-primary)" }}
         >
           View in care summary
@@ -154,7 +154,7 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
 
       <Link
         href="/care/summary"
-        className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
+        className="min-h-11 inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-opacity hover:opacity-90"
         style={{ backgroundColor: severity === "severe" ? "var(--color-brand-primary)" : "var(--color-states-success)", color: "var(--color-text-primary)" }}
       >
         View care summary

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { getCarePatientByUserId, getCareInterventionById, updateCareInterventionStatus } from "@/lib/db/queries/care";
+import { getCarePatientByUserId, getCareInterventionById, updateCareInterventionStatus, getActiveCareAcknowledgement } from "@/lib/db/queries/care";
 
 export const maxDuration = 30;
 
@@ -29,6 +29,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const patient = await getCarePatientByUserId(auth.user.id);
   if (!patient) {
     return NextResponse.json({ error: "patient not found" }, { status: 404 });
+  }
+
+  const acknowledgement = await getActiveCareAcknowledgement(patient.id);
+  if (!acknowledgement) {
+    return NextResponse.json({ error: "Care sharing is not active" }, { status: 403 });
   }
 
   const intervention = await getCareInterventionById(id);

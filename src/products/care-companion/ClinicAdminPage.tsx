@@ -49,6 +49,8 @@ export function ClinicAdminPage() {
   const [creating, setCreating] = useState(false);
   const [enrollmentSuccess, setEnrollmentSuccess] = useState<string | null>(null);
   const [invitationLink, setInvitationLink] = useState<string | null>(null);
+  const [copyingId, setCopyingId] = useState<string | null>(null);
+  const [copyMessage, setCopyMessage] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user) return;
@@ -129,6 +131,33 @@ export function ClinicAdminPage() {
     }
   }
 
+  async function copyInvitationLink(clinicId: string, patientId: string) {
+    setCopyingId(patientId);
+    try {
+      const res = await fetch(`/api/care/clinics/${encodeURIComponent(clinicId)}/patients/${encodeURIComponent(patientId)}`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Could not generate link");
+      if (json.alreadyAcknowledged) {
+        setCopyMessage((prev) => ({ ...prev, [patientId]: "Already accepted" }));
+      } else if (json.invitationToken) {
+        const link = `${window.location.origin}/care/accept?token=${encodeURIComponent(json.invitationToken)}`;
+        await navigator.clipboard.writeText(link);
+        setCopyMessage((prev) => ({ ...prev, [patientId]: "Copied" }));
+      }
+    } catch (err) {
+      setCopyMessage((prev) => ({ ...prev, [patientId]: err instanceof Error ? err.message : "Failed" }));
+    } finally {
+      setCopyingId(null);
+      setTimeout(() => {
+        setCopyMessage((prev) => {
+          const next = { ...prev };
+          delete next[patientId];
+          return next;
+        });
+      }, 2500);
+    }
+  }
+
   if (!user) {
     return (
       <main className="min-h-svh px-5 py-8" style={{ backgroundColor: "var(--color-bg-base)", color: "var(--color-text-primary)" }}>
@@ -174,7 +203,7 @@ export function ClinicAdminPage() {
             value={newClinicName}
             onChange={(e) => setNewClinicName(e.target.value)}
             placeholder="Clinic name"
-            className="w-full text-sm rounded-xl px-3 py-2.5 border bg-transparent"
+            className="w-full text-sm min-h-11 rounded-xl px-3 py-2.5 border bg-transparent"
             style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
           />
           <PrimaryButton type="submit" disabled={creating || !newClinicName.trim()}>
@@ -193,7 +222,7 @@ export function ClinicAdminPage() {
               <select
                 value={selectedClinicId}
                 onChange={(e) => setSelectedClinicId(e.target.value)}
-                className="w-full text-sm rounded-xl px-3 py-2.5 border bg-transparent"
+                className="w-full text-sm min-h-11 rounded-xl px-3 py-2.5 border bg-transparent"
                 style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
               >
                 <option value="">Select a clinic</option>
@@ -209,7 +238,7 @@ export function ClinicAdminPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Patient email"
-                className="w-full text-sm rounded-xl px-3 py-2.5 border bg-transparent"
+                className="w-full text-sm min-h-11 rounded-xl px-3 py-2.5 border bg-transparent"
                 style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
               />
 
@@ -218,11 +247,11 @@ export function ClinicAdminPage() {
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
                 placeholder="Patient name (optional)"
-                className="w-full text-sm rounded-xl px-3 py-2.5 border bg-transparent"
+                className="w-full text-sm min-h-11 rounded-xl px-3 py-2.5 border bg-transparent"
                 style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
               />
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="text-[11px]" style={{ color: "var(--color-text-secondary)" }}>
                   Medication <span style={{ color: "var(--color-text-faint)" }}>(optional)</span>
                   <input
@@ -230,7 +259,7 @@ export function ClinicAdminPage() {
                   value={medication}
                   onChange={(e) => setMedication(e.target.value)}
                   placeholder="As recorded"
-                  className="mt-1.5 w-full text-sm rounded-xl px-3 py-2.5 border bg-transparent"
+                  className="mt-1.5 w-full text-sm min-h-11 rounded-xl px-3 py-2.5 border bg-transparent"
                   style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
                 />
                 </label>
@@ -241,7 +270,7 @@ export function ClinicAdminPage() {
                   value={currentDose}
                   onChange={(e) => setCurrentDose(e.target.value)}
                   placeholder="As recorded"
-                  className="mt-1.5 w-full text-sm rounded-xl px-3 py-2.5 border bg-transparent"
+                  className="mt-1.5 w-full text-sm min-h-11 rounded-xl px-3 py-2.5 border bg-transparent"
                   style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
                 />
                 </label>
@@ -249,14 +278,14 @@ export function ClinicAdminPage() {
 
               <label className="block text-[11px]" style={{ color: "var(--color-text-secondary)" }}>
                 Treatment start date <span style={{ color: "var(--color-text-faint)" }}>(optional)</span>
-                <input type="date" value={startedAt} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setStartedAt(e.target.value)} className="mt-1.5 w-full rounded-xl px-3 py-2.5 text-sm" style={{ backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-primary)" }} />
+                <input type="date" value={startedAt} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setStartedAt(e.target.value)} className="mt-1.5 min-h-11 w-full rounded-xl px-3 py-2.5 text-sm" style={{ backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-primary)" }} />
               </label>
 
               <PrimaryButton type="submit" disabled={enrolling || !selectedClinicId || !email.trim()}>
                 {enrolling ? "Enrolling…" : "Enroll patient"}
               </PrimaryButton>
             </form>
-            {enrollmentSuccess && <div className="rounded-xl p-3 text-xs space-y-3" style={{ backgroundColor: "rgba(74,222,128,0.08)", color: "var(--color-states-success)" }}><p className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />{enrollmentSuccess}</p>{invitationLink && <><input readOnly value={invitationLink} aria-label="Secure patient invitation link" className="w-full rounded-lg px-2.5 py-2 text-[11px]" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-primary)" }} /><button type="button" onClick={() => navigator.clipboard.writeText(invitationLink)} className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--color-brand-primary)" }}><Copy className="h-3.5 w-3.5" />Copy secure link</button><p style={{ color: "var(--color-text-secondary)" }}>Valid for 7 days. Email delivery remains disabled until clinic wording and sender identity are approved.</p></>}</div>}
+            {enrollmentSuccess && <div className="rounded-xl p-3 text-xs space-y-3" style={{ backgroundColor: "rgba(74,222,128,0.08)", color: "var(--color-states-success)" }}><p className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />{enrollmentSuccess}</p>{invitationLink && <><input readOnly value={invitationLink} aria-label="Secure patient invitation link" className="w-full rounded-lg px-2.5 py-2 text-[11px]" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-primary)" }} /><button type="button" onClick={() => navigator.clipboard.writeText(invitationLink)} className="min-h-11 inline-flex items-center gap-1.5 px-2 text-xs font-medium" style={{ color: "var(--color-brand-primary)" }}><Copy className="h-3.5 w-3.5" />Copy secure link</button><p style={{ color: "var(--color-text-secondary)" }}>Valid for 7 days. Email delivery remains disabled until clinic wording and sender identity are approved.</p></>}</div>}
           </div>
         )}
         </div>
@@ -271,7 +300,7 @@ export function ClinicAdminPage() {
               <button
                 type="button"
                 onClick={() => router.push(`/care/clinician?clinicId=${encodeURIComponent(clinic.id)}`)}
-                className="text-xs flex items-center gap-1 font-medium"
+                className="min-h-11 px-2 text-xs flex items-center gap-1 font-medium"
                 style={{ color: "var(--color-brand-primary)" }}
               >
                 Review exceptions
@@ -326,6 +355,16 @@ export function ClinicAdminPage() {
                         </p>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      disabled={copyingId === p.id}
+                      onClick={() => copyInvitationLink(clinic.id, p.id)}
+                      className="mt-3 min-h-11 inline-flex items-center gap-1.5 px-2 text-[11px] font-medium disabled:opacity-50"
+                      style={{ color: "var(--color-brand-primary)" }}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {copyingId === p.id ? "Generating…" : copyMessage[p.id] || "Copy invitation link"}
+                    </button>
                   </li>
                 ))}
               </ul>
