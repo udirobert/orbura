@@ -240,7 +240,7 @@ describe("DashboardScreen — empty state", () => {
   it("renders the empty state when no analysis or stressors exist", async () => {
     const { DashboardScreen } = await import("@/components/screens/DashboardScreen");
     render(<DashboardScreen />);
-    expect(screen.getByText("Your body is waiting")).toBeDefined();
+    expect(screen.getByText("Your debt orb is dormant")).toBeDefined();
     expect(screen.getByText("Start assessment")).toBeDefined();
   });
 

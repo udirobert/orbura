@@ -38,20 +38,20 @@ export async function GET(request: NextRequest) {
 
   const baseMessages: MessageVariant[] = [
     {
-      title: "Daily body debt check-in",
-      body: "How are you feeling today? Your body is waiting.",
+      title: "Wake your debt orb",
+      body: "What hit you yesterday? One log reveals today's recovery state.",
     },
     {
       title: "Recovery check-in",
-      body: "Your body keeps the score. What hit you yesterday?",
+      body: "Your body keeps the score. Log last night to see your debt.",
     },
     {
-      title: "Morning debt assessment",
-      body: "One quick log takes the guesswork out of your day.",
+      title: "Morning debt scan",
+      body: "Two minutes of input beats guessing your recovery.",
     },
     {
       title: "How's the body today?",
-      body: "Log your stressors and see your real recovery state.",
+      body: "Log your stressors and get a real recovery prescription.",
     },
     {
       title: "Don't lose the picture",
@@ -62,13 +62,13 @@ export async function GET(request: NextRequest) {
   // Monday has a weekend recovery angle
   const mondayMessage: MessageVariant = {
     title: "Weekend recovery report",
-    body: "How did your body handle the weekend? Log in to see your baseline.",
+    body: "How did your body handle the weekend? Log in and recalibrate.",
   };
 
   // Saturday has a pre-weekend nudge
   const saturdayMessage: MessageVariant = {
     title: "Weekend ahead",
-    body: "How are you carrying into this weekend? One log sets the tone.",
+    body: "Log before the weekend so your orb can guide you through it.",
   };
 
   let message: MessageVariant;

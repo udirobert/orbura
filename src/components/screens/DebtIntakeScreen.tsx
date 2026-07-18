@@ -221,9 +221,9 @@ export function DebtIntakeScreen() {
         >
           {hasSelection
             ? selectedStressors.length === 1
-              ? "Continue with 1 logged"
-              : `Continue with ${selectedStressors.length} logged`
-            : "Log 1–2 things to continue"}
+              ? "Continue with 1 stressor"
+              : `Continue with ${selectedStressors.length} stressors`
+            : "Log 1–2 stressors to continue"}
         </PrimaryButton>
 
         <button

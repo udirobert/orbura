@@ -4,9 +4,11 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 import { memory } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { DebtOrb } from "./DebtOrb";
+import { MiniOrb } from "@/components/MiniOrb";
 import { DebtGauge } from "./DebtGauge";
 import { RecoveryTimeline } from "./RecoveryTimeline";
 import { DonutChart, BarChartView } from "./StressorBreakdownChart";
@@ -47,13 +49,13 @@ const IS_TEST_ENV = process.env.NODE_ENV === "test";
 
 const FALLBACK_ANALYSIS: DebtAnalysis = {
   debtScore: 0,
-  verdict: "No data collected yet.",
+  verdict: "Your debt orb is dormant — no check-in to read yet.",
   recoveryTime: "now",
   prescription: {
-    rightNow:    "Log your stressors to get a personalized prescription.",
-    thisMorning: "Take a few minutes to check in with yourself.",
-    today:       "Start fresh — your body is ready.",
-    avoid:       "Skipping your next check-in.",
+    rightNow:    "Start a check-in to wake the orb and get a recovery plan.",
+    thisMorning: "Two minutes of input beats guessing your recovery.",
+    today:       "A clear baseline starts with one honest log.",
+    avoid:       "Skipping your check-in means flying blind today.",
   },
   stressorBreakdown: [],
   recoveryArc: {
@@ -253,25 +255,52 @@ export function DashboardScreen() {
   // ── Empty / first-run state ─────────────────────────────────────────────────
   if (isEmpty) {
     return (
-      <div className="min-h-svh flex flex-col items-center justify-center px-6 text-center"
-        style={{ backgroundColor: "var(--color-bg-base)" }}>
-        <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          className="w-28 h-28 rounded-full mb-8"
-          style={{ background: "radial-gradient(circle at 40% 35%, rgba(245,158,11,0.25) 0%, rgba(234,88,12,0.08) 60%, transparent 100%)" }}
-        />
-        <h2 className="text-xl font-normal mb-2" style={{ fontFamily: "var(--font-heading)", color: "var(--color-text-primary)" }}>
-          Your body is waiting
-        </h2>
-        <p className="text-sm mb-8" style={{ color: "var(--color-text-secondary)" }}>
-          Your debt can&apos;t be quantified without input. Log what hit you.
-        </p>
-        <motion.button whileTap={{ scale: 0.98 }}
-          onClick={() => router.push("/wake-time")}
-          className="w-full max-w-xs font-semibold rounded-2xl"
-          style={{ backgroundColor: "var(--color-brand-primary)", color: "var(--color-text-primary)", minHeight: 58, fontFamily: "var(--font-body)" }}>
-          Start assessment
-        </motion.button>
+      <div
+        className="min-h-svh flex flex-col items-center justify-center px-6"
+        style={{ backgroundColor: "var(--color-bg-base)" }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: EASE_PROTOCOL }}
+          className="w-full max-w-sm rounded-2xl p-6 text-center"
+          style={{
+            backgroundColor: "var(--color-bg-surface)",
+            border: "1px solid var(--color-border-subtle)",
+          }}
+        >
+          <div className="flex justify-center mb-5">
+            <div style={{ opacity: 0.55 }}>
+              <MiniOrb score={0} size={80} />
+            </div>
+          </div>
+          <p
+            className="text-[10px] font-mono uppercase tracking-widest mb-2"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            Body Debt
+          </p>
+          <h2
+            className="text-xl font-normal mb-2"
+            style={{ fontFamily: "var(--font-heading)", color: "var(--color-text-primary)" }}
+          >
+            Your debt orb is dormant
+          </h2>
+          <p className="text-sm mb-6" style={{ color: "var(--color-text-secondary)" }}>
+            Last night hasn&apos;t been logged yet. Two minutes of input wakes the orb and gives you a recovery plan.
+          </p>
+          <PrimaryButton size="lg" onClick={() => router.push("/wake-time")}>
+            Start assessment
+          </PrimaryButton>
+          <button
+            type="button"
+            onClick={() => router.push("/preview")}
+            className="w-full text-center text-[11px] py-3 mt-2 font-medium"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            See a full example session
+          </button>
+        </motion.div>
       </div>
     );
   }
