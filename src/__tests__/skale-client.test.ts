@@ -86,9 +86,9 @@ describe("halo2VerifierAbi", () => {
     expect(fn).toBeDefined();
     if (fn && fn.type === "function") {
       expect(fn.inputs).toHaveLength(3);
-      expect(fn.inputs[0].name).toBe("proof");
-      expect(fn.inputs[1].name).toBe("instances");
-      expect(fn.inputs[2].name).toBe("vka");
+      expect(fn.inputs[0]?.name).toBe("proof");
+      expect(fn.inputs[1]?.name).toBe("instances");
+      expect(fn.inputs[2]?.name).toBe("vka");
     }
   });
 });

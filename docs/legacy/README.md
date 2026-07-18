@@ -1,8 +1,11 @@
 # Legacy / archived materials
 
-These documents and scripts are preserved for reference only. The active product and docs story now centers on:
+These documents and scripts are preserved for historical reference only. The
+active direction is defined by:
 
-- SKALE programmable privacy
-- Tether Developers Cup / Match Fit
+- [Product strategy](../product-strategy.md)
+- [Target architecture](../architecture.md)
+- [Recent progress](../progress.md)
 
-Archived content includes older hackathon notes for QVAC, Build Small, and AutoScientist.
+Current QVAC, Supermemory, SKALE, Tether/Match Fit, and AutoScientist showcases
+may still be runnable, but competition narratives are not the company roadmap.

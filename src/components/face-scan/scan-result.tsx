@@ -126,7 +126,7 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
     status === "verified" ? "Anchored on-chain ✓"
     : status === "pending" ? "Anchoring on-chain..."
     : status === "failed" ? "Couldn't anchor on-chain"
-    : status === "no-wallet" ? "On-device only (no wallet connected)"
+    : status === "no-wallet" ? "Browser-local only (no wallet connected)"
     : "Waiting for wallet";
 
   // Step labels are <= 14 chars so the truncation guard in
@@ -251,7 +251,7 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
                 </p>
                 <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
                   <span className="font-semibold" style={{ color: "var(--color-text-primary)" }}>Privacy: </span>
-                  the image and measurements never left your device —
+                  the image and measurements never left this browser —
                   only a math proof was committed.
                 </p>
               </>
@@ -262,7 +262,7 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
                 </p>
                 <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
                   <span className="font-semibold" style={{ color: "var(--color-text-primary)" }}>Privacy intact: </span>
-                  your face was measured on this device, but the math
+                  your face was measured in this browser, but the math
                   proof didn&apos;t check out, so nothing was committed
                   publicly. Nothing was uploaded either.
                 </p>
@@ -274,7 +274,7 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
                 </p>
                 <p className="text-[10px] mt-1 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
                   <span className="font-semibold" style={{ color: "var(--color-text-primary)" }}>Privacy intact: </span>
-                  your face was measured on this device, but the
+                  your face was measured in this browser, but the
                   verifier didn&apos;t load this time. Nothing was
                   uploaded or stored.
                 </p>
@@ -356,7 +356,7 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
             })()}
           </div>
           <p className="text-[8px] font-mono mt-3 leading-relaxed" style={{ color: "var(--color-text-faint)" }}>
-            468 facial landmarks → 6 geometric features → ZK circuit. Raw image never leaves your device.
+            468 facial landmarks → 6 geometric features → ZK circuit. Raw image never leaves this browser.
           </p>
         </div>
       )}
@@ -400,8 +400,8 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
               Offline — proof is fully local
             </p>
             <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
-              Edge AI + ZK proof both work without internet. SKALE verification
-              will submit when you reconnect.
+              The browser-local proof works without an upload. QVAC and SKALE
+              availability depend on the current deployment and connection.
             </p>
           </div>
         </div>
@@ -414,7 +414,7 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
           <div className="flex items-center gap-2 mb-2">
             <CloudDownload className="w-4 h-4 animate-pulse" style={{ color: "var(--color-brand-primary)" }} />
             <span className="text-[9px] font-mono uppercase tracking-widest font-semibold" style={{ color: "var(--color-brand-primary)" }}>
-              Downloading Local AI Model
+              Loading QVAC Model
             </span>
           </div>
           <div className="relative h-1.5 rounded-full overflow-hidden mb-1.5"
@@ -448,7 +448,7 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
                 Generating Recovery Advice
               </p>
               <p className="text-[10px] mt-0.5" style={{ color: "var(--color-text-faint)" }}>
-                Running local LLM inference
+                Running QVAC on the app server
               </p>
             </div>
           </div>
@@ -491,7 +491,7 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
               <Cpu className="w-3 h-3 flex-shrink-0" style={{ color: "var(--color-brand-primary)" }} />
               <div>
                 <p className="text-[8px] font-mono" style={{ color: "var(--color-text-secondary)" }}>
-                  QVAC Edge AI · Qwen3 1.7B Q4 ·{' '}
+                  QVAC server AI · Qwen3 1.7B Q4 ·{' '}
                   <span className="text-[7px]" style={{ color: "var(--color-brand-primary)" }}>isolated fork sandbox</span>
                 </p>
                 <p className="text-[7px] font-mono mt-0.5" style={{ color: "var(--color-text-faint)" }}>
@@ -501,20 +501,20 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
             </div>
           )}
 
-          {/* Edge AI vs Cloud latency comparison */}
+          {/* QVAC vs Cloud latency comparison */}
           {qvacDurationMs && (
             <div className="rounded-2xl px-4 py-3"
               style={{ backgroundColor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[9px] font-mono uppercase tracking-widest font-semibold" style={{ color: "var(--color-states-warning)" }}>
-                  ⚡ Edge AI vs Cloud
+                  QVAC vs Cloud
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 {/* Edge bar */}
                 <div className="flex-1">
                   <div className="flex justify-between text-[8px] font-mono mb-0.5">
-                    <span style={{ color: "var(--color-states-success)" }}>Edge (this device)</span>
+                    <span style={{ color: "var(--color-states-success)" }}>QVAC (app server)</span>
                     <span style={{ color: "var(--color-text-primary)" }}>{(qvacDurationMs / 1000).toFixed(1)}s</span>
                   </div>
                   <div className="relative h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(168,162,158,0.1)" }}>
@@ -542,9 +542,9 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
                 </div>
               </div>
               <p className="text-[8px] font-mono mt-1.5 text-center" style={{ color: "var(--color-text-faint)" }}>
-                Edge AI is {displayCloudMs && qvacDurationMs
-                  ? `${Math.round(displayCloudMs / qvacDurationMs)}× faster`
-                  : "faster"} and keeps your data on-device
+                QVAC is {displayCloudMs && qvacDurationMs
+                  ? `${Math.round(displayCloudMs / qvacDurationMs)}× faster in this comparison`
+                  : "self-hosted"} without a third-party model API
               </p>
             </div>
           )}

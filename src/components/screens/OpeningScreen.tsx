@@ -192,7 +192,7 @@ export function OpeningScreen() {
                   className="mt-3 text-sm leading-relaxed"
                   style={{ color: "var(--color-text-faint)" }}
                 >
-                  Log last night. Get a recovery plan that runs on-device.
+                  Log last night. Get a recovery plan with transparent reasoning.
                 </p>
               )}
               {!isReturning && (
@@ -312,8 +312,8 @@ export function OpeningScreen() {
                 style={{ color: "rgba(82,79,76,0.7)" }}
               >
                 {isReturning
-                  ? "AI on-device · Memory on your machine"
-                  : "No account · AI runs on-device"}
+                  ? "Self-hosted QVAC · User-controlled memory"
+                  : "No account · Deterministic score first"}
               </p>
             </motion.div>
           )}

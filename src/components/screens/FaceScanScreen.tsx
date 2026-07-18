@@ -101,7 +101,7 @@ export function FaceScanScreen() {
                 {personalityCopy.scanPrompt}
               </h2>
               <p className="text-xs mt-1.5 flex items-center justify-center gap-1.5" style={{ color: "var(--color-text-faint)" }}>
-                <ShieldCheck className="w-3 h-3 text-emerald-500" /> Optional · processed on this device
+                <ShieldCheck className="w-3 h-3 text-emerald-500" /> Optional · processed in this browser
               </p>
             </div>
             <div className="mx-auto w-full max-w-xs rounded-2xl flex items-center justify-center mb-6"
@@ -114,7 +114,7 @@ export function FaceScanScreen() {
             <div className="mt-auto flex flex-col gap-3 pb-10">
               <PrimaryButton size="lg" onClick={startCamera}>
                 <div className="font-bold text-base mb-0.5">Open camera</div>
-                <div className="text-[10px] font-normal opacity-80">Nothing uploaded · skip anytime</div>
+                <div className="text-[10px] font-normal opacity-80">Image stays in browser · skip anytime</div>
               </PrimaryButton>
               <button onClick={handleSkip} className="w-full text-center text-[13px] py-2.5 font-medium" style={{ color: "var(--color-text-secondary)" }}>
                 Skip — continue without scan
@@ -311,7 +311,7 @@ export function FaceScanScreen() {
               style={{ backgroundColor: "rgba(16, 185, 129, 0.06)", border: "1px solid rgba(16, 185, 129, 0.12)" }}>
               <ShieldCheck className="w-3 h-3 flex-shrink-0" style={{ color: "var(--color-states-success)" }} />
               <p className="text-[10px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
-                This photo exists only in your device&apos;s temporary memory. It&apos;s deleted when you continue or leave this page.
+                This photo exists only in this browser&apos;s temporary memory. It&apos;s deleted when you continue or leave this page.
               </p>
             </div>
             <div className="mt-auto flex flex-col gap-2.5 pb-10">
@@ -356,7 +356,7 @@ export function FaceScanScreen() {
               </div>
               <div className="rounded-2xl p-4 w-full" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
                 <p className="text-[10px] text-center flex items-center justify-center gap-1.5" style={{ color: "var(--color-states-success)" }}>
-                  <ShieldCheck className="w-3 h-3" /> Still on this device · photo clears when done
+                  <ShieldCheck className="w-3 h-3" /> Still in this browser · photo clears when done
                 </p>
               </div>
             </div>

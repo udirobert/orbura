@@ -29,15 +29,15 @@ export const maxDuration = 120;
  *
  *   event: score        → Layer 1: deterministic score (instant, <5ms)
  *   event: agent_start  → Agent begins (triage / coach / schedule)
- *   event: agent_token  → Token streamed from QVAC local LLM
+ *   event: agent_token  → Token streamed from QVAC self-hosted LLM
  *   event: agent_done   → Agent completed with result + timing
  *   event: verdict      → Layer 2: AI verdict + recovery arc
  *   event: prescription → Layer 3: full prescription from QVAC multi-agent
  *   event: done         → Final merged result with full agent trace
  *   event: error        → Only if all layers fail
  *
- * AI inference runs on QVAC (Qwen3-1.7B, local) as the primary path.
- * Cloud AI (Eazo/deepseek) is fallback only when QVAC is unavailable.
+ * AI inference runs on QVAC (Qwen3-1.7B, self-hosted on the app server) as the primary path.
+ * Third-party cloud AI is not used in standalone builds; a deterministic fallback fires when QVAC fails.
  */
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth(request);
@@ -195,12 +195,16 @@ export async function POST(request: NextRequest) {
           schedule = qvacResult.schedule ?? undefined;
           agentTrace = buildAgentTrace(qvacResult, memoryContext);
         } else {
-          // QVAC unavailable — fall back to cloud AI
+          // QVAC unavailable — attempt cloud AI fallback. In standalone builds
+          // ai.chat() rejects, so fetchPrescriptionFromCloud returns the
+          // deterministic fallback.
           prescriptionData = await fetchPrescriptionFromCloud(body, layer1);
           // Generate deterministic schedule fallback so the UI always has output
           schedule = deterministicSchedule(layer1.systemScores ?? [], layer1.debtScore, body.locale ?? "en", body.mode ?? "personal");
         }
       } catch {
+        // QVAC worker threw; cloud AI is disabled in standalone builds,
+        // so fetchPrescriptionFromCloud falls back to deterministic output.
         prescriptionData = await fetchPrescriptionFromCloud(body, layer1);
         // Generate deterministic schedule fallback
         schedule = deterministicSchedule(layer1.systemScores ?? [], layer1.debtScore, body.locale ?? "en");
@@ -305,12 +309,13 @@ export async function POST(request: NextRequest) {
       "Connection":    "keep-alive",
       "X-Accel-Buffering": "no",
       "X-AI-Source":   "qvac-local",
-      "X-Offline-Capable": "true",
+      "X-QVAC-Runtime": "server-process",
+      "X-Offline-Capable": "deployment-dependent",
     },
   });
 }
 
-// ─── Layer 2: verdict + recovery arc ─────────────────────────────────────────
+// ─── Layer 2: verdict + recovery arc (only called when ENABLE_CLOUD_VERDICT is true) ─
 
 async function fetchVerdict(body: AnalyzeBodyRequest, layer1: ReturnType<typeof computeScore>) {
   const { stressors, hrvData, currentTime } = body;
@@ -366,7 +371,7 @@ Respond with JSON only:
   throw new Error("All verdict models failed");
 }
 
-// ─── Cloud fallback for prescription ─────────────────────────────────────────
+// ─── Prescription fallback (third-party cloud AI is disabled in standalone) ────
 
 async function fetchPrescriptionFromCloud(
   body: AnalyzeBodyRequest,

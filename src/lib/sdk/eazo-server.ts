@@ -17,7 +17,8 @@ export class EazoNotificationPublishError extends Error {
 }
 
 export const notifications = {
+  available: false,
   publish(_payload: { title: string; body: string; data?: Record<string, unknown>; audience?: string }): Promise<{ delivered: number; failed: number }> {
-    return Promise.resolve({ delivered: 0, failed: 0 });
+    return Promise.reject(new EazoNotificationPublishError("Notification delivery is not configured", 501));
   },
 };

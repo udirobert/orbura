@@ -1,5 +1,10 @@
 # Supermemory Demo Flow
 
+> **Status:** Recovery-memory showcase. In the care architecture, PostgreSQL is
+> canonical and Supermemory is a derived retrieval index. The current score
+> delta/repeated-advice signal is correlation, not confirmed adherence or
+> causation. See [target architecture](./architecture.md).
+
 This script walks through the before/after contrast that makes the
 Supermemory integration visible. The key narrative: **a recovery coach
 without memory is a calculator. With memory, it's infrastructure that

@@ -252,7 +252,7 @@ export function buildFallbackPrompt(input: HealthCoachInput): string {
 }
 
 /**
- * Legacy: Runs QVAC Edge AI inference by spawning a standalone worker process.
+ * Legacy: Runs self-hosted QVAC inference by spawning a standalone worker process.
  * @deprecated Use runMultiAgentPipeline for the full 3-agent flow.
  */
 export async function runHealthCoach(

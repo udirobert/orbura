@@ -8,6 +8,9 @@ export const users = pgTable(
     email: varchar("email", { length: 256 }).unique(),
     name: text("name"),
     avatarUrl: text("avatar_url"),
+    /** Auth.js-compatible image/avatar URL. */
+    image: text("image"),
+    emailVerified: timestamp("email_verified"),
     /** Guest anonymousId that was used as Supermemory containerTag before
      *  sign-in. Set on first authentication to bridge guest → user memory. */
     anonymousId: varchar("anonymous_id", { length: 128 }),

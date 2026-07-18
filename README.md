@@ -1,70 +1,97 @@
 # Body Debt
 
-Body Debt is a recovery intelligence app focused on three active tracks:
+Body Debt is evolving into a longitudinal intervention platform: turn fragmented
+health signals into one safe action, learn what a person can sustain, and bring
+a human care team in when judgment is needed.
 
-- **Supermemory agent memory**: the AI recovery coach remembers your patterns, past scores, and what worked — and uses that context to personalize every prescription. Uses all three Supermemory primitives: `add()`, `search()`/`profile()`, and `forget()`.
-- **SKALE programmable privacy**: prove the face-scan and scoring steps without exposing raw biometric data.
-- **Tether Developers Cup**: ship a football Match Fit experience with on-device QVAC reasoning and WDK-backed squad payments.
+The repository currently contains several product shells and technology
+showcases built on shared recovery infrastructure:
 
-The app logs lifestyle stressors, computes deterministic physiological debt across five systems, and streams recovery guidance through an on-device QVAC pipeline. The SKALE path adds zero-knowledge proof generation and on-chain verification for the face-scan flow. The Supermemory integration gives the QVAC multi-agent pipeline persistent memory — the triage and coach agents receive injected memory context that shapes their prescriptions.
+- **Body Debt** — the original personal recovery product.
+- **Match Fit** — football squad readiness and recovery.
+- **Fan Recovery** — an experimental post-match recovery experience.
+- **Care Companion** — the primary commercial direction for chronic care.
+- **Showcases** — QVAC, Supermemory, SKALE/EZKL, WDK, and prior hackathon work.
+
+QVAC, OpenAI, Supermemory, wearables, ZK/SKALE, WDK, and MCP are capabilities or
+integrations, not peer modes in a patient experience.
+
+## Current product direction
+
+The first care-companion wedge is UK GLP-1 titration support:
+
+> Help patients through the first 12 weeks of initiation and dose escalation,
+> while helping digital clinics identify silent disengagement, persistent side
+> effects, and cases that need human review.
+
+The intended product is an adherence-rescue and care-continuity layer, not a
+prescriber, diagnostic system, autonomous dose manager, or generic chatbot.
+Deterministic policy owns safety and escalation; AI operates inside a
+clinic-approved protocol; clinicians own diagnosis, prescribing, dose changes,
+and alert resolution.
+
+See [product strategy](docs/product-strategy.md) and
+[target architecture](docs/architecture.md).
+
+## Existing recovery platform
+
+The current app logs lifestyle stressors, computes deterministic recovery debt
+across five systems, and streams a personalized plan through a multi-stage
+analysis pipeline. Optional capabilities include wearable data, browser-local
+MediaPipe/EZKL processing, Supermemory retrieval, QVAC inference, and on-chain
+proof anchoring.
+
+Runtime location matters:
+
+- MediaPipe feature extraction and EZKL proof generation run in the browser.
+- In the hosted Next.js deployment, the QVAC worker runs on the server host as a
+  child process; it is not browser-local.
+- Supermemory calls are server-side and may target a configured local or hosted
+  service.
 
 ## Supermemory integration
 
-The coach doesn't just retrieve memories — it **reasons over them**. Memory context is injected into the triage and coach agent prompts in the QVAC pipeline, so the prescription you get on day 2 is different from day 1 because the agent knows what happened on day 1.
+Memory context is retrieved before analysis and injected into triage and coach
+prompts. The current recovery demo stores completed sessions, retrieves relevant
+history, and lets users forget individual facts or reset memory.
 
-After each session, an **outcome signal** logs whether debt moved and which prior advice was echoed — closing the feedback loop so future recalls include results, not just prescriptions.
+The existing `outcome_signal` compares score changes and repeated advice. It is
+useful experimental context, but it is not proof of adherence or causation. The
+care product will store explicit intervention and outcome events in PostgreSQL,
+with Supermemory used only as a derived retrieval index.
 
-**Three primitives, all used:**
-
-| Primitive | Where | What it does |
+| Primitive | Where | Current use |
 |---|---|---|
-| `add()` | `POST /api/memory`, `logSession()`, `logOutcomeSignal()` | Logs actions, sessions, and cross-session outcome signals |
-| `search()` / `profile()` | `GET /api/memory/context` | Retrieves profile facts + relevant memories for agent context and UI display |
-| `forget()` | `DELETE /api/memory` | Single-memory soft-delete + agentic mass-forget with user confirmation |
+| `add()` | `POST /api/memory`, `logSession()`, `logOutcomeSignal()` | Logs actions and recovery-session summaries |
+| `search()` / `profile()` | `GET /api/memory/context` | Retrieves profile facts and relevant memories |
+| `forget()` | `DELETE /api/memory` | User-controlled single and mass forget |
 
-**User-facing flows:**
+Demo routes:
 
 | Route | Purpose |
 |---|---|
-| `/coach-memory` | Side-by-side day 1 vs day 2 prescription comparison |
-| `/preview` | Full labeled example dashboard (isolated from user data) |
-| Opening screen | Links to both for first-time and returning users |
+| `/coach-memory` | Side-by-side day-one and day-two recovery plans |
+| `/preview` | Full labeled example dashboard, isolated from user data |
+| `/evidence` | QVAC showcase |
+| `/autoscientist` | AutoScientist showcase |
+| `/tether` | Tether/Match Fit showcase |
 
-**UI touchpoints** (gracefully hidden when Supermemory is disabled):
+## Architecture direction
 
-1. Dashboard "Remembers you" badge
-2. "Your coach remembers" card with per-fact forget + local memory status
-3. Agent trace panel showing injected memory context
-4. Analysis loader driven by real `memory_recall` SSE events
-5. Opening screen welcome-back with recalled facts
-6. Prescription screen with `from memory` / `new today` attribution chips
+The target is a modular monolith:
 
-**Architecture:** All Supermemory calls go through `src/lib/supermemory/` (server-only). Client code POSTs to `/api/memory` which calls the server module. Memory is fetched in parallel during analysis (`/api/analyze/stream`) and injected into agent prompts. The `containerTag` is the user's `anonymousId` (or `userId` when authenticated). Example sessions at `/preview` use a shared demo container without touching the user's ID.
+```text
+product shells
+  -> application use cases
+  -> recovery and care domains
+  -> narrow capability ports
+  -> OpenAI/QVAC/Supermemory/wearable/privacy/payment adapters
+  -> Auth.js/PostgreSQL/authorization/consent/audit platform
+```
 
-## Current focus
-
-- Persistent agent memory via Supermemory
-- Privacy-preserving health verification on SKALE
-- Football / match-readiness flows for the Tether Cup
-- On-device AI for recovery coaching, scheduling, and explainability
-
-## Documentation
-
-- [docs/tether-cup-plan.md](docs/tether-cup-plan.md) — strategy and implementation notes for Tether.
-- [docs/skale-privacy-demo.md](docs/skale-privacy-demo.md) — demo flow for the SKALE privacy story.
-- [docs/supermemory-demo.md](docs/supermemory-demo.md) — demo flow for the Supermemory agent memory story.
-- [docs/deployment.md](docs/deployment.md) — deployment, HTTPS, and runtime notes.
-- [docs/zk-pipeline.md](docs/zk-pipeline.md) — ZK artifact workflow and on-chain verification.
-
-## Repo shape
-
-- [src/](src/) — main app, UI, QVAC pipeline, and SKALE client logic.
-- [contracts/](contracts/) — Halo2/SKALE verifier contracts.
-- [scripts/](scripts/) — active deployment and runtime helpers.
-- [archive/legacy-gradio/](archive/legacy-gradio/) — historical root-level Gradio prototype scripts.
-- [docs/legacy/](docs/legacy/) — archived notes for older hackathon tracks.
-- [hf-space/archive/](hf-space/archive/) — historical Hugging Face experiment scripts.
-- [scripts/legacy/](scripts/legacy/) — preserved historical deployment / audit scripts.
+Existing `RecoveryContextConfig` variants remain useful for recovery products.
+Chronic care receives its own product shell, roles, longitudinal data model, and
+safety boundary rather than becoming another global mode.
 
 ## Quick start
 
@@ -73,6 +100,33 @@ bun install
 bun dev
 ```
 
-## Legacy materials
+Verification:
 
-Older hackathon notes and scripts are archived in [docs/legacy/](docs/legacy/) and [scripts/legacy/](scripts/legacy/). They remain available for reference, but the active launch plan now centers on SKALE and Tether.
+```bash
+bun run lint
+bun run test
+bun run build
+```
+
+## Documentation
+
+- [Product strategy](docs/product-strategy.md)
+- [Target architecture](docs/architecture.md)
+- [Recent progress](docs/progress.md)
+- [Deployment](docs/deployment.md)
+- [Motion and UX](docs/motion-ux.md)
+- [Face-scan reliability](docs/face-scan.md)
+- [ZK pipeline](docs/zk-pipeline.md)
+- [Supermemory showcase](docs/supermemory-demo.md)
+- [Tether/Match Fit historical plan](docs/tether-cup-plan.md)
+- [SKALE privacy showcase](docs/skale-privacy-demo.md)
+- [Legacy materials](docs/legacy/)
+
+## Repository shape
+
+- `src/` — application, product UI, domains, and integrations.
+- `contracts/` — Halo2/SKALE verifier contracts.
+- `scripts/` — deployment, QVAC runtime, and artifact tooling.
+- `docs/` — active strategy, architecture, operations, and showcase notes.
+- `docs/legacy/` — archived hackathon notes.
+- `hf-space/archive/` — historical Hugging Face experiments.

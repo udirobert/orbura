@@ -3,6 +3,20 @@
 Snapshot of craft + platform work landed together. Longer detail lives in the
 linked docs.
 
+## Product direction
+
+**Decision:** evolve from a shared mode switcher into separate product shells on
+a modular-monolith platform. Care Companion is the primary commercial direction;
+its first wedge is adherence rescue during the first 12 weeks of UK GLP-1
+initiation and dose escalation. Body Debt remains the recovery laboratory, Match
+Fit remains a separate football product, and Fan Recovery plus hackathon pages
+remain experimental/showcase surfaces.
+
+Safety and escalation stay deterministic. OpenAI and QVAC are AI adapters,
+Supermemory is a derived retrieval index, and PostgreSQL becomes the canonical
+longitudinal record. See [product-strategy.md](./product-strategy.md) and
+[architecture.md](./architecture.md).
+
 ## UX craft (motion grammar)
 
 **Decision:** polish Body Debt’s existing metaphors (orbs, gauges, systems). Do

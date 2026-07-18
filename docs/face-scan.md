@@ -1,6 +1,6 @@
 # Face scan reliability
 
-On-device MediaPipe FaceMesh → feature vector → EZKL worker → optional SKALE
+In-browser MediaPipe FaceMesh → feature vector → EZKL worker → optional SKALE
 anchor. Camera frames and landmarks are never persisted.
 
 **Status (landed):** still-frame confirm, retake detection restart, worker

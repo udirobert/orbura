@@ -1,19 +1,24 @@
 # Agent Guide: Body Debt
 
-Body Debt is a multi-context recovery platform on the Eazo platform. It logs
-lifestyle stressors, computes deterministic physiological debt across five body
-systems, and streams AI-backed recovery prescriptions via a QVAC multi-agent
-pipeline that runs entirely on-device.
+Body Debt is evolving into a longitudinal intervention platform: turn health
+signals into one safe action, learn what a person can sustain, and bring a human
+care team in when judgment is needed. The first commercial wedge is adherence
+rescue during the first 12 weeks of UK GLP-1 initiation and dose escalation.
+See `docs/product-strategy.md` and `docs/architecture.md`.
 
-The platform supports two recovery contexts:
+The repository contains separate product shells:
 
-- **Personal** — single-user body debt, the original app.
-- **Football ("Match Fit")** — squad-level match-readiness, used for the
-  Tether Developers Cup submission. See `docs/tether-cup-plan.md`.
+- **Body Debt** — the original personal recovery product.
+- **Match Fit** — squad-level football readiness.
+- **Fan Recovery** — an experimental post-match experience.
+- **Care Companion** — the new chronic-care product direction.
+- **Showcases** — QVAC, Supermemory, SKALE/EZKL, WDK, and past hackathons.
 
-Context-specific behavior (stressor catalog, scoring weights, agent prompt
-vocabulary, UI vocabulary) lives in `src/lib/contexts/`. Each context exposes a
-`RecoveryContextConfig`; the rest of the pipeline is context-agnostic.
+The existing recovery contexts share `RecoveryContextConfig` under
+`src/lib/contexts/`. Do not model Care Companion as another recovery mode: it
+requires separate patient/clinician roles, longitudinal records, safety policy,
+and escalation workflows. QVAC, OpenAI, memory, wearables, ZK/SKALE, WDK, and
+MCP are capabilities or integrations, not user-facing products.
 
 This file is intentionally compact. Put longer architecture notes in `docs/`
 instead of expanding this guide.
@@ -22,12 +27,13 @@ instead of expanding this guide.
 
 - Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4
 - Bun for install, scripts, and local development
-- `@eazo/sdk` for auth, device, AI gateway, memory, notifications
+- Auth.js v5 for self-hosted authentication; Eazo-named modules are compatibility shims
 - Zustand for guest-first state in `src/stores/useBodyDebtStore.ts`
 - Drizzle ORM + PostgreSQL via `DATABASE_URL`
 - shadcn/ui, lucide-react, framer-motion
 - MediaPipe FaceMesh, EZKL, wagmi/viem, SKALE Europa testnet
-- QVAC local LLM worker for edge AI coaching
+- QVAC LLM worker spawned on the Next.js server host in web deployments
+- Supermemory as an optional server-side retrieval integration
 
 ## Commands
 
@@ -68,7 +74,7 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 | Motion tokens | `src/lib/motion/protocol.ts`, CSS `--duration-*` / `--ease-*` in `globals.css` |
 | Collapse (accordion) | `src/components/ui/collapse.tsx` |
 | Motion provider | `src/components/providers/MotionProvider.tsx` |
-| Recovery contexts | `src/lib/contexts/` (registry: `index.ts`, configs: `personal.ts`, `football.ts`) |
+| Recovery contexts | `src/lib/contexts/` (registry: `index.ts`, configs: `personal.ts`, `football.ts`, `fan.ts`) |
 | Context provider | `src/lib/contexts/RecoveryContext.tsx` (`useRecoveryContext()` hook) |
 | Stressor catalog + scoring | `src/stressors/` (single source: `catalog.ts`, `scoring.ts`, `types.ts`, `index.ts`) |
 | SSE event schemas (Zod) | `src/lib/sse-schemas.ts` |
@@ -95,6 +101,11 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 
 ## Hard Rules
 
+- Do not add Care Companion as another `RecoveryMode` or `RecoveryContextConfig`. Keep chronic-care roles, data, safety, and routes behind a separate product boundary.
+- Treat OpenAI, QVAC, Supermemory, wearables, EZKL/SKALE, WDK, and MCP as capabilities or adapters, never as user-facing product modes.
+- PostgreSQL is canonical for future care records. Supermemory may index derived summaries but must never be the only store of a clinically meaningful fact.
+- Never let an LLM suppress a deterministic safety alert, diagnose, prescribe, or change a medication dose.
+- Describe runtime location literally: MediaPipe/EZKL are browser-local; hosted QVAC runs on the Next.js server host unless the whole app is deployed locally.
 - **Auth is NextAuth.js (Auth.js v5)** — self-hosted, no vendor lock-in. Config in `src/lib/auth.ts`. The Eazo SDK stubs in `src/lib/sdk/eazo-client.ts` and `eazo-react.tsx` delegate to NextAuth. Do not re-introduce `@eazo/sdk` as a real dependency.
 - `requireAuth` is async — always `await requireAuth(request)` in API routes. It returns `{ ok: true, user }` or `{ ok: false, response }`. Guest-first: callers fall through when `ok: false`.
 - Use `auth.login()` from `@/lib/sdk/eazo-client` (delegates to `signIn()` from `next-auth/react`) for login UI. The sign-in page is at `/auth/signin`.
@@ -234,11 +245,13 @@ GITHUB_CLIENT_SECRET=
 
 ## Docs
 
+- Product strategy: `docs/product-strategy.md`
+- Target architecture: `docs/architecture.md`
 - Deployment & HTTPS: `docs/deployment.md`
 - Contract deployment: `contracts/README.md`
 - ZK pipeline details: `docs/zk-pipeline.md`
 - Demo notes: `docs/skale-privacy-demo.md`
-- Tether Developers Cup plan: `docs/tether-cup-plan.md`
+- Historical Tether / Match Fit plan: `docs/tether-cup-plan.md`
 - Motion & UX craft: `docs/motion-ux.md`
 - Face scan reliability: `docs/face-scan.md`
 - Recent progress: `docs/progress.md`

@@ -197,11 +197,11 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, a
             </motion.div>
           )}
           <p className="text-[10px] font-mono uppercase tracking-widest mt-1" style={{ color: "var(--color-text-faint)" }}>
-            {hasLiveAgents ? "edge AI agents working" : isLoadingModel ? "loading AI model" : "processing signals"}
+            {hasLiveAgents ? "QVAC agents working" : isLoadingModel ? "loading AI model" : "processing signals"}
           </p>
         </div>
 
-        {/* Edge AI badge — only when live agents are running */}
+        {/* QVAC badge — only when live agents are running */}
         {hasLiveAgents && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -216,7 +216,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, a
               transition={{ duration: 1.5, repeat: Infinity }}
             />
             <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>
-              QVAC · Qwen3-1.7B · on-device
+              QVAC · Qwen3-1.7B · app server
             </span>
           </motion.div>
         )}

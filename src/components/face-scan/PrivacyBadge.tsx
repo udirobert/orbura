@@ -8,8 +8,8 @@ import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 const PHASE_COPY: Partial<Record<ScanPhase, { label: string; sublabel?: string }>> = {
   camera:    { label: "Live preview", sublabel: "Not recording" },
   review:    { label: "In memory only", sublabel: "Not saved" },
-  extracting: { label: "Processing locally", sublabel: "Nothing uploaded" },
-  proving:   { label: "Proving locally", sublabel: "Nothing uploaded" },
+  extracting: { label: "Processing locally", sublabel: "Browser-local" },
+  proving:   { label: "Proving locally", sublabel: "Browser-local" },
   verifying: { label: "Verifying proof", sublabel: "Credential only" },
   result:    { label: "Photo cleared", sublabel: "Nothing stored" },
 };

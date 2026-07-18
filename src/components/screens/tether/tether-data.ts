@@ -2,16 +2,17 @@
  * Data for the Tether Developers Cup judge page.
  *
  * The Tether Cup is football-themed with 3 tracks:
- * Pears (P2P), QVAC (Local AI), WDK (Wallets).
+ * Pears (P2P), QVAC (self-hosted AI), WDK (Wallets).
  *
  * The story: a football match is a physiological event — for the players who
  * run 11km AND the billions who watch a shootout with their heart in their
- * mouth. One on-device engine, two experiences:
+ * mouth. One self-hosted engine, two experiences:
  *
  *  • Match Fit    — the team doctor for players & coaches (+ WDK squad payments)
  *  • Fan Recovery — an emotional-recovery coach for fans (the mass audience)
  *
- * All AI runs on-device via the QVAC SDK. No cloud, no API keys, no account.
+ * All AI runs through the self-hosted QVAC SDK. No third-party model API,
+ * no API keys, no account.
  */
 
 import { scienceFor } from "@/lib/science";
@@ -31,20 +32,20 @@ export const TOURNAMENT_DATES = [
 
 export const PITCH = {
   headline: "Match Fit",
-  subheadline: "The on-device team doctor. No cloud, no API keys, works in a locker room with no signal.",
-  problem: "Football teams at every level — from Sunday league to World Cup — need to assess player readiness. Is your striker match-fit after a late night? Can your defender play through a concussion protocol? Today this requires a sports scientist, a cloud-connected app, or a gut call from the manager.",
-  solution: "Match Fit runs a 4-agent AI pipeline entirely on the manager's phone. Scan a player's face, log their stressors (match minutes, training load, sleep, alcohol, travel, cards, concussion), and get a match-readiness score, return-to-play protocol, and time-blocked recovery schedule — all from a 1.7B model running locally via the QVAC SDK.",
-  whyQvac: "The QVAC SDK makes this possible. A 1.7B Qwen3 model runs 4 agents (triage, coach, schedule, reflection) in ~21 seconds on a phone — no cloud AI, no API keys, no per-token cost. The model is cached after first inference, so subsequent scans work fully offline. This is the difference between a tool that works in a Premier League locker room and one that doesn't work in a World Cup basement changing room with no signal.",
+  subheadline: "The self-hosted football readiness coach, powered by QVAC without a third-party model API.",
+  problem: "Football teams at every level — from Sunday league to World Cup — need to assess player readiness. Is your striker match-fit after a late night? Can your defender play through a concussion protocol? Today this requires a sports scientist, a connected app, or a gut call from the manager.",
+  solution: "Match Fit runs a 4-agent QVAC pipeline on the app host. Scan a player's face in the browser, log their stressors (match minutes, training load, sleep, alcohol, travel, cards, concussion), and get a match-readiness estimate and time-blocked recovery schedule from a self-hosted 1.7B model.",
+  whyQvac: "The QVAC SDK runs a Qwen3 model across four agents (triage, coach, schedule, reflection) without sending prompts to a third-party model API. In the hosted web app the worker runs on the app server; a fully local deployment can keep the complete runtime on the operator's machine.",
 };
 
-// ─── Two experiences, one on-device engine ───────────────────────────────────
+// ─── Two experiences, one self-hosted engine ─────────────────────────────────
 
 export const HERO = {
-  eyebrow: "One on-device engine · two experiences",
+  eyebrow: "One self-hosted engine · two experiences",
   headlineTop: "The match is over.",
   headlineAccent: "Your body isn't.",
   subheadline:
-    "A football match is a physiological event — for the players who run 11km and the billions who watch a shootout with their heart in their mouth. Body Debt quantifies the recovery either one needs, and runs every bit of AI on your own device. No cloud, no API keys, no account.",
+    "A football match is a physiological event — for the players who run 11km and the billions who watch a shootout with their heart in their mouth. Body Debt estimates the recovery either one needs with deterministic scoring and a self-hosted QVAC runtime.",
 };
 
 export const EXPERIENCES = [
@@ -70,7 +71,7 @@ export const FAN_STORY = {
   problem:
     "Watching football is physical too. A late winner, a knockout, a penalty shootout — they spike cortisol and adrenaline, raise heart rate, and wreck sleep, especially for the late kickoffs fans stay up for across time zones. Billions feel it every tournament, and nothing helps them recover. Ask any fan the morning after their team went out.",
   solution:
-    "Fan Recovery reuses the exact same on-device engine. A fan logs how the match left them — the result, how tense it was to watch, the post-match doomscroll — and the QVAC coach returns a warm, practical wind-down: a short walk to burn the cortisol, water, screens down, sleep protected. And it's private by design: how you feel after your team loses never leaves your phone.",
+    "Fan Recovery reuses the same self-hosted QVAC engine. A fan logs how the match left them — the result, how tense it was to watch, the post-match doomscroll — and the coach returns a practical wind-down: a short walk, water, screens down, and protected sleep.",
 };
 
 export const FAN_SCIENCE = {
@@ -260,10 +261,10 @@ export const ARCHITECTURE = [
   { step: "WDK squad payment", icon: "💰", detail: "Self-custodial USDt: match-day bonus, player fine, or fan tip" },
 ];
 
-// ─── Fallback chain (deterministic-only, no cloud AI) ────────────────────────
+// ─── Fallback chain (deterministic-only, no third-party model API) ───────────
 
 export const FALLBACK_CHAIN = [
-  { layer: "QVAC 4-agent pipeline",  primary: "On-device inference (Qwen3-1.7B)",   fallback: "Deterministic prescription + schedule from score" },
+  { layer: "QVAC 4-agent pipeline",  primary: "Self-hosted inference (Qwen3-1.7B)", fallback: "Deterministic prescription + schedule from score" },
   { layer: "Verdict",                primary: "Deterministic Layer 1 score",        fallback: "Always available — no AI needed" },
   { layer: "Prescription",           primary: "QVAC Coach Agent",                   fallback: "Deterministic rule-based prescription" },
   { layer: "Schedule",               primary: "QVAC Schedule Agent",                fallback: "Deterministic 4-block schedule" },
@@ -274,7 +275,7 @@ export const FALLBACK_CHAIN = [
 
 export const PERFORMANCE = {
   model: "Qwen3-1.7B-Instruct (Q4 quantized + TurboQuant KV-cache)",
-  totalPipeline: "~21.5s on-device",
+  totalPipeline: "~21.5s self-hosted",
   agentBreakdown: [
     { agent: "Triage", time: "6.3s" },
     { agent: "Coach", time: "4.3s" },
@@ -293,7 +294,7 @@ export const PERFORMANCE = {
 export const JUDGING_CRITERIA = [
   {
     criterion: "Technical ambition",
-    score: "Two-track project: QVAC 4-agent pipeline on-device + WDK self-custodial USDt wallet. ZK face scan proof verified on SKALE. Deterministic fallback chain for every AI layer. One engine, three contexts (personal + Match Fit + Fan Recovery) — a new audience is a data-driven registry entry, not a new codebase.",
+    score: "Two-track project: self-hosted QVAC 4-agent pipeline + WDK self-custodial USDt wallet. ZK face scan proof verified on SKALE. Deterministic fallback chain for every AI layer. One engine, three contexts (personal + Match Fit + Fan Recovery) — a new audience is a data-driven registry entry, not a new codebase.",
   },
   {
     criterion: "User experience",
@@ -301,7 +302,7 @@ export const JUDGING_CRITERIA = [
   },
   {
     criterion: "Real-world use",
-    score: "Two real audiences. Coaches scan a player in 30 seconds in a locker room with no signal and send a USDt bonus from the same screen. And the billions who only watch get something no one has built — recover from a loss, protect your sleep after a late kickoff. No account, no API keys, no cloud bills.",
+    score: "Two real audiences. Coaches scan a player in 30 seconds and send a USDt bonus from the same screen. And the billions who only watch get something no one has built — recover from a loss, protect your sleep after a late kickoff. No account, no third-party model API, no API bills.",
   },
   {
     criterion: "Creativity",
@@ -309,7 +310,7 @@ export const JUDGING_CRITERIA = [
   },
   {
     criterion: "Real use of QVAC track",
-    score: "All AI inference via @qvac/sdk. Qwen3-1.7B-Instruct Q4. 4 agents (triage, coach, schedule, reflection) chained via SSE streaming. The same pipeline powers a private emotional-recovery coach — how you feel after your team loses never leaves the device, which is exactly why on-device matters here. Model cached after first run; subsequent runs fully offline. Zero cloud AI calls.",
+    score: "All AI inference via @qvac/sdk. Qwen3-1.7B-Instruct Q4. 4 agents (triage, coach, schedule, reflection) chained via SSE streaming. The same pipeline powers a private emotional-recovery coach — how you feel after your team loses is processed by self-hosted QVAC with no third-party model API. Model cached after first run; subsequent runs reuse it without a third-party model API.",
   },
   {
     criterion: "Real use of WDK track",

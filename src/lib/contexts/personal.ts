@@ -27,7 +27,7 @@ export const personalContext: RecoveryContextConfig = {
     verdictLabel: "Verdict",
     systemLabel: "Recovery by system",
     counterfactualLabel: "What would change this",
-    edgeAiBadge: "Edge AI",
+    edgeAiBadge: "Self-hosted AI",
     personaLabel: "Body Debt",
     tagline: "Your body is talking. Are you listening?",
   },

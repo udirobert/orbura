@@ -192,7 +192,7 @@ describe("AnalysisLoader — live agent events", () => {
     expect(screen.getByText("Recovery Coach")).toBeDefined();
   });
 
-  it("shows 'edge AI agents working' label when agents are running", () => {
+  it("shows 'QVAC agents working' label when agents are running", () => {
     const agents: AgentEventState[] = [
       { agent: "triage", description: "Analyzing...", status: "active" },
     ];
@@ -203,7 +203,7 @@ describe("AnalysisLoader — live agent events", () => {
         agentEvents={agents}
       />
     );
-    expect(screen.getByText("edge AI agents working")).toBeDefined();
+    expect(screen.getByText("QVAC agents working")).toBeDefined();
   });
 
   it("shows completed agent with duration", () => {

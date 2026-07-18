@@ -27,7 +27,7 @@ export interface UIVocabulary {
   verdictLabel: string;        // "Verdict" | "Manager's Verdict"
   systemLabel: string;         // "Recovery by system" | "Squad medical by system"
   counterfactualLabel: string; // "What would change this" | "What would change this"
-  edgeAiBadge: string;         // "Edge AI" | "Edge AI"
+  edgeAiBadge: string;         // "Self-hosted AI"
   personaLabel: string;        // "Body Debt" | "Match Fit"
   tagline: string;             // shown on opening screen
 }

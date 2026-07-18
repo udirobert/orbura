@@ -45,7 +45,7 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
             color: "var(--color-text-primary)",
           }}
         >
-          On-device. Nothing uploaded.
+          Browser-local. Nothing uploaded.
         </h3>
         <p className="text-[12px] mt-1" style={{ color: "var(--color-text-secondary)" }}>
           Estimates stress from facial cues. Your image never leaves this browser.
@@ -89,7 +89,7 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
           style={{ borderTop: "1px solid rgba(168,162,158,0.08)" }}
         >
           <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-states-success)" }}>
-            Stays on device
+            Stays in this browser
           </p>
           <p className="text-[11px] mt-1" style={{ color: "var(--color-text-secondary)" }}>
             Frame is discarded once the proof is generated.
@@ -105,7 +105,7 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
         </li>
         <li className="flex gap-2 text-[12px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
           <span style={{ color: "var(--color-brand-primary)" }}>·</span>
-          On-chain proof only if you connect a wallet. Otherwise local.
+          On-chain proof only if you connect a wallet. Otherwise local to this browser.
         </li>
       </ul>
 

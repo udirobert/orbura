@@ -66,7 +66,7 @@ export interface OrbCopy {
 
 const COPY: Record<OrbPersonality, OrbCopy> = {
   honest: {
-    scanPrompt:          "A quick face check estimates stress — on your device.",
+    scanPrompt:          "A quick face check estimates stress — in this browser.",
     scanObserving:       "I'm seeing something.",
     recoveryTagline:     "Your body is working to clear this.",
     prescriptionHeader:  "The Prescription",
@@ -75,7 +75,7 @@ const COPY: Record<OrbPersonality, OrbCopy> = {
     reminderPrompt:      "Want me to remind you?",
   },
   gentle: {
-    scanPrompt:          "A short on-device face check can sharpen your score.",
+    scanPrompt:          "A short in-browser face check can sharpen your score.",
     scanObserving:       "I notice a few things.",
     recoveryTagline:     "Your body knows how to recover. Give it time.",
     prescriptionHeader:  "What will help today",
@@ -84,7 +84,7 @@ const COPY: Record<OrbPersonality, OrbCopy> = {
     reminderPrompt:      "Want a few gentle nudges throughout the day?",
   },
   scientific: {
-    scanPrompt:          "Optional facial biomarkers — processed entirely locally.",
+    scanPrompt:          "Optional facial biomarkers — processed entirely in this browser.",
     scanObserving:       "Physiological markers detected.",
     recoveryTagline:     "Homeostatic recovery is in progress.",
     prescriptionHeader:  "Recovery Protocol",

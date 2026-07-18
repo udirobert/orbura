@@ -138,7 +138,7 @@ export function useStreamingAnalysis() {
             }
 
             if (eventType === "agent_start") {
-              // An edge AI agent has started — cancel the fallback timer
+              // A QVAC agent has started — cancel the fallback timer
               if (fallbackTimerRef.current) {
                 clearTimeout(fallbackTimerRef.current);
                 fallbackTimerRef.current = null;

@@ -15,6 +15,13 @@
       "when": 1783793354454,
       "tag": "0001_skinny_mentallo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784334318521,
+      "tag": "0002_fluffy_sunspot",
+      "breakpoints": true
     }
   ]
 }

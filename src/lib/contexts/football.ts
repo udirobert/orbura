@@ -32,9 +32,9 @@ export const footballContext: RecoveryContextConfig = {
     verdictLabel: "Manager's Verdict",
     systemLabel: "Squad medical by system",
     counterfactualLabel: "What would change this",
-    edgeAiBadge: "Edge AI",
+    edgeAiBadge: "Self-hosted AI",
     personaLabel: "Match Fit",
-    tagline: "The on-device team doctor. No cloud, no API keys, works in the locker room.",
+    tagline: "A self-hosted football readiness coach with transparent reasoning.",
   },
   supportsSquad: true,
   theme: {

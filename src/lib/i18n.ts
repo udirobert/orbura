@@ -33,11 +33,11 @@ export interface LocalizedCopy {
     counterfactual: string;       // "What would change this"
     multiAgent: string;           // "Multi-Agent Pipeline"
     recoverySchedule: string;     // "Recovery Schedule"
-    edgeAiBadge: string;          // "Edge AI"
+    edgeAiBadge: string;          // "Self-hosted AI"
     onChainBadge: string;         // "On-chain"
     onChainPill: string;          // "Last verified on SKALE"
-    qvacBadge: string;            // "QVAC · Qwen3-1.7B · on-device"
-    qvacAgentsWorking: string;    // "edge AI agents working"
+    qvacBadge: string;            // "QVAC · Qwen3-1.7B · self-hosted"
+    qvacAgentsWorking: string;    // "QVAC agents working"
     checkBack: string;            // "Check back in the morning"
     checkBackSubtitle: string;    // sub-copy under "Check back"
     streakChain: (n: number) => string; // "{n}-day streak — don't break the chain"
@@ -101,11 +101,11 @@ const EN: LocalizedCopy = {
     counterfactual: "What would change this",
     multiAgent: "Multi-Agent Pipeline",
     recoverySchedule: "Recovery Schedule",
-    edgeAiBadge: "Edge AI",
+    edgeAiBadge: "Self-hosted AI",
     onChainBadge: "On-chain",
     onChainPill: "Last verified on SKALE",
-    qvacBadge: "QVAC · Qwen3-1.7B · on-device",
-    qvacAgentsWorking: "edge AI agents working",
+    qvacBadge: "QVAC · Qwen3-1.7B · self-hosted",
+    qvacAgentsWorking: "QVAC agents working",
     checkBack: "Check back in the morning",
     checkBackSubtitle:
       "Your systems recover on different timelines. Log tomorrow to see how much debt cleared overnight and keep your streak going.",
@@ -166,11 +166,11 @@ const ES: LocalizedCopy = {
     counterfactual: "Qué cambiaría esto",
     multiAgent: "Pipeline multi-agente",
     recoverySchedule: "Horario de recuperación",
-    edgeAiBadge: "Edge AI",
+    edgeAiBadge: "IA autoalojada",
     onChainBadge: "On-chain",
     onChainPill: "Última verificación en SKALE",
-    qvacBadge: "QVAC · Qwen3-1.7B · en el dispositivo",
-    qvacAgentsWorking: "agentes edge AI trabajando",
+    qvacBadge: "QVAC · Qwen3-1.7B · autoalojado",
+    qvacAgentsWorking: "agentes QVAC trabajando",
     checkBack: "Vuelve por la mañana",
     checkBackSubtitle:
       "Tus sistemas se recuperan en plazos diferentes. Registra mañana para ver cuánta deuda se liberó durante la noche y mantén tu racha.",
@@ -231,11 +231,11 @@ const FR: LocalizedCopy = {
     counterfactual: "Ce qui changerait ça",
     multiAgent: "Pipeline multi-agents",
     recoverySchedule: "Programme de récupération",
-    edgeAiBadge: "Edge AI",
+    edgeAiBadge: "IA auto-hébergée",
     onChainBadge: "On-chain",
     onChainPill: "Dernière vérif sur SKALE",
-    qvacBadge: "QVAC · Qwen3-1.7B · sur l'appareil",
-    qvacAgentsWorking: "agents edge AI en cours",
+    qvacBadge: "QVAC · Qwen3-1.7B · auto-hébergé",
+    qvacAgentsWorking: "agents QVAC en cours",
     checkBack: "Reviens demain matin",
     checkBackSubtitle:
       "Tes systèmes récupèrent à des rythmes différents. Log demain pour voir combien de dette s'est effacée pendant la nuit et garde ta série.",

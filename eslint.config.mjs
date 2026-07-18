@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
     // torch, or in hf-space/.venv's case the full Gradio frontend
     // bundle — 1.4GB of minified JS that OOMs ESLint's Babel parser).
     "**/.venv/**",
+    "**/.venv-*/**",
     // Self-hosted MediaPipe vendor files (minified, from
     // @mediapipe/face_mesh). Not our code, not lintable.
     "public/mediapipe/**",

@@ -1,5 +1,10 @@
 # Tether Developers Cup — Multi-Track Football Recovery Platform
 
+> **Status:** Historical competition plan and Match Fit product reference. It is
+> not the active company roadmap. Match Fit is now treated as a separate product
+> shell; see [product strategy](./product-strategy.md) and
+> [target architecture](./architecture.md).
+
 ## Competition
 
 Tether Developers Cup. Football-themed knockout tournament.
@@ -31,11 +36,11 @@ code is allowed, but new commits must show meaningful progress.
 
 ## Strategy — Multi-Track (QVAC + WDK)
 
-**Pitch:** *Match Fit is the on-device team doctor. Scan a player, get a
-match-readiness score and return-to-play protocol — no cloud, no API keys,
-works in a locker room with no signal. Now with self-custodial squad
-payments: match-day bonuses, player fines, and fan tipping — all in USDt,
-all from the same app.*
+**Pitch:** *Match Fit is the self-hosted team doctor. Scan a player, get a
+match-readiness score and return-to-play protocol — no third-party model
+API, no API keys. Now with self-custodial squad payments: match-day
+bonuses, player fines, and fan tipping — all in USDt, all from the same
+app.*
 
 ### Why multi-track
 
@@ -48,7 +53,7 @@ fines, tipping) is a natural fit no one else will have.
 
 | Track | What we use | How |
 |---|---|---|
-| **QVAC** | `@qvac/sdk` | 4-agent pipeline (triage, coach, schedule, reflection) running Qwen3-1.7B on-device |
+| **QVAC** | `@qvac/sdk` | 4-agent pipeline (triage, coach, schedule, reflection) running Qwen3-1.7B self-hosted on the app server |
 | **WDK** | `@tetherto/wdk` + `@tetherto/wdk-wallet-evm` | Self-custodial USDt wallet for squad payments: bonuses, fines, fan tipping |
 
 Pears (P2P) is a possible future addition for squad sharing, but WDK is
@@ -276,7 +281,7 @@ Update `/tether` page to reflect the multi-track submission:
 
 3-minute YouTube unlisted video. Script:
 
-1. **0:00–0:15** — Hook: "The on-device team doctor. Now with squad
+1. **0:00–0:15** — Hook: "The self-hosted team doctor. Now with squad
    payments."
 2. **0:15–0:45** — Open Match Fit, add a player, log stressors (match
    minutes, poor sleep)
@@ -285,10 +290,8 @@ Update `/tether` page to reflect the multi-track submission:
 4. **1:15–1:45** — Squad readiness board: 5 players, traffic-light tiers
 5. **1:45–2:30** — WDK payments: connect treasury, send "Player of the
    Match" bonus in USDt, show tx confirmation
-6. **2:30–2:50** — Offline demo: disconnect network, run another scan,
-   show it still works
-7. **2:50–3:00** — Close: "QVAC + WDK. No cloud. No API keys. Works in a
-   locker room."
+6. **2:30–2:50** — Self-hosted demo: show the QVAC pipeline running on the app server without a third-party model API
+7. **2:50–3:00** — Close: "QVAC + WDK. No third-party model API. No API keys."
 
 ### Phase 11: Pears P2P squad sharing (STRETCH — post-July 8)
 
@@ -310,11 +313,11 @@ This is a stretch goal — only if time permits after WDK is solid.
 ## Round Milestones
 
 - **Round of 16 (July 8):** Football mode + QVAC pipeline + WDK payments
-  functional. Cloud AI fallback removed. 3-min demo video submitted.
+  functional. Cloud AI fallback disabled. 3-min demo video submitted.
 - **Semifinals (July 12):** WDK payment history. Polish: payment
   animations, tx confirmation states. Pears P2P sharing (stretch).
 - **Final (July 14–15):** Live demo: squad scan → readiness board →
-  USDt bonus payment → offline mode.
+  USDt bonus payment → self-hosted QVAC mode.
 
 ## Dependency Installation
 
@@ -376,8 +379,8 @@ remain as-is.
 
 - **ENHANCEMENT FIRST:** WDK payments extend the existing `SquadScreen`
   and `SquadPlayer` type. No new screen, no parallel type system.
-- **CONSOLIDATION:** Cloud AI fallback code is deleted for the Tether
-  build, not gated behind a flag. Less code, less risk.
+- **CONSOLIDATION:** Cloud AI fallback is disabled for the Tether build.
+  Less code, less risk.
 - **PREVENT BLOAT:** WDK client is a single module (`src/lib/wdk/`) with
   three files. Payment UI is three components inside the existing
   `SquadScreen.tsx`, not a new screen.

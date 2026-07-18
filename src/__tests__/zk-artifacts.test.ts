@@ -86,7 +86,7 @@ describe("vk-chunks.json", () => {
     const chunks: string[] = JSON.parse(readFileSync(chunksPath, "utf8"));
     const digest = JSON.parse(readFileSync(resolve(ezklDir, "vk-digest.json"), "utf8"));
 
-    const concatenated = `0x${chunks.map((c) => c.slice(2)).join("")}`;
+    const concatenated = `0x${chunks.map((c) => c.slice(2)).join("")}` as `0x${string}`;
     const computed = keccak256(concatenated);
     expect(computed).toBe(digest.digest);
   });

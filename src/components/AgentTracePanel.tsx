@@ -14,8 +14,8 @@ const AGENT_ICONS: Record<string, string> = {
 };
 
 const SOURCE_LABELS: Record<string, string> = {
-  "qvac-local": "QVAC · Qwen3-1.7B · on-device",
-  "eazo-cloud": "Cloud AI · Eazo",
+  "qvac-local": "QVAC · Qwen3-1.7B · app server",
+  "eazo-cloud": "Cloud AI · legacy fallback",
   "deterministic": "Deterministic engine",
 };
 
@@ -143,7 +143,7 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                             <motion.span className="w-1 h-1 rounded-full" style={{ backgroundColor: "var(--color-brand-primary)" }}
                               animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }} />
                             <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-brand-primary)" }}>
-                              Running on device...
+                              Running on app server...
                             </span>
                           </>
                         )}
@@ -224,7 +224,7 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                       {/* Edge bar */}
                       <div className="flex-1">
                         <div className="flex justify-between text-[8px] font-mono mb-0.5">
-                          <span style={{ color: "var(--color-states-success)" }}>Edge (on-device)</span>
+                          <span style={{ color: "var(--color-states-success)" }}>QVAC (app server)</span>
                           <span style={{ color: "var(--color-text-primary)" }}>{(trace.totalDurationMs / 1000).toFixed(1)}s</span>
                         </div>
                         <div className="relative h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--color-border-subtle)" }}>
@@ -260,9 +260,9 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                       )}
                     </div>
                     <p className="text-[8px] font-mono mt-1.5 text-center" style={{ color: "var(--color-text-faint)" }}>
-                      Edge AI ran {trace.cloudDurationMs != null && trace.cloudDurationMs > trace.totalDurationMs
-                        ? `${Math.round(trace.cloudDurationMs / trace.totalDurationMs)}x faster than cloud`
-                        : "on-device with zero data leaving"}
+                      QVAC ran {trace.cloudDurationMs != null && trace.cloudDurationMs > trace.totalDurationMs
+                        ? `${Math.round(trace.cloudDurationMs / trace.totalDurationMs)}x faster than the cloud comparison`
+                        : "on the app server without a third-party model API"}
                     </p>
                   </div>
                 )}

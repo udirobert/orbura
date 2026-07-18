@@ -32,7 +32,7 @@ export const SCAN_MESSAGES = [
   "Mapping facial landmarks…",
   "Building a private proof…",
   "Verifying the proof locally…",
-  "Almost done — nothing uploaded…",
+  "Almost done — browser-local proof…",
 ];
 
 export function cameraErrorCopy(kind: CameraError) {
@@ -642,7 +642,7 @@ export function useFaceScanPipeline() {
         if (!workerRef.current) return reject(new Error("Worker not initialized"));
         const PROVE_TIMEOUT_MS = 90_000;
         const timer = setTimeout(() => {
-          reject(new Error("Proof generation timed out. You can continue without on-device proof."));
+          reject(new Error("Proof generation timed out. You can continue without a browser-local proof."));
         }, PROVE_TIMEOUT_MS);
         workerRef.current.onmessage = (event: MessageEvent) => {
           const data = event.data;

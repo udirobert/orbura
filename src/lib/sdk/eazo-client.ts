@@ -54,6 +54,8 @@ export const memory = {
   async reportAction(payload: {
     content: string;
     event_type: string;
+    page?: string;
+    metadata?: Record<string, unknown>;
   }): Promise<void> {
     try {
       if (typeof window === "undefined") return;
@@ -81,6 +83,7 @@ export const share = {
 };
 
 export const notifications = {
+  available: false,
   isSubscribed(): Promise<{ subscribed: boolean }> {
     return Promise.resolve({ subscribed: false });
   },

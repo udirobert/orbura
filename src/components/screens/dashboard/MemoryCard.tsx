@@ -24,7 +24,7 @@ interface MemoryCardProps {
  *
  * Shows extracted facts from Supermemory so the user can see
  * that their recovery coach has accumulated knowledge about them.
- * Collapsible. Purple accent to distinguish from Edge AI (green)
+ * Collapsible. Purple accent to distinguish from QVAC (green)
  * and On-chain (blue).
  *
  * When containerTag + onForget are provided, each fact has a
@@ -43,8 +43,8 @@ export function MemoryCard({ profile, memories, containerTag, onForget, readOnly
   const { patterns } = useUserPatterns();
 
   const greeting = user
-    ? patterns?.streakDays > 0
-      ? `Welcome back, ${user.name ?? user.email?.split("@")[0]}. You're on a ${patterns.streakDays}-day low-debt streak.`
+    ? (patterns?.streakDays ?? 0) > 0
+      ? `Welcome back, ${user.name ?? user.email?.split("@")[0]}. You're on a ${patterns?.streakDays ?? 0}-day low-debt streak.`
       : patterns?.trendDirection === "improving"
       ? `Welcome back, ${user.name ?? user.email?.split("@")[0]}. Your debt is trending down.`
       : patterns?.trendDirection === "worsening"

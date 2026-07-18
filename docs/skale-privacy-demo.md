@@ -1,5 +1,10 @@
 # SKALE Programmable Privacy Hackathon — Demo Script (2 minutes)
 
+> **Status:** Technology showcase, not the active product roadmap. Browser-local
+> MediaPipe/EZKL remains an optional privacy capability; blockchain is not a
+> substitute for consent, clinical evidence, or compliance. See
+> [product strategy](./product-strategy.md) and [target architecture](./architecture.md).
+
 ## Setup (before recording)
 
 1. Open the app at `bodydebt.app` in Chrome
@@ -113,7 +118,7 @@
 **Show:** The "Accept & Continue" button
 
 **Say:**
-> *"Body Debt demonstrates that programmable privacy isn't theoretical — it's shipping. Real ZK proofs, real on-chain verification, real edge AI, all protecting user biometric data. This is what privacy-first health intelligence looks like."*
+> *"Body Debt demonstrates that programmable privacy isn't theoretical — it's shipping. Real ZK proofs, real on-chain verification, real self-hosted AI, all protecting user biometric data. This is what privacy-first health intelligence looks like."*
 
 ---
 

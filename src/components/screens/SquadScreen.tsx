@@ -35,7 +35,7 @@ function useScanPlayer() {
   const { setActivePlayerId, setSelectedStressors, setFaceAnalysis } = useBodyDebtStore();
   return (player: SquadPlayer) => {
     setActivePlayerId(player.id);
-    setSelectedStressors(player.stressors);
+    setSelectedStressors(player.stressors ?? []);
     setFaceAnalysis(player.faceAnalysis ?? null);
     router.push("/intake");
   };

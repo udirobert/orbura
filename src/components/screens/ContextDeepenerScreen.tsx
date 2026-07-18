@@ -308,7 +308,7 @@ export function ContextDeepenerScreen() {
               Got it
             </h2>
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              Next: a quick face check to estimate stress — on-device, nothing uploaded.
+              Next: a quick face check to estimate stress — in this browser, nothing uploaded.
             </p>
           </div>
         ) : null}

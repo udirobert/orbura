@@ -71,7 +71,7 @@ export function EvidencePage() {
               style={{ backgroundColor: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
               <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "var(--color-states-success)" }} />
               <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>
-                Edge AI · 4 agents
+                Self-hosted AI · 4 agents
               </span>
             </span>
           </div>
@@ -102,17 +102,17 @@ export function EvidencePage() {
         {/* Headline metrics */}
         <section>
           <h2 className="text-[10px] font-mono uppercase tracking-widest mb-3" style={{ color: "var(--color-text-faint)" }}>
-            Measured on-device performance
+            Measured self-hosted performance
           </h2>
           <div className="grid grid-cols-2 gap-2">
-            <MetricCard label="Edge pipeline (4 agents)" value={formatMs(SAMPLE_BENCHMARK.edgeTotalMs)}
+            <MetricCard label="Self-hosted pipeline (4 agents)" value={formatMs(SAMPLE_BENCHMARK.edgeTotalMs)}
               sub={`${SAMPLE_BENCHMARK.model}`} />
             <MetricCard label="Cloud verdict (parallel)" value={formatMs(SAMPLE_BENCHMARK.cloudVerdictMs)}
               sub="Anthropic Claude 3.5 Haiku" color="var(--color-states-error)" />
-            <MetricCard label="Edge outputs vs cloud" value="4×"
+            <MetricCard label="Self-hosted outputs vs cloud" value="4×"
               sub="Verdict + Rx + Schedule + Reflection vs single verdict" color="var(--color-states-warning)" />
-            <MetricCard label="Data leaving device" value="0 bytes"
-              sub="Pipeline runs entirely on-device" color="var(--color-system-muscular)" />
+            <MetricCard label="Third-party model API" value="None"
+              sub="QVAC runs on the app server" color="var(--color-system-muscular)" />
           </div>
         </section>
 
@@ -186,7 +186,7 @@ export function EvidencePage() {
                 Total pipeline
               </span>
               <span className="text-xs font-bold" style={{ color: "var(--color-states-success)" }}>
-                {formatMs(SAMPLE_BENCHMARK.edgeTotalMs)} · on-device
+                {formatMs(SAMPLE_BENCHMARK.edgeTotalMs)} · app server
               </span>
             </div>
           </div>
@@ -201,7 +201,7 @@ export function EvidencePage() {
             style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
             <div>
               <div className="flex justify-between text-[10px] font-mono mb-1">
-                <span style={{ color: "var(--color-states-success)" }}>Edge (on-device, 4 agents)</span>
+                <span style={{ color: "var(--color-states-success)" }}>Self-hosted (4 agents)</span>
                 <span style={{ color: "var(--color-text-primary)" }}>{formatMs(SAMPLE_BENCHMARK.edgeTotalMs)}</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(168,162,158,0.1)" }}>
@@ -221,7 +221,7 @@ export function EvidencePage() {
               </div>
             </div>
             <p className="text-[10px] text-center font-mono pt-1" style={{ color: "var(--color-text-primary)" }}>
-              4× the outputs in similar latency — and zero biometric data left the device
+              4× the outputs in similar latency — raw biometric data never leaves the browser
             </p>
           </div>
         </section>
@@ -277,7 +277,7 @@ export function EvidencePage() {
             ))}
           </div>
           <p className="text-[10px] mt-2 font-mono" style={{ color: "var(--color-text-faint)" }}>
-            Cloud calls have 5s and 8s timeouts. After first inference, the QVAC model is cached locally — subsequent runs work fully offline.
+            After first inference, the QVAC model is cached in the app server process — subsequent runs reuse it without a third-party model API.
           </p>
         </section>
 
@@ -305,7 +305,7 @@ export function EvidencePage() {
               .
             </p>
             <p className="text-[10px] font-mono" style={{ color: "var(--color-text-faint)" }}>
-              Biometric data never leaves the device. The on-chain anchor is a verifiable commitment
+              Raw biometric data never leaves the browser. The on-chain anchor is a verifiable commitment
               that the score came from a real face — not a screenshot.
             </p>
           </div>
@@ -654,7 +654,7 @@ export function EvidencePage() {
             Built for the QVAC Hackathon I — Unleash Edge AI · DoraHacks · June 2026
           </p>
           <p className="text-[10px] font-mono" style={{ color: "var(--color-text-disabled)" }}>
-            Three AI agents, one local model, zero cloud calls for the inference path.
+            Four AI agents, one self-hosted model, no third-party model API calls for the inference path.
           </p>
           <div className="flex justify-center gap-3 pt-2">
             <Link href="/autoscientist" className="text-[10px] font-mono underline" style={{ color: "var(--color-text-faint)" }}>

@@ -6,7 +6,7 @@ import type { RecoveryContextConfig } from "./types";
  * Watching a match is a physiological event: a loss, a shootout, or a late
  * winner drives cortisol and adrenaline, elevates heart rate, and (for late
  * kickoffs) wrecks sleep. This context reframes the same five-system engine
- * around the fan's post-match state and an on-device wind-down coach.
+ * around the fan's post-match state and a self-hosted wind-down coach.
  */
 export const fanContext: RecoveryContextConfig = {
   mode: "fan",
@@ -37,9 +37,9 @@ export const fanContext: RecoveryContextConfig = {
     verdictLabel: "Full-Time Verdict",
     systemLabel: "How the match hit you",
     counterfactualLabel: "What would've helped",
-    edgeAiBadge: "Edge AI",
+    edgeAiBadge: "Self-hosted AI",
     personaLabel: "Fan Recovery",
-    tagline: "The final whistle hits your body too. Log the match, get a wind-down that works offline.",
+    tagline: "The final whistle hits your body too. Log the match and get a private wind-down."
   },
   supportsSquad: false,
   theme: {

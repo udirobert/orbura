@@ -34,7 +34,7 @@ export function NotificationsToggle() {
     };
   }, [user]);
 
-  if (!user) return null;
+  if (!user || !notifications.available) return null;
 
   async function handleToggle() {
     if (toggling) return;

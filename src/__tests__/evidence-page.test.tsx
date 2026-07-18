@@ -47,9 +47,9 @@ describe("EvidencePage — page structure", () => {
     expect(screen.getByText("BODY DEBT")).toBeDefined();
   });
 
-  it("renders the Edge AI badge", () => {
+  it("renders the Self-hosted AI badge", () => {
     render(<EvidencePage />);
-    expect(screen.getByText("Edge AI · 4 agents")).toBeDefined();
+    expect(screen.getByText("Self-hosted AI · 4 agents")).toBeDefined();
   });
 
   it("renders navigation links", () => {
@@ -62,7 +62,7 @@ describe("EvidencePage — page structure", () => {
   it("renders all section headings", () => {
     render(<EvidencePage />);
     const headings = [
-      "Measured on-device performance",
+      "Measured self-hosted performance",
       "End-to-end architecture",
       "4-agent QVAC pipeline (recorded run)",
       "Edge vs Cloud — real measured timings",
@@ -89,10 +89,10 @@ describe("EvidencePage — page structure", () => {
 describe("EvidencePage — metric cards", () => {
   it("renders all 4 headline metric cards", () => {
     render(<EvidencePage />);
-    expect(screen.getByText("Edge pipeline (4 agents)")).toBeDefined();
+    expect(screen.getByText("Self-hosted pipeline (4 agents)")).toBeDefined();
     expect(screen.getByText("Cloud verdict (parallel)")).toBeDefined();
-    expect(screen.getByText("Edge outputs vs cloud")).toBeDefined();
-    expect(screen.getByText("Data leaving device")).toBeDefined();
+    expect(screen.getByText("Self-hosted outputs vs cloud")).toBeDefined();
+    expect(screen.getByText("Third-party model API")).toBeDefined();
   });
 
   it("renders the edge pipeline latency value (appears twice — metric card + total pipeline)", () => {
@@ -101,9 +101,9 @@ describe("EvidencePage — metric cards", () => {
     expect(screen.getAllByText("21.5s").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders the '0 bytes' data claim", () => {
+  it("renders the 'None' third-party API claim", () => {
     render(<EvidencePage />);
-    expect(screen.getByText("0 bytes")).toBeDefined();
+    expect(screen.getByText("None")).toBeDefined();
   });
 
   it("renders the '4×' throughput claim", () => {
@@ -153,7 +153,7 @@ describe("EvidencePage — agent trace", () => {
 describe("EvidencePage — Edge vs Cloud benchmark", () => {
   it("renders both timing labels", () => {
     render(<EvidencePage />);
-    expect(screen.getByText(/Edge \(on-device/)).toBeDefined();
+    expect(screen.getByText(/Self-hosted \(4 agents\)/)).toBeDefined();
     expect(screen.getByText(/Cloud \(parallel verdict\)/)).toBeDefined();
   });
 });
@@ -188,8 +188,8 @@ describe("EvidencePage — fallback chain", () => {
 
   it("renders primary and fallback columns", () => {
     render(<EvidencePage />);
-    expect(screen.getByText("On-device inference")).toBeDefined();
-    expect(screen.getByText("Deterministic verdict from score")).toBeDefined();
+    expect(screen.getByText("Self-hosted inference")).toBeDefined();
+    expect(screen.getByText("Always available — no AI needed")).toBeDefined();
     expect(screen.getByText(/Deterministic rule-based prescription/)).toBeDefined();
   });
 });

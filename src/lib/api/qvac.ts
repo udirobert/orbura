@@ -27,7 +27,7 @@ export interface QvacProgress {
 }
 
 /**
- * Calls the QVAC edge AI inference endpoint via SSE.
+ * Calls the self-hosted QVAC inference endpoint via SSE.
  * Reports progress via onProgress callback and returns the final advice.
  *
  * POST /api/qvac/infer

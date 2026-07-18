@@ -74,7 +74,7 @@ export const CustomColor: Story = {
   args: {
     label: "Edge inference",
     value: "21.5s",
-    sub: "On-device QVAC pipeline",
+    sub: "Self-hosted QVAC pipeline",
     color: "#A78BFA",
   },
 };

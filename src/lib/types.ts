@@ -51,8 +51,9 @@ export interface Stressor {
 export interface SquadPlayer {
   id: string;
   name: string;
-  position: "GK" | "DEF" | "MID" | "FWD";
-  stressors: Stressor[];
+  position: string;
+  jerseyNumber?: number | null;
+  stressors?: Stressor[];
   faceAnalysis?: FaceAnalysisResult | null;
   analysis?: DebtAnalysis | null;
   /** Player's EVM address for receiving USDt payments (WDK) */
@@ -156,7 +157,7 @@ export interface DebtAnalysis {
   };
   confidenceLevel: "high" | "medium" | "low";
   sessionId?: number;
-  // ─── Multi-agent edge AI metadata ────────────────────────────────────────
+  // ─── Multi-agent QVAC metadata ───────────────────────────────────────────
   agentTrace?: AgentTrace;
   schedule?: ScheduleBlock[];
   // ─── Counterfactual insight ──────────────────────────────────────────────
@@ -168,7 +169,7 @@ export interface DebtAnalysis {
   };
 }
 
-// ─── Multi-agent edge AI ─────────────────────────────────────────────────────
+// ─── Multi-agent QVAC metadata ───────────────────────────────────────────────
 
 export interface AgentStep {
   agent: "triage" | "coach" | "schedule" | "reflection";

@@ -28,9 +28,9 @@ import {
  * TetherPage — judge page for the Tether Developers Cup.
  *
  * Story: a football match is a physiological event for the players AND the
- * billions who watch. One on-device engine, two experiences — Match Fit (the
+ * billions who watch. One self-hosted engine, two experiences — Match Fit (the
  * team doctor for players & coaches, + WDK squad payments) and Fan Recovery
- * (an emotional-recovery coach for fans). No cloud, no API keys, no account.
+ * (an emotional-recovery coach for fans). No third-party model API, no account.
  */
 export function TetherPage() {
   return (
@@ -167,7 +167,7 @@ export function TetherPage() {
             className="text-[10px] font-mono uppercase tracking-widest mb-3"
             style={{ color: "var(--color-text-faint)" }}
           >
-            Two experiences · one on-device engine
+            Two experiences · one self-hosted engine
           </h2>
           <div className="grid grid-cols-1 gap-2">
             {EXPERIENCES.map((e, i) => (
@@ -296,7 +296,7 @@ export function TetherPage() {
             className="text-[10px] font-mono uppercase tracking-widest mb-3"
             style={{ color: "var(--color-text-faint)" }}
           >
-            On-device performance
+            Self-hosted performance
           </h2>
           <div className="grid grid-cols-2 gap-2">
             <MetricCard
@@ -460,7 +460,7 @@ export function TetherPage() {
                 className="text-xs font-bold"
                 style={{ color: "var(--color-states-success)" }}
               >
-                {PERFORMANCE.totalPipeline} · on-device · zero cloud
+                {PERFORMANCE.totalPipeline} · app server · no model API
               </span>
             </div>
           </div>
@@ -558,7 +558,7 @@ export function TetherPage() {
             </p>
           </div>
 
-          {/* Sample on-device wind-down output */}
+          {/* Sample self-hosted wind-down output */}
           <div
             className="rounded-2xl p-4"
             style={{
@@ -570,7 +570,7 @@ export function TetherPage() {
               className="text-[9px] font-mono uppercase tracking-wider block mb-2"
               style={{ color: "var(--color-text-faint)" }}
             >
-              QVAC coach · after a shootout defeat · on-device
+              QVAC coach · after a shootout defeat · self-hosted
             </span>
             <pre
               className="text-[10px] font-mono whitespace-pre-wrap leading-relaxed rounded-lg p-2 mb-2"
@@ -713,13 +713,13 @@ export function TetherPage() {
           </div>
         </section>
 
-        {/* ─── Fallback chain (deterministic, no cloud AI) ─── */}
+        {/* ─── Fallback chain (deterministic, no third-party model API) ─── */}
         <section>
           <h2
             className="text-[10px] font-mono uppercase tracking-widest mb-3"
             style={{ color: "var(--color-text-faint)" }}
           >
-            Graceful degradation — no cloud AI, ever
+            Graceful degradation — deterministic fallback
           </h2>
           <div
             className="rounded-2xl overflow-hidden"
@@ -764,8 +764,8 @@ export function TetherPage() {
             className="text-[10px] mt-2 font-mono"
             style={{ color: "var(--color-text-faint)" }}
           >
-            Every layer has a deterministic fallback. No cloud AI calls, ever.
-            The app works fully offline after the QVAC model is cached.
+            Every layer has a deterministic fallback. The hosted app runs QVAC
+            on its server process without a third-party model API.
           </p>
         </section>
 
@@ -984,7 +984,7 @@ export function TetherPage() {
             className="text-[10px] font-mono"
             style={{ color: "var(--color-text-disabled)" }}
           >
-            For the players and the billions who watch. Scan a player and send a bonus — or log a loss and get a wind-down. All on-device. No cloud. No API keys.
+            For the players and the billions who watch. Scan a player and send a bonus — or log a loss and get a wind-down. Browser-local proof, self-hosted QVAC, no third-party model API.
           </p>
           <div className="flex justify-center gap-3 pt-2">
             <Link

@@ -34,10 +34,10 @@ export const ARCHITECTURE_STEPS = [
 ];
 
 export const FALLBACK_CHAIN = [
-  { layer: "QVAC 4-agent pipeline",     primary: "On-device inference",          fallback: "Cloud AI (Eazo/deepseek, 5–8s timeout)" },
-  { layer: "Verdict",                   primary: "Cloud AI (Eazo parallel)",     fallback: "Deterministic verdict from score" },
-  { layer: "Prescription",              primary: "QVAC Coach Agent",            fallback: "Deterministic rule-based prescription" },
-  { layer: "Schedule",                  primary: "QVAC Schedule Agent",         fallback: "Deterministic 4-block schedule" },
+  { layer: "QVAC 4-agent pipeline",     primary: "Self-hosted inference",        fallback: "Deterministic prescription + schedule from score" },
+  { layer: "Verdict",                   primary: "Deterministic Layer 1 score",  fallback: "Always available — no AI needed" },
+  { layer: "Prescription",              primary: "QVAC Coach Agent",             fallback: "Deterministic rule-based prescription" },
+  { layer: "Schedule",                  primary: "QVAC Schedule Agent",          fallback: "Deterministic 4-block schedule" },
   { layer: "Counterfactual",            primary: "Deterministic single-flip",    fallback: "Always available, no LLM needed" },
 ];
 

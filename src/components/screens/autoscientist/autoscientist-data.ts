@@ -3,7 +3,7 @@
  *
  * This is separate from the QVAC evidence-data.ts because the
  * AutoScientist Challenge has a different narrative: it's about
- * the data-to-model pipeline, not edge AI performance.
+ * the data-to-model pipeline, not QVAC inference performance.
  */
 
 // ─── The pipeline story ──────────────────────────────────────────────────────

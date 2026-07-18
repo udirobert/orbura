@@ -3,6 +3,7 @@ import { db } from "@/lib/db/client";
 import { terraConnections } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { logAction, isMemoryEnabled } from "@/lib/supermemory";
+import { verifyTerraWebhookSignature } from "@/lib/terra/webhook";
 
 export const maxDuration = 30;
 
@@ -20,6 +21,10 @@ export const maxDuration = 30;
  * TERRA_SIGNING_SECRET env var is present.
  */
 export async function POST(request: NextRequest) {
+  // Read the raw body first; Terra's HMAC is computed over the unaltered
+  // request text. We parse JSON only after verification.
+  const rawBody = await request.text();
+
   // Verify Terra signature if signing secret is configured
   const signingSecret = process.env.TERRA_SIGNING_SECRET;
   if (signingSecret) {
@@ -27,13 +32,15 @@ export async function POST(request: NextRequest) {
     if (!terraSignature) {
       return NextResponse.json({ error: "Missing signature" }, { status: 401 });
     }
-    // Basic presence check — full HMAC verification omitted for brevity
-    // In production: compute HMAC-SHA256(body, signingSecret) and compare
+    const valid = verifyTerraWebhookSignature(rawBody, terraSignature, signingSecret);
+    if (!valid) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
   }
 
   let payload: Record<string, unknown>;
   try {
-    payload = await request.json();
+    payload = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }

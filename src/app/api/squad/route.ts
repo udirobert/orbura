@@ -23,7 +23,7 @@ export async function GET() {
   const squad: SquadPlayer[] = rows.map((r) => ({
     id: r.id,
     name: r.name,
-    position: r.position ?? undefined,
+    position: r.position ?? "",
     jerseyNumber: r.jerseyNumber ?? undefined,
     analysis: r.analysis ?? null,
   }));

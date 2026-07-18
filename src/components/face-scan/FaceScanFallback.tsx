@@ -146,7 +146,7 @@ export function FaceScanFallback({ onSubmit, onSkip }: FaceScanFallbackProps) {
         <p className="text-xs leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
           The face detection model couldn&apos;t load. Answer a few quick questions
           about how you look right now — this approximates what the camera would
-          detect, all on-device.
+          detect, all in this browser.
         </p>
       </div>
 

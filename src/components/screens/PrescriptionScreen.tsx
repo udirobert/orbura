@@ -130,13 +130,13 @@ export function PrescriptionScreen() {
             <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
               style={{ backgroundColor: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
               <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "var(--color-states-success)" }} />
-              <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>Edge AI</span>
+              <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>QVAC AI</span>
             </span>
           )}
         </div>
         <p className="text-xs mt-1" style={{ color: "var(--color-text-faint)" }}>
           {analysis?.agentTrace?.source === "qvac-local"
-            ? "Generated on your device by 3 QVAC AI agents. No cloud calls."
+            ? "Generated on the app server by QVAC agents without a third-party model API."
             : "Based on your current body state. Specific. Actionable."}
         </p>
       </motion.div>

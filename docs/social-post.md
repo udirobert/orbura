@@ -20,6 +20,6 @@ Explore: bodydebt.thisyearnofear.com/coach-memory
 Full example: bodydebt.thisyearnofear.com/preview
 GitHub: github.com/udirobert/bodydebt
 
-Built with @Supermemory × QVAC on-device AI × Next.js
+Built with @Supermemory × QVAC self-hosted AI × Next.js
 
 #Supermemory #AI #RecoveryTech #Hackathon
