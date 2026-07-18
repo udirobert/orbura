@@ -6,12 +6,18 @@ import {
   careEscalations,
   carePatients,
   careClinicians,
+  careClinics,
   type CareObservationRow,
   type CareInterventionRow,
   type CareEscalationRow,
   type CarePatient,
   type CareClinician,
+  type CareClinic,
+  type NewCareClinic,
+  type NewCareClinician,
+  type NewCarePatient,
 } from "../schema/care";
+import { users, type User } from "../schema/users";
 
 export async function getCarePatientByUserId(userId: string): Promise<CarePatient | undefined> {
   const rows = await db.select().from(carePatients).where(eq(carePatients.userId, userId)).limit(1);
@@ -183,4 +189,59 @@ export async function getCareClinician(
     .where(and(eq(careClinicians.userId, userId), eq(careClinicians.clinicId, clinicId)))
     .limit(1);
   return rows[0];
+}
+
+export async function getCareClinicById(id: string): Promise<CareClinic | undefined> {
+  const rows = await db.select().from(careClinics).where(eq(careClinics.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function getUserByEmail(email: string): Promise<User | undefined> {
+  const rows = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return rows[0];
+}
+
+export async function createUser(input: { email: string; name?: string | null }): Promise<User> {
+  const now = new Date();
+  const [row] = await db
+    .insert(users)
+    .values({
+      id: crypto.randomUUID(),
+      email: input.email,
+      name: input.name ?? null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+  return row;
+}
+
+export async function createCareClinic(name: string): Promise<CareClinic> {
+  const [row] = await db
+    .insert(careClinics)
+    .values({ id: crypto.randomUUID(), name, createdAt: new Date() })
+    .returning();
+  return row;
+}
+
+export async function createCareClinician(input: NewCareClinician): Promise<CareClinician> {
+  const [row] = await db.insert(careClinicians).values(input).returning();
+  return row;
+}
+
+export async function createCarePatient(input: NewCarePatient): Promise<CarePatient> {
+  const [row] = await db.insert(carePatients).values(input).returning();
+  return row;
+}
+
+export async function updateCarePatientClinic(
+  patientId: string,
+  clinicId: string,
+): Promise<CarePatient> {
+  const [row] = await db
+    .update(carePatients)
+    .set({ clinicId, updatedAt: new Date() })
+    .where(eq(carePatients.id, patientId))
+    .returning();
+  return row;
 }

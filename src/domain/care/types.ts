@@ -72,9 +72,15 @@ export interface CareEscalation {
   resolvedAt: Date | null;
 }
 
+export interface CareEvidence {
+  source: string;
+  trialSource: string;
+  clinicalSignificance: string;
+}
+
 export type CareAction =
   | { type: "escalate"; reason: string }
-  | { type: "intervention"; action: string; explanation?: string };
+  | { type: "intervention"; action: string; explanation?: string; evidence?: CareEvidence };
 
 export interface CheckInResult {
   observation: CareObservation;

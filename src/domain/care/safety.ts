@@ -5,39 +5,63 @@ import type {
   CareSymptom,
   AdherenceStatus,
 } from "./types";
+import { getEvidenceBasedIntervention } from "@/lib/care/evidence";
 
-export const SEVERE_SYMPTOMS: CareSymptom[] = [
-  "vomiting",
-  "abdominal_pain",
+type TrackableSymptom = Exclude<CareSymptom, "none">;
+
+/** Hard safety signals — escalate regardless of severity. */
+const RED_FLAG_SYMPTOMS: TrackableSymptom[] = [
   "jaundice",
   "allergic_reaction",
   "hypoglycaemia_symptoms",
+  "fever",
 ];
+
+/** These symptoms are expected side effects at mild/moderate severity, but
+ * severe or persistent episodes require escalation. */
+const SEVERE_ACUTE_SYMPTOMS: TrackableSymptom[] = ["vomiting", "abdominal_pain"];
 
 /**
  * Deterministic GLP-1 safety and escalation rules for the first 12 weeks.
  *
- * These rules do not diagnose or change doses. They decide whether the next
- * action is a clinic escalation or an allowed self-care intervention from the
- * care plan.
+ * Interventions are sourced from the Ozarihealth GLP-1 side effects dataset
+ * (CC-BY-4.0) when available, and fall back to conservative generic guidance
+ * for symptoms not covered by the dataset.
  */
 export function evaluateObservation(
   input: CareObservationInput,
   previousObservations: Pick<CareObservation, "symptoms" | "symptomSeverity" | "checkInAt">[],
 ): CareAction {
-  const symptoms = new Set(input.symptoms);
+  const symptoms = input.symptoms.filter((s): s is TrackableSymptom => s !== "none");
 
-  // 1. Hard safety signals — always escalate
-  for (const severe of SEVERE_SYMPTOMS) {
-    if (symptoms.has(severe)) {
+  // 1. No symptoms reported
+  if (symptoms.length === 0) {
+    return { type: "intervention", action: "You're on track. Log again tomorrow." };
+  }
+
+  // 2. Hard safety signals — always escalate
+  for (const redFlag of RED_FLAG_SYMPTOMS) {
+    if (symptoms.includes(redFlag)) {
       return {
         type: "escalate",
-        reason: `Severe safety signal reported: ${severe.replace(/_/g, " ")}.`,
+        reason: `Severe safety signal reported: ${redFlag.replace(/_/g, " ")}.`,
       };
     }
   }
 
-  // 2. Persistent moderate+ symptom > 7 days
+  // 3. Severe vomiting or abdominal pain — possible pancreatitis / gallbladder
+  if (input.symptomSeverity === "severe") {
+    for (const severeAcute of SEVERE_ACUTE_SYMPTOMS) {
+      if (symptoms.includes(severeAcute)) {
+        return {
+          type: "escalate",
+          reason: `Severe ${severeAcute.replace(/_/g, " ")} reported — clinic review needed.`,
+        };
+      }
+    }
+  }
+
+  // 4. Persistent moderate+ symptom > 7 days
   const sameSymptomForDays = (symptom: CareSymptom) => {
     const matching = previousObservations.filter(
       (o) => o.symptoms.includes(symptom) && o.symptomSeverity !== "mild",
@@ -48,7 +72,7 @@ export function evaluateObservation(
     return days;
   };
 
-  for (const symptom of input.symptoms) {
+  for (const symptom of symptoms) {
     if (input.symptomSeverity !== "mild" && sameSymptomForDays(symptom) > 7) {
       return {
         type: "escalate",
@@ -57,7 +81,7 @@ export function evaluateObservation(
     }
   }
 
-  // 3. Adherence / disengagement
+  // 5. Adherence / disengagement
   if (input.adherence === "missed_multiple" || input.adherence === "stopped") {
     return {
       type: "escalate",
@@ -65,38 +89,31 @@ export function evaluateObservation(
     };
   }
 
-  // 4. Persistent nausea / diarrhoea with moderate severity
-  if (input.symptomSeverity === "moderate" || input.symptomSeverity === "severe") {
-    if (symptoms.has("nausea")) {
-      return { type: "intervention", action: "Eat a small, bland meal before your next dose and sip ginger tea." };
-    }
-    if (symptoms.has("diarrhoea")) {
-      return { type: "intervention", action: "Increase oral rehydration and avoid high-fat meals for 24 hours." };
-    }
-    if (symptoms.has("constipation")) {
-      return { type: "intervention", action: "Drink 500ml extra water today and add fibre to your next meal." };
-    }
-    if (symptoms.has("reflux")) {
-      return { type: "intervention", action: "Avoid lying down for 2 hours after eating and elevate your head tonight." };
-    }
-    if (symptoms.has("headache")) {
-      return { type: "intervention", action: "Drink 500ml water and rest in a dark room for 20 minutes." };
-    }
-    if (symptoms.has("fatigue")) {
-      return { type: "intervention", action: "Plan a 20-minute walk after your next meal and aim for 8 hours sleep." };
-    }
-    if (symptoms.has("dizziness")) {
-      return { type: "intervention", action: "Sit down, drink water, and do not drive until it passes." };
+  // 6. Evidence-based self-care intervention
+  for (const symptom of symptoms) {
+    const evidence = getEvidenceBasedIntervention(symptom, input.symptomSeverity);
+    if (evidence) {
+      return {
+        type: "intervention",
+        action: evidence.action,
+        evidence: evidence.evidence,
+      };
     }
   }
 
-  // 5. Mild symptoms
-  if (symptoms.has("nausea") || symptoms.has("fatigue")) {
-    return { type: "intervention", action: "Continue your care plan and log tomorrow to track the trend." };
-  }
+  // 7. Generic fallbacks for symptoms not in the dataset
+  const generic = getGenericIntervention(symptoms);
+  if (generic) return { type: "intervention", action: generic };
 
-  // 6. No symptoms, good adherence
+  // 8. Default on-track message
   return { type: "intervention", action: "You're on track. Log again tomorrow." };
+}
+
+function getGenericIntervention(symptoms: CareSymptom[]): string | undefined {
+  if (symptoms.includes("reflux")) return "Avoid lying down for 2 hours after eating and elevate your head tonight.";
+  if (symptoms.includes("dizziness")) return "Sit down, drink water, and do not drive until it passes.";
+  if (symptoms.includes("injection_site_reaction")) return "Rotate injection sites and apply a cool compress.";
+  return undefined;
 }
 
 export function missedDoseCount(adherence: AdherenceStatus): number {

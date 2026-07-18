@@ -61,12 +61,13 @@ describe("processCheckIn", () => {
     vi.useRealTimers();
   });
 
-  it("returns an on-track intervention when symptoms are mild and adherence is good", async () => {
+  it("returns an evidence-based intervention for mild nausea", async () => {
     const deps = makeDeps();
     const result = await processCheckIn(makeInput({ symptoms: ["nausea"], symptomSeverity: "mild" }), deps);
 
     expect(result.action.type).toBe("intervention");
-    expect(result.action.action).toBe("Continue your care plan and log tomorrow to track the trend.");
+    expect(result.action.action).toBe("Take with food; slow dose escalation; small meals");
+    expect(result.action.evidence).toBeDefined();
     expect(result.intervention).toBeDefined();
     expect(result.escalation).toBeUndefined();
     expect(deps.saveObservation).toHaveBeenCalledTimes(1);
@@ -75,17 +76,37 @@ describe("processCheckIn", () => {
     expect(deps.notifyEscalation).not.toHaveBeenCalled();
   });
 
-  it("escalates when a severe safety signal is reported", async () => {
+  it("returns an on-track intervention when no symptoms are reported", async () => {
     const deps = makeDeps();
-    const result = await processCheckIn(makeInput({ symptoms: ["vomiting"], symptomSeverity: "moderate" }), deps);
+    const result = await processCheckIn(makeInput({ symptoms: ["none"], symptomSeverity: "mild" }), deps);
+
+    expect(result.action.type).toBe("intervention");
+    expect(result.action.action).toBe("You're on track. Log again tomorrow.");
+    expect(result.intervention).toBeDefined();
+    expect(result.escalation).toBeUndefined();
+  });
+
+  it("escalates when a red-flag safety signal is reported", async () => {
+    const deps = makeDeps();
+    const result = await processCheckIn(makeInput({ symptoms: ["jaundice"], symptomSeverity: "moderate" }), deps);
 
     expect(result.action.type).toBe("escalate");
-    expect(result.action.reason).toBe("Severe safety signal reported: vomiting.");
+    expect(result.action.reason).toBe("Severe safety signal reported: jaundice.");
     expect(result.escalation).toBeDefined();
     expect(result.intervention).toBeUndefined();
     expect(deps.saveEscalation).toHaveBeenCalledTimes(1);
     expect(deps.notifyEscalation).toHaveBeenCalledTimes(1);
     expect(deps.notifyEscalation).toHaveBeenCalledWith(result.escalation);
+  });
+
+  it("escalates when vomiting is reported as severe", async () => {
+    const deps = makeDeps();
+    const result = await processCheckIn(makeInput({ symptoms: ["vomiting"], symptomSeverity: "severe" }), deps);
+
+    expect(result.action.type).toBe("escalate");
+    expect(result.action.reason).toBe("Severe vomiting reported — clinic review needed.");
+    expect(result.escalation).toBeDefined();
+    expect(result.intervention).toBeUndefined();
   });
 
   it("escalates when adherence is stopped or multiple doses are missed", async () => {
@@ -119,12 +140,13 @@ describe("processCheckIn", () => {
     expect(result.action.reason).toBe("nausea has persisted at moderate or severe for more than 7 days.");
   });
 
-  it("returns a symptom-specific intervention for moderate nausea", async () => {
+  it("returns an evidence-based intervention for moderate nausea", async () => {
     const deps = makeDeps();
     const result = await processCheckIn(makeInput({ symptoms: ["nausea"], symptomSeverity: "moderate" }), deps);
 
     expect(result.action.type).toBe("intervention");
-    expect(result.action.action).toBe("Eat a small, bland meal before your next dose and sip ginger tea.");
+    expect(result.action.action).toBe("Take with food; slow dose escalation; small meals");
+    expect(result.action.evidence).toBeDefined();
   });
 
   it("sets the intervention dueAt to 24 hours after creation", async () => {
@@ -141,8 +163,8 @@ describe("processCheckIn", () => {
     const result = await processCheckIn(makeInput(), deps);
 
     expect(result.action.type).toBe("intervention");
-    expect(result.action.explanation).toBe("Explained: Continue your care plan and log tomorrow to track the trend.");
-    expect(result.intervention!.action).toBe("Continue your care plan and log tomorrow to track the trend.");
+    expect(result.action.explanation).toBe("Explained: Take with food; slow dose escalation; small meals");
+    expect(result.intervention!.action).toBe("Take with food; slow dose escalation; small meals");
     expect(deps.explainIntervention).toHaveBeenCalledTimes(1);
   });
 });

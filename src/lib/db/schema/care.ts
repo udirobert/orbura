@@ -43,6 +43,12 @@ export const careEscalationStatusEnum = pgEnum("care_escalation_status", [
 
 export const careClinicianRoleEnum = pgEnum("care_clinician_role", ["clinician", "admin"]);
 
+export const careClinics = pgTable("care_clinics", {
+  id: varchar("id", { length: 128 }).primaryKey(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const carePatients = pgTable("care_patients", {
   id: varchar("id", { length: 128 }).primaryKey(),
   userId: varchar("user_id", { length: 128 }).notNull(),
@@ -104,3 +110,5 @@ export type CareEscalationRow = InferSelectModel<typeof careEscalations>;
 export type NewCareEscalation = InferInsertModel<typeof careEscalations>;
 export type CareClinician = InferSelectModel<typeof careClinicians>;
 export type NewCareClinician = InferInsertModel<typeof careClinicians>;
+export type CareClinic = InferSelectModel<typeof careClinics>;
+export type NewCareClinic = InferInsertModel<typeof careClinics>;
