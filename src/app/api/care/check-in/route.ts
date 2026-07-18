@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { notifications } from "@/lib/sdk/eazo-server";
 import { ai } from "@/lib/sdk/eazo-client";
+import { sendEmail } from "@/lib/email";
 import { processCheckIn } from "@/application/care/check-in";
 import { careObservations, careInterventions, careEscalations, carePatients } from "@/lib/db/schema/care";
 import { db } from "@/lib/db/client";
@@ -104,19 +105,33 @@ export async function POST(request: NextRequest) {
       return row as CareEscalation;
     },
     notifyEscalation: async (escalation) => {
-      if (!notifications.available) {
-        console.log("[care/escalation] notification suppressed (notifications unavailable)", escalation.id);
+      const careTeamEmail = process.env.CARE_TEAM_EMAIL;
+      if (careTeamEmail) {
+        try {
+          await sendEmail({
+            to: careTeamEmail,
+            subject: "Care Companion escalation",
+            text: `A patient check-in generated an escalation.\n\nReason: ${escalation.reason}\nPatient: ${escalation.patientId}\nEscalation ID: ${escalation.id}`,
+          });
+        } catch (err) {
+          console.error("[care/escalation] email failed", err);
+        }
         return;
       }
-      try {
-        await notifications.publish({
-          title: "Care escalation",
-          body: escalation.reason,
-          data: { escalationId: escalation.id, patientId: escalation.patientId },
-          audience: "care-team",
-        });
-      } catch {
-        // Never block check-in on notification failure.
+
+      if (notifications.available) {
+        try {
+          await notifications.publish({
+            title: "Care escalation",
+            body: escalation.reason,
+            data: { escalationId: escalation.id, patientId: escalation.patientId },
+            audience: "care-team",
+          });
+        } catch {
+          // Never block check-in on notification failure.
+        }
+      } else {
+        console.log("[care/escalation] notification suppressed (no CARE_TEAM_EMAIL or push config)", escalation.id);
       }
     },
     explainIntervention: async (_input, action) => {

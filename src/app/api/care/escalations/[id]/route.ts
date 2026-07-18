@@ -1,6 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { getCareEscalationWithPatientById, updateCareEscalationStatus } from "@/lib/db/queries/care";
+import {
+  getCareEscalationWithPatientById,
+  updateCareEscalationStatus,
+  getCareClinician,
+} from "@/lib/db/queries/care";
 
 export const maxDuration = 30;
 
@@ -8,8 +12,8 @@ export const maxDuration = 30;
  * PATCH /api/care/escalations/[id]
  *
  * Clinicians can resolve or mark an escalation as reviewed.
- * In the first wedge this is gated by a clinicId in the body; proper
- * clinician RBAC will replace this once care_clinicians is introduced.
+ * The caller must be a registered clinician for the clinic and the
+ * escalation's patient must belong to the same clinic.
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth(request);
@@ -24,12 +28,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "clinicId is required" }, { status: 400 });
   }
 
-  const escalation = await getCareEscalationWithPatientById(id);
+  const [escalation, clinician] = await Promise.all([
+    getCareEscalationWithPatientById(id),
+    getCareClinician(auth.user.id, body.clinicId),
+  ]);
   if (!escalation) {
     return NextResponse.json({ error: "escalation not found" }, { status: 404 });
   }
-  if (escalation.patient.clinicId !== body.clinicId) {
-    return NextResponse.json({ error: "escalation does not belong to this clinic" }, { status: 403 });
+  if (!clinician || escalation.patient.clinicId !== body.clinicId) {
+    return NextResponse.json({ error: "not authorized" }, { status: 403 });
   }
 
   const updated = await updateCareEscalationStatus(id, body.status);

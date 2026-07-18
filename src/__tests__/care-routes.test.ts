@@ -14,6 +14,7 @@ vi.mock("@/application/care/check-in", () => ({
 vi.mock("@/lib/db/queries/care", () => ({
   getOpenEscalationsForClinic: vi.fn(),
   getPendingInterventionsForClinic: vi.fn(),
+  getCareClinician: vi.fn(),
 }));
 
 import { requireAuth } from "@/lib/auth";
@@ -21,6 +22,7 @@ import { processCheckIn } from "@/application/care/check-in";
 import {
   getOpenEscalationsForClinic,
   getPendingInterventionsForClinic,
+  getCareClinician,
 } from "@/lib/db/queries/care";
 
 function mockAuth(userId = "user-1") {
@@ -143,8 +145,18 @@ describe("GET /api/care/summary", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns open escalations and pending interventions for a clinic", async () => {
+  it("returns 403 when the caller is not a clinician for the clinic", async () => {
     mockAuth();
+    (getCareClinician as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    const req = new Request("http://localhost:3000/api/care/summary?clinicId=clinic-1");
+    const res = await GET(req as never);
+    expect(res.status).toBe(403);
+  });
+
+  it("returns open escalations and pending interventions for an authorized clinician", async () => {
+    mockAuth();
+    (getCareClinician as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "clin-1", userId: "user-1", clinicId: "clinic-1" });
     const escalations = [{ id: "esc-1", reason: "Severe symptom" }];
     const interventions = [{ id: "int-1", action: "Drink water." }];
     (getOpenEscalationsForClinic as ReturnType<typeof vi.fn>).mockResolvedValue(escalations);

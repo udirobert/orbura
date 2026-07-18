@@ -13,6 +13,7 @@ vi.mock("@/lib/db/queries/care", () => ({
   updateCareInterventionStatus: vi.fn(),
   getCareEscalationWithPatientById: vi.fn(),
   updateCareEscalationStatus: vi.fn(),
+  getCareClinician: vi.fn(),
 }));
 
 import { requireAuth } from "@/lib/auth";
@@ -22,6 +23,7 @@ import {
   updateCareInterventionStatus,
   getCareEscalationWithPatientById,
   updateCareEscalationStatus,
+  getCareClinician,
 } from "@/lib/db/queries/care";
 
 function mockAuth(userId = "user-1") {
@@ -128,12 +130,13 @@ describe("PATCH /api/care/escalations/[id]", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns 403 when the escalation belongs to a different clinic", async () => {
+  it("returns 403 when the caller is not a clinician for the clinic", async () => {
     mockAuth();
     (getCareEscalationWithPatientById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: "esc-1",
-      patient: { clinicId: "clinic-2" },
+      patient: { clinicId: "clinic-1" },
     });
+    (getCareClinician as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
     const req = new Request("http://localhost:3000/api/care/escalations/esc-1", {
       method: "PATCH",
@@ -143,12 +146,29 @@ describe("PATCH /api/care/escalations/[id]", () => {
     expect(res.status).toBe(403);
   });
 
-  it("updates the escalation status", async () => {
+  it("returns 403 when the escalation belongs to a different clinic", async () => {
+    mockAuth();
+    (getCareEscalationWithPatientById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: "esc-1",
+      patient: { clinicId: "clinic-2" },
+    });
+    (getCareClinician as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "clin-1", userId: "user-1", clinicId: "clinic-1" });
+
+    const req = new Request("http://localhost:3000/api/care/escalations/esc-1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "resolved", clinicId: "clinic-1" }),
+    });
+    const res = await patchEscalation(req as never, { params: Promise.resolve({ id: "esc-1" }) });
+    expect(res.status).toBe(403);
+  });
+
+  it("updates the escalation status when the caller is an authorized clinician", async () => {
     mockAuth();
     (getCareEscalationWithPatientById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: "esc-1",
       patient: { clinicId: "clinic-1" },
     });
+    (getCareClinician as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "clin-1", userId: "user-1", clinicId: "clinic-1" });
     (updateCareEscalationStatus as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "esc-1", status: "resolved" });
 
     const req = new Request("http://localhost:3000/api/care/escalations/esc-1", {

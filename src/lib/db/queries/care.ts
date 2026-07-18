@@ -5,10 +5,12 @@ import {
   careInterventions,
   careEscalations,
   carePatients,
+  careClinicians,
   type CareObservationRow,
   type CareInterventionRow,
   type CareEscalationRow,
   type CarePatient,
+  type CareClinician,
 } from "../schema/care";
 
 export async function getCarePatientByUserId(userId: string): Promise<CarePatient | undefined> {
@@ -168,5 +170,17 @@ export async function updateCareEscalationStatus(
     .set({ status, resolvedAt: new Date() })
     .where(eq(careEscalations.id, id))
     .returning();
+  return rows[0];
+}
+
+export async function getCareClinician(
+  userId: string,
+  clinicId: string,
+): Promise<CareClinician | undefined> {
+  const rows = await db
+    .select()
+    .from(careClinicians)
+    .where(and(eq(careClinicians.userId, userId), eq(careClinicians.clinicId, clinicId)))
+    .limit(1);
   return rows[0];
 }
