@@ -5,6 +5,7 @@ import type {
   CareObservation,
   CareIntervention,
   CareEscalation,
+  CareAction,
 } from "@/domain/care/types";
 
 function makeInput(overrides: Partial<CareObservationInput> = {}): CareObservationInput {
@@ -47,8 +48,18 @@ function makeDeps() {
       return escalation;
     }),
     notifyEscalation: vi.fn(async () => undefined),
-    explainIntervention: vi.fn(async (_input, action) => `Explained: ${action.action}`),
+    explainIntervention: vi.fn(async (_input, action) => `Explained: ${(action as CareAction & { type: "intervention" }).action}`),
   };
+}
+
+function getInterventionAction(action: CareAction) {
+  expect(action.type).toBe("intervention");
+  return action as CareAction & { type: "intervention" };
+}
+
+function getEscalateAction(action: CareAction) {
+  expect(action.type).toBe("escalate");
+  return action as CareAction & { type: "escalate" };
 }
 
 describe("processCheckIn", () => {
@@ -64,10 +75,10 @@ describe("processCheckIn", () => {
   it("returns an evidence-based intervention for mild nausea", async () => {
     const deps = makeDeps();
     const result = await processCheckIn(makeInput({ symptoms: ["nausea"], symptomSeverity: "mild" }), deps);
+    const action = getInterventionAction(result.action);
 
-    expect(result.action.type).toBe("intervention");
-    expect(result.action.action).toBe("Take with food; slow dose escalation; small meals");
-    expect(result.action.evidence).toBeDefined();
+    expect(action.action).toBe("Take with food; slow dose escalation; small meals");
+    expect(action.evidence).toBeDefined();
     expect(result.intervention).toBeDefined();
     expect(result.escalation).toBeUndefined();
     expect(deps.saveObservation).toHaveBeenCalledTimes(1);
@@ -79,9 +90,9 @@ describe("processCheckIn", () => {
   it("returns an on-track intervention when no symptoms are reported", async () => {
     const deps = makeDeps();
     const result = await processCheckIn(makeInput({ symptoms: ["none"], symptomSeverity: "mild" }), deps);
+    const action = getInterventionAction(result.action);
 
-    expect(result.action.type).toBe("intervention");
-    expect(result.action.action).toBe("You're on track. Log again tomorrow.");
+    expect(action.action).toBe("You're on track. Log again tomorrow.");
     expect(result.intervention).toBeDefined();
     expect(result.escalation).toBeUndefined();
   });
@@ -89,9 +100,9 @@ describe("processCheckIn", () => {
   it("escalates when a red-flag safety signal is reported", async () => {
     const deps = makeDeps();
     const result = await processCheckIn(makeInput({ symptoms: ["jaundice"], symptomSeverity: "moderate" }), deps);
+    const action = getEscalateAction(result.action);
 
-    expect(result.action.type).toBe("escalate");
-    expect(result.action.reason).toBe("Severe safety signal reported: jaundice.");
+    expect(action.reason).toBe("Severe safety signal reported: jaundice.");
     expect(result.escalation).toBeDefined();
     expect(result.intervention).toBeUndefined();
     expect(deps.saveEscalation).toHaveBeenCalledTimes(1);
@@ -102,9 +113,9 @@ describe("processCheckIn", () => {
   it("escalates when vomiting is reported as severe", async () => {
     const deps = makeDeps();
     const result = await processCheckIn(makeInput({ symptoms: ["vomiting"], symptomSeverity: "severe" }), deps);
+    const action = getEscalateAction(result.action);
 
-    expect(result.action.type).toBe("escalate");
-    expect(result.action.reason).toBe("Severe vomiting reported — clinic review needed.");
+    expect(action.reason).toBe("Severe vomiting reported — clinic review needed.");
     expect(result.escalation).toBeDefined();
     expect(result.intervention).toBeUndefined();
   });
@@ -112,11 +123,11 @@ describe("processCheckIn", () => {
   it("escalates when adherence is stopped or multiple doses are missed", async () => {
     const deps = makeDeps();
     const stopped = await processCheckIn(makeInput({ adherence: "stopped" }), deps);
-    expect(stopped.action.type).toBe("escalate");
-    expect(stopped.action.reason).toBe("Multiple missed doses or treatment stopped — clinic follow-up required.");
+    const stoppedAction = getEscalateAction(stopped.action);
+    expect(stoppedAction.reason).toBe("Multiple missed doses or treatment stopped — clinic follow-up required.");
 
     const missed = await processCheckIn(makeInput({ adherence: "missed_multiple" }), deps);
-    expect(missed.action.type).toBe("escalate");
+    getEscalateAction(missed.action);
   });
 
   it("escalates when a moderate+ symptom persists for more than 7 days", async () => {
@@ -135,18 +146,18 @@ describe("processCheckIn", () => {
     } as CareObservation);
 
     const result = await processCheckIn(makeInput({ symptoms: ["nausea"], symptomSeverity: "moderate" }), deps);
+    const action = getEscalateAction(result.action);
 
-    expect(result.action.type).toBe("escalate");
-    expect(result.action.reason).toBe("nausea has persisted at moderate or severe for more than 7 days.");
+    expect(action.reason).toBe("nausea has persisted at moderate or severe for more than 7 days.");
   });
 
   it("returns an evidence-based intervention for moderate nausea", async () => {
     const deps = makeDeps();
     const result = await processCheckIn(makeInput({ symptoms: ["nausea"], symptomSeverity: "moderate" }), deps);
+    const action = getInterventionAction(result.action);
 
-    expect(result.action.type).toBe("intervention");
-    expect(result.action.action).toBe("Take with food; slow dose escalation; small meals");
-    expect(result.action.evidence).toBeDefined();
+    expect(action.action).toBe("Take with food; slow dose escalation; small meals");
+    expect(action.evidence).toBeDefined();
   });
 
   it("sets the intervention dueAt to 24 hours after creation", async () => {
@@ -161,9 +172,9 @@ describe("processCheckIn", () => {
   it("explains the intervention but keeps the raw action in the intervention record", async () => {
     const deps = makeDeps();
     const result = await processCheckIn(makeInput(), deps);
+    const action = getInterventionAction(result.action);
 
-    expect(result.action.type).toBe("intervention");
-    expect(result.action.explanation).toBe("Explained: Take with food; slow dose escalation; small meals");
+    expect(action.explanation).toBe("Explained: Take with food; slow dose escalation; small meals");
     expect(result.intervention!.action).toBe("Take with food; slow dose escalation; small meals");
     expect(deps.explainIntervention).toHaveBeenCalledTimes(1);
   });
