@@ -59,3 +59,26 @@ route into `/auth/signin`. Preferences + squad sync still hydrate after login.
 Also landed alongside this pass: user preferences sync, patterns hooks, squad
 API/schema, memory migrate path, and related Drizzle migrations. Env template
 documents `AUTH_SECRET`, `AUTH_URL`, email magic-link SMTP, and GitHub OAuth.
+
+## Care Companion — clinic-enrolled check-ins and care record
+
+**Decision:** the patient surface is now clinic-enrolled. A check-in only becomes
+part of the care record once a clinic has assigned the patient, so the app
+cannot promise a care-team response for an unassigned user.
+
+**Shipped:**
+
+- `carePatients.clinicId` is required to submit or view a care summary; routes
+  return `403` with a clear message when the patient is not enrolled.
+- `fastingGlucoseUnit` added to observations, schema, forms, API validation, and
+  summary display (mg/dL or mmol/L).
+- `currentDoseMg` and `startedAt` fields on `carePatients`, editable from the
+  clinic admin enrolment flow.
+- Patient summary now surfaces the clinic name, medication, dose, and treatment
+  start date as a read-only care record.
+- Recent intervention outcomes (completed / skipped) are shown to both patients
+  and clinicians, forming a simple adherence trail between visits.
+- `CarePage`, `CareSummaryPage`, `ClinicianPage`, and `ClinicAdminPage` redesigned
+  around one clear next step and exception-oriented review.
+- Updated test suites to match the new enrolment and outcome shapes; all
+  care-related tests pass.
