@@ -53,9 +53,9 @@ export async function POST(request: NextRequest) {
   await linkAnonymousId(userId, anonymousId);
 
   // If Supermemory is enabled, log a bridge memory under the new userId
-  // containerTag so the coach knows about the guest history
+  // containerTag so the coach knows the guest history is now tied to this user.
   if (isMemoryEnabled) {
-    logAction(userId, `User migrated from guest session. Previous anonymousId: ${anonymousId}. All prior guest memories should be associated with this user.`, {
+    logAction(userId, "Guest check-ins are now linked to this account.", {
       type: "memory_migration",
       anonymousId,
     }).catch(() => {});

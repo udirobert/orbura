@@ -33,12 +33,21 @@ export function OpeningScreen() {
   const [copyVisible, setCopyVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
+  const rawMemories = memoryData?.memories ?? [];
+  const usefulMemories = rawMemories.filter(
+    (m) =>
+      m &&
+      !m.includes("anonymousId") &&
+      !m.includes("User migrated from guest session") &&
+      !m.startsWith("User ") &&
+      !m.includes("memory_migration"),
+  );
   const memoryReturning =
-    memoryData?.enabled && (memoryData.profile || memoryData.memories.length > 0);
+    memoryData?.enabled && (memoryData.profile || usefulMemories.length > 0);
   const localReturning = hasSeenOpening || streakDays > 0 || !!(lastWakeTime && lastBedTime);
   const isReturning = memoryReturning || localReturning;
   const memorySummary = memoryReturning
-    ? memoryData.memories.slice(0, 2).join(" · ")
+    ? (memoryData.profile || usefulMemories.slice(0, 2).join(" · ")).trim()
     : "";
   const sleepHabit =
     lastWakeTime && lastBedTime ? `${lastBedTime} → ${lastWakeTime}` : null;
@@ -65,7 +74,7 @@ export function OpeningScreen() {
     router.prefetch("/wake-time");
     memory
       .reportAction({
-        content: `User started a ${mode} session from the opening screen.`,
+        content: `Started a ${mode === "personal" ? "personal" : mode === "football" ? "Match Fit" : "Fan Recovery"} check-in from the welcome screen.`,
         event_type: "start",
         page: "opening",
         metadata: { type: "start_session", mode },
@@ -179,7 +188,7 @@ export function OpeningScreen() {
                 style={{
                   fontFamily: "var(--font-heading)",
                   fontSize: "clamp(1.05rem, 4vw, 1.25rem)",
-                  color: "rgba(168,162,158,0.85)",
+                  color: "var(--color-text-secondary)",
                   letterSpacing: "0.01em",
                 }}
               >
@@ -200,7 +209,7 @@ export function OpeningScreen() {
                   type="button"
                   onClick={() => router.push("/coach-memory")}
                   className="mt-4 text-[10px] font-mono tracking-wide underline-offset-2 hover:underline"
-                  style={{ color: "#a855f7" }}
+                  style={{ color: "var(--color-system-muscular)" }}
                 >
                   How your coach learns over time →
                 </button>
@@ -238,7 +247,7 @@ export function OpeningScreen() {
                   type="button"
                   onClick={() => router.push("/coach-memory")}
                   className="mt-2 text-[9px] font-mono"
-                  style={{ color: "#a855f7" }}
+                  style={{ color: "var(--color-system-muscular)" }}
                 >
                   How your coach uses this →
                 </button>
@@ -277,7 +286,7 @@ export function OpeningScreen() {
               <div className="flex flex-col items-center gap-2.5">
                 <p
                   className="text-[10px] font-mono uppercase tracking-widest"
-                  style={{ color: "rgba(82,79,76,0.75)" }}
+                  style={{ color: "var(--color-text-faint)" }}
                 >
                   Or continue as
                 </p>
@@ -287,7 +296,7 @@ export function OpeningScreen() {
                       {i > 0 && (
                         <span
                           className="mx-2 text-[10px]"
-                          style={{ color: "rgba(82,79,76,0.5)" }}
+                          style={{ color: "var(--color-text-disabled)" }}
                           aria-hidden
                         >
                           ·
@@ -309,7 +318,7 @@ export function OpeningScreen() {
 
               <p
                 className="text-center text-[10px] tracking-widest uppercase font-mono"
-                style={{ color: "rgba(82,79,76,0.7)" }}
+                style={{ color: "var(--color-text-faint)" }}
               >
                 {isReturning
                   ? "Self-hosted QVAC · Your memory, your control"
