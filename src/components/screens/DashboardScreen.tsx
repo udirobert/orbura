@@ -13,6 +13,8 @@ import { DebtGauge } from "./DebtGauge";
 import { RecoveryTimeline } from "./RecoveryTimeline";
 import { DonutChart, BarChartView } from "./StressorBreakdownChart";
 import { AnalysisLoader } from "@/components/AnalysisLoader";
+import { orburaPresence } from "@/lib/mira/orbura-mapping";
+import type { MiraPresence } from "@/lib/mira/contract";
 import { SystemPanels } from "@/components/SystemPanels";
 import { SystemClearanceNotifier } from "@/components/SystemClearanceNotifier";
 import { PersonalityPicker } from "./personality-picker";
@@ -134,6 +136,28 @@ export function DashboardScreen() {
   // the target. Keeping this out of state avoids a cascading render
   // (setState inside effect → re-render → effect re-runs → ...).
   const scoreLanded = !!analysis && displayScore >= analysis.debtScore;
+
+  // ── Mira presence ──────────────────────────────────────────────────────────
+  // The orb transforms into Mira mode when the prescription is ready and
+  // the score has landed. It stays in Mira mode while the user is on the
+  // dashboard with an active analysis — the orb is Mira speaking, not just
+  // a gauge. When the user starts a new assessment (analysis cleared), the
+  // orb returns to debt mode.
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  useEffect(() => {
+    if (!analysis) return;
+    const id = setInterval(() => setNowTs(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, [analysis]);
+  const miraPresence: MiraPresence | null = (() => {
+    if (!analysis || !scoreLanded) return null;
+    const hasPrescription = !!analysis.prescription;
+    const clearedAt = new Date(analysis.recoveryArc.clearedAt).getTime();
+    const isCleared = clearedAt <= nowTs;
+    if (isCleared) return orburaPresence("cleared");
+    if (hasPrescription) return orburaPresence("prescription");
+    return orburaPresence("recovering");
+  })();
 
   const [personalityOpen, setPersonalityOpen] = useState(false);
   const personalityCfg = getPersonality(orbPersonality);
@@ -446,7 +470,33 @@ export function DashboardScreen() {
 
       {/* ── Layer 1: Orb + Score (hero) ─────────────────────────────── */}
       <div className="relative z-10 flex flex-col items-center pt-2 pb-6">
-        <DebtOrb score={data.debtScore} />
+        <DebtOrb score={data.debtScore} presence={miraPresence} />
+
+        {/* Mira label — appears when the orb is in Mira mode */}
+        <AnimatePresence>
+          {miraPresence && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.5, ease: EASE_PROTOCOL }}
+              className="text-center -mt-2 mb-2"
+            >
+              <p
+                className="text-[9px] font-mono uppercase tracking-widest"
+                style={{ color: "var(--color-text-faint)" }}
+              >
+                Mira · {miraPresence.label}
+              </p>
+              <p
+                className="text-[11px] mt-0.5"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
+                {miraPresence.message}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <motion.div className="text-center mt-4"
           initial={{ opacity: 0, scale: 0.9 }}
