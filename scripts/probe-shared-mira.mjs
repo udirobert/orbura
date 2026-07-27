@@ -32,10 +32,13 @@ if (!SESSION_KEY) {
   process.exit(2);
 }
 
-const url = `https://${BASE44_APP_ID}.base44.app/functions/miraHistory?session_key=${encodeURIComponent(SESSION_KEY)}&surface=famile&limit=20`;
+const url = `https://base44.app/api/apps/${BASE44_APP_ID}/functions/miraHistory?session_key=${encodeURIComponent(SESSION_KEY)}&surface=famile&limit=20`;
 
 try {
-  const res = await fetch(url, { method: "GET" });
+  const res = await fetch(url, {
+    method: "GET",
+    headers: { "X-App-Id": BASE44_APP_ID },
+  });
   if (res.status === 404) {
     console.log("No session found for that key. Visit famile.xyz/ask first.");
     process.exit(1);
