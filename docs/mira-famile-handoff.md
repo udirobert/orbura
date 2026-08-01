@@ -10,6 +10,10 @@ The shared contract *code* still lives in this repo at
 `@famile/mira-contract` package. Keep it in sync with
 `famile/web/docs/MIRA.md`.
 
+The related voice direction is documented in
+`../../famile/web/docs/VOICE_PLATFORM.md`. It covers reusable transport and event
+patterns only; it does not add voice biomarkers or emotion inference to Mira.
+
 ---
 
 ## What was decided (historical)

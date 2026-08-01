@@ -1,5 +1,19 @@
 # Target architecture
 
+## Voice platform note
+
+TrueVoice is a useful reference for a future voice lane: browser audio
+capture, short-frame streaming, parallel transcription, ephemeral sessions,
+and typed live events. Famile's shared direction is documented in
+`../../famile/web/docs/VOICE_PLATFORM.md`.
+
+Orbura may reuse the transport and session patterns for a low-friction spoken
+recovery check-in. The person's words, explicitly reported observations, and
+authoritative product records remain the source of truth. Do not import voice
+biomarkers, concordance scoring, or claims about hidden mood, distress, or
+minimisation. Any persisted audio or transcript needs explicit consent,
+retention, deletion, and audit rules.
+
 ## Direction
 
 Use a modular monolith. Keep one repository and deployable application while

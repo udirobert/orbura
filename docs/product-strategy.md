@@ -86,6 +86,15 @@ followed or effective.
    remain explicit; shared identity, design, observations, AI ports, and audit
    infrastructure are reused.
 
+## Voice as an optional input surface
+
+The Famile voice direction is a shared platform capability, not a new Orbura
+product mode. Orbura's first useful slice is an optional spoken recovery
+check-in that produces an attributable observation for the existing loop.
+Audio is ephemeral by default. The person's explicit report and authoritative
+product records remain the source of truth; voice biomarkers and hidden-state
+inference are out of scope.
+
 ## Distribution and business model
 
 The initial distribution model is B2B2C. A digital clinic enrolls the patient as
