@@ -182,11 +182,159 @@ export const QUALITY_METRICS = {
   ],
 };
 
+// ─── Part 2: Data Visualization track ─────────────────────────────────────────
+
+export const DATAVIZ_TASK_TYPES = [
+  {
+    task: "chart_qa",
+    icon: "❓",
+    weight: "45%",
+    description: "Arithmetic, comparison, and trend questions about chart data",
+    examples: 4_500,
+    questionTypes: 18,
+  },
+  {
+    task: "chart_to_code",
+    icon: "📊",
+    weight: "15%",
+    description: "Generate matplotlib code from chart type and data table",
+    examples: 1_500,
+    questionTypes: 4,
+  },
+  {
+    task: "fix_code",
+    icon: "🔧",
+    weight: "10%",
+    description: "Repair common matplotlib bugs (typos, missing imports, swapped axes)",
+    examples: 1_000,
+    questionTypes: 7,
+  },
+  {
+    task: "code_to_desc",
+    icon: "📝",
+    weight: "10%",
+    description: "Describe what a matplotlib code block produces, including statistics",
+    examples: 1_000,
+    questionTypes: 1,
+  },
+  {
+    task: "style_transfer",
+    icon: "🎨",
+    weight: "10%",
+    description: "Modify an existing plot (change chart type, add grid, rotate labels)",
+    examples: 1_000,
+    questionTypes: 5,
+  },
+  {
+    task: "chart_choice",
+    icon: "📈",
+    weight: "5%",
+    description: "Select the most appropriate chart type for given data",
+    examples: 500,
+    questionTypes: 4,
+  },
+  {
+    task: "data_to_code",
+    icon: "📄",
+    weight: "5%",
+    description: "Convert CSV data into a matplotlib chart",
+    examples: 500,
+    questionTypes: 4,
+  },
+] as const;
+
+export const DATAVIZ_PIPELINE = [
+  {
+    id: "generator",
+    icon: "⚙️",
+    label: "Deterministic dataset generator",
+    detail: "7 task types × 4 chart types. 10k train + 2k val. Every label computed from input — no human annotation.",
+  },
+  {
+    id: "tasks",
+    icon: "🎯",
+    label: "7 task types weighted",
+    detail: "chart_qa (45%), chart_to_code (15%), fix_code (10%), code_to_desc (10%), style_transfer (10%), chart_choice (5%), data_to_code (5%).",
+  },
+  {
+    id: "multimodal",
+    icon: "🖼️",
+    label: "Multimodal pilot (100 rows)",
+    detail: "Rendered chart images (bar, line, scatter, pie, grouped, stacked, area, mixed) with visual QA pairs.",
+  },
+  {
+    id: "augment",
+    icon: "✨",
+    label: "Adaptive Data augmentation",
+    detail: "Reasoning traces + deduplication. Prompt rephrase disabled (train/inference mismatch lesson from Part 1).",
+  },
+  {
+    id: "recipe",
+    icon: "🍳",
+    label: "AutoScientist co-optimized recipe",
+    detail: "SFT with AutoScientist-selected base model and hyperparameters. No manual tuning.",
+  },
+  {
+    id: "eval",
+    icon: "📐",
+    label: "Structural eval harness",
+    detail: "Code equivalence (not text match), numeric tolerance for QA, normalized comparison for style transfer.",
+  },
+  {
+    id: "release",
+    icon: "🎁",
+    label: "Released open source",
+    detail: "Dataset + weights on Hugging Face and Kaggle. Apache 2.0.",
+  },
+];
+
+export const DATAVIZ_CHART_TYPES = [
+  { type: "line", icon: "📈", description: "Trend visualization" },
+  { type: "bar", icon: "📊", description: "Category comparison" },
+  { type: "scatter", icon: "🔵", description: "Correlation" },
+  { type: "pie", icon: "🥧", description: "Proportion of a whole" },
+];
+
+export const DATAVIZ_QA_TYPES = [
+  "max", "min", "sum", "avg", "median", "range",
+  "pct_total", "ratio", "rank", "above_avg", "trend",
+  "difference", "doubled_total", "pct_of_max",
+  "combined_greater", "percentage_change", "counterfactual", "new_average",
+];
+
+export const DATAVIZ_BEFORE_AFTER = {
+  task: "chart_qa",
+  scenario: "Bar chart: Phone 84, Laptop 142, Tablet 67, Watch 95",
+  question: "What percentage of the total does Laptop represent?",
+  baseline: "The Laptop category has a value of 142, which is a significant portion of the total. Based on the data, it appears to be around 35-40% of the total.",
+  finetuned: "35.9%",
+  groundTruth: "35.9%",
+};
+
+export const DATAVIZ_CODE_EXAMPLE = {
+  task: "chart_to_code",
+  input: "Write Python matplotlib code for a bar chart.\n\n- Phone: 84\n- Laptop: 142\n- Tablet: 67\n- Watch: 95",
+  baseline: "import matplotlib.pyplot as plt\nlabels = ['Phone', 'Laptop', 'Tablet', 'Watch']\nvalues = [84, 142, 67, 95]\nplt.bar(labels, values)\nplt.title('Category Comparison')\nplt.show()",
+  finetuned: "import matplotlib.pyplot as plt\nlabels = [\"Phone\", \"Laptop\", \"Tablet\", \"Watch\"]\nvalues = [84, 142, 67, 95]\nplt.bar(labels, values, color='steelblue')\nplt.title('Category Comparison')\nplt.xlabel('Category')\nplt.ylabel('Count')\nplt.xticks(rotation=45)\nplt.tight_layout()\nplt.show()",
+  groundTruth: "import matplotlib.pyplot as plt\nlabels = [\"Phone\", \"Laptop\", \"Tablet\", \"Watch\"]\nvalues = [84, 142, 67, 95]\nplt.bar(labels, values, color='steelblue')\nplt.title('Category Comparison')\nplt.xlabel('Category')\nplt.ylabel('Count')\nplt.xticks(rotation=45)\nplt.tight_layout()\nplt.show()",
+};
+
+export const PART2_QUALITY_METRICS = {
+  before: { score: "—", grade: "—", label: "TBD" },
+  after: { score: "—", grade: "—", label: "TBD" },
+  improvement: 0,
+  recipes: [
+    "Reasoning traces (chain-of-thought added)",
+    "Deduplication (near-duplicates removed)",
+    "Prompt rephrase: DISABLED (Part 1 lesson — causes train/inference mismatch)",
+  ],
+};
+
 // ─── Release links ───────────────────────────────────────────────────────────
 
 export const RELEASE_LINKS = {
   huggingFace: "https://huggingface.co/Papajams",
-  kaggle: "https://kaggle.com/udirobert",
+  kaggle: "https://www.kaggle.com/udirobert",
   github: "https://github.com/udirobert/orbura",
   demo: "/autoscientist-demo",
   adaption: "https://adaptionlabs.ai",

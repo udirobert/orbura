@@ -223,6 +223,25 @@ export function CareSummaryPage() {
           </div>
         </section>}
 
+        <Link
+          href="/anatomy"
+          className="group flex items-center gap-3 rounded-2xl p-4 transition-opacity hover:opacity-90"
+          style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}
+        >
+          <span className="grid h-9 w-9 place-items-center rounded-xl" style={{ backgroundColor: "rgba(167,139,250,0.12)" }}>
+            <Activity className="h-4 w-4" style={{ color: "#A78BFA" }} />
+          </span>
+          <span className="flex-1">
+            <span className="block text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>
+              Explore how your body works
+            </span>
+            <span className="block text-[11px] leading-4" style={{ color: "var(--color-text-secondary)" }}>
+              Interactive 3D anatomy — learn about your organs and how they function. Educational only.
+            </span>
+          </span>
+          <ArrowRight className="h-4 w-4" style={{ color: "var(--color-text-faint)" }} />
+        </Link>
+
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
         <section className="space-y-3">
           <SectionTitle count={summary?.pendingInterventions?.length ?? 0}>

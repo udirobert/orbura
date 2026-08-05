@@ -10,6 +10,13 @@ import {
   BEFORE_AFTER,
   QUALITY_METRICS,
   RELEASE_LINKS,
+  DATAVIZ_TASK_TYPES,
+  DATAVIZ_PIPELINE,
+  DATAVIZ_CHART_TYPES,
+  DATAVIZ_QA_TYPES,
+  DATAVIZ_BEFORE_AFTER,
+  DATAVIZ_CODE_EXAMPLE,
+  PART2_QUALITY_METRICS,
 } from "./autoscientist-data";
 import { SYSTEMS_SCIENCE } from "../evidence/systems-science";
 
@@ -702,6 +709,288 @@ export function AutoScientistPage() {
           </div>
         </section>
 
+        {/* ─── Part 2: Data Visualization ─── */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <span
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+              style={{
+                backgroundColor: "rgba(99,102,241,0.08)",
+                border: "1px solid rgba(99,102,241,0.15)",
+              }}
+            >
+              <span
+                className="w-1 h-1 rounded-full"
+                style={{ backgroundColor: "#6366f1" }}
+              />
+              <span
+                className="text-[8px] font-mono uppercase tracking-wider"
+                style={{ color: "#6366f1" }}
+              >
+                AutoScientist · Part 2 · Data Visualization
+              </span>
+            </span>
+          </div>
+
+          <h2
+            className="text-2xl font-normal leading-tight mb-3"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Teaching a model to{" "}
+            <span style={{ color: "#6366f1" }}>read and write charts</span>.
+          </h2>
+          <p
+            className="text-xs leading-relaxed mb-4"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            Part 2 of the AutoScientist Challenge: a deterministic dataset for data
+            visualization — 10,000 training examples across 7 task types, 4 chart
+            types, and 18 chart-QA question types. Every label is computed from the
+            input, not annotated. A multimodal pilot adds rendered chart images for
+            visual reasoning.
+          </p>
+
+          {/* Task type grid */}
+          <h3
+            className="text-[10px] font-mono uppercase tracking-widest mb-3"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            7 task types · 10,000 examples
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+            {DATAVIZ_TASK_TYPES.map((t, i) => (
+              <motion.div
+                key={t.task}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04, ease: EASE_PROTOCOL }}
+                className="rounded-xl p-3"
+                style={{
+                  backgroundColor: "var(--color-bg-surface)",
+                  border: "1px solid rgba(168,162,158,0.08)",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-base">{t.icon}</span>
+                  <span
+                    className="text-xs font-semibold"
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    {t.task}
+                  </span>
+                  <span
+                    className="text-[9px] font-mono ml-auto px-1.5 py-0.5 rounded-full"
+                    style={{
+                      backgroundColor: "rgba(99,102,241,0.08)",
+                      color: "#6366f1",
+                    }}
+                  >
+                    {t.weight}
+                  </span>
+                </div>
+                <p
+                  className="text-[10px] leading-relaxed"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  {t.description}
+                </p>
+                <div
+                  className="text-[9px] font-mono mt-1"
+                  style={{ color: "var(--color-text-faint)" }}
+                >
+                  {t.examples.toLocaleString()} examples · {t.questionTypes} variants
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Chart types */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {DATAVIZ_CHART_TYPES.map((c) => (
+              <div
+                key={c.type}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full"
+                style={{
+                  backgroundColor: "var(--color-bg-surface)",
+                  border: "1px solid rgba(168,162,158,0.08)",
+                }}
+              >
+                <span className="text-sm">{c.icon}</span>
+                <span
+                  className="text-[10px] font-mono"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  {c.type}
+                </span>
+                <span
+                  className="text-[9px]"
+                  style={{ color: "var(--color-text-faint)" }}
+                >
+                  {c.description}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* QA types */}
+          <div className="mb-4">
+            <span
+              className="text-[9px] font-mono uppercase tracking-wider"
+              style={{ color: "var(--color-text-faint)" }}
+            >
+              18 chart-QA question types
+            </span>
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {DATAVIZ_QA_TYPES.map((q) => (
+                <span
+                  key={q}
+                  className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+                  style={{
+                    backgroundColor: "rgba(99,102,241,0.06)",
+                    color: "#818cf8",
+                  }}
+                >
+                  {q}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Part 2: Pipeline ─── */}
+        <section>
+          <h2
+            className="text-[10px] font-mono uppercase tracking-widest mb-3"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            Part 2 pipeline — from generator to open weights
+          </h2>
+          <div
+            className="rounded-2xl p-4 space-y-2"
+            style={{
+              backgroundColor: "var(--color-bg-surface)",
+              border: "1px solid rgba(168,162,158,0.08)",
+            }}
+          >
+            {DATAVIZ_PIPELINE.map((step, i) => (
+              <motion.div
+                key={step.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05, ease: EASE_PROTOCOL }}
+                className="flex items-start gap-3"
+              >
+                <span className="text-sm flex-shrink-0 w-6 text-center mt-0.5">
+                  {step.icon}
+                </span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-[10px] font-mono"
+                      style={{ color: "var(--color-text-faint)", minWidth: 16 }}
+                    >
+                      {i + 1}
+                    </span>
+                    <span
+                      className="text-xs font-medium"
+                      style={{ color: "var(--color-text-primary)" }}
+                    >
+                      {step.label}
+                    </span>
+                  </div>
+                  <p
+                    className="text-[10px] mt-0.5 pl-6"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    {step.detail}
+                  </p>
+                </div>
+                {i < DATAVIZ_PIPELINE.length - 1 && (
+                  <span
+                    className="text-[10px] mt-1"
+                    style={{ color: "var(--color-text-disabled)" }}
+                  >
+                    ↓
+                  </span>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* ─── Part 2: Before/after ─── */}
+        <section>
+          <h2
+            className="text-[10px] font-mono uppercase tracking-widest mb-3"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            Part 2 — before / after comparison
+          </h2>
+          <p
+            className="text-[11px] mb-3 font-mono"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            Task: {DATAVIZ_BEFORE_AFTER.task} · {DATAVIZ_BEFORE_AFTER.scenario}
+          </p>
+          <ComparisonBlock
+            title="Chart QA — numeric answer"
+            icon="❓"
+            baseline={DATAVIZ_BEFORE_AFTER.baseline}
+            finetuned={DATAVIZ_BEFORE_AFTER.finetuned}
+            groundTruth={DATAVIZ_BEFORE_AFTER.groundTruth}
+          />
+          <ComparisonBlock
+            title="Chart-to-code generation"
+            icon="📊"
+            baseline={DATAVIZ_CODE_EXAMPLE.baseline}
+            finetuned={DATAVIZ_CODE_EXAMPLE.finetuned}
+            groundTruth={DATAVIZ_CODE_EXAMPLE.groundTruth}
+          />
+        </section>
+
+        {/* ─── Part 2: Augmentation lessons ─── */}
+        <section>
+          <h2
+            className="text-[10px] font-mono uppercase tracking-widest mb-3"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            Augmentation recipe — lessons from Part 1
+          </h2>
+          <div
+            className="rounded-2xl p-4 space-y-2"
+            style={{
+              backgroundColor: "var(--color-bg-surface)",
+              border: "1px solid rgba(99,102,241,0.12)",
+            }}
+          >
+            {PART2_QUALITY_METRICS.recipes.map((r) => {
+              const isDisabled = r.includes("DISABLED");
+              const isError = r.includes("DISABLED");
+              return (
+                <div
+                  key={r}
+                  className="flex items-center gap-2 text-[10px]"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  <span style={{ color: isDisabled ? "var(--color-states-error)" : "var(--color-states-success)" }}>
+                    {isError ? "✗" : "✓"}
+                  </span>
+                  <span style={{ color: isDisabled ? "var(--color-text-faint)" : "var(--color-text-secondary)" }}>
+                    {r}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <p
+            className="text-[10px] mt-2 font-mono"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            Part 1 post-mortem: prompt rephrasing rewrote system prompts during
+            augmentation, causing a train/inference mismatch. Part 2 disables it.
+          </p>
+        </section>
+
         {/* ─── Footer ─── */}
         <footer className="text-center pt-6 pb-2 space-y-2">
           <p
@@ -717,7 +1006,7 @@ export function AutoScientistPage() {
             >
               AutoScientist Challenge
             </a>{" "}
-            · Adaption Labs · July 2026
+            · Adaption Labs · July–August 2026
           </p>
           <p
             className="text-[10px] font-mono"

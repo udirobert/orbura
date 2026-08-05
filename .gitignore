@@ -274,5 +274,11 @@ hf-space/
 # Demo video project (separate HyperFrames project, large binaries)
 demo-video/
 
+# Anatomy 3D model binaries (large, licensed from thebuggeddev/anatomy — pending review)
+public/models/*.glb
+
+# AutoScientist Part 2 — large generated datasets (regeneratable)
+showcases/autoscientist-dataviz/data/
+
 # Drizzle migration SQL (generated, tracked via meta journal)
 !src/lib/db/migrations/*.sql

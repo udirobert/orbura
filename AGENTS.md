@@ -97,7 +97,10 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 | WDK payments | `src/lib/wdk/` (`index.ts`, `types.ts`, `payments.ts`), `src/app/api/wallet/` (`connect`, `balance`, `send`), `src/stores/slices/wallet-slice.ts` |
 | Wearables | `src/app/api/terra/`, `src/app/api/google-fit/`, `src/app/api/garmin/parse/route.ts`, `src/app/api/hrv/resolve/route.ts` |
 | DB | `src/lib/db/schema/`, `src/lib/db/queries/`, `src/lib/db/client.ts` |
-| Judge pages | `/evidence` (QVAC Hackathon), `/autoscientist` (AutoScientist Challenge), `/tether` (Tether Developers Cup) |
+| Judge pages | `/evidence` (QVAC Hackathon), `/autoscientist` (AutoScientist Challenge Part 1 Healthcare + Part 2 Data Viz), `/tether` (Tether Developers Cup) |
+| AutoScientist Part 2 | `showcases/autoscientist-dataviz/` (dataset generator, eval harness, publish scripts) |
+| Anatomy explorer | `src/components/anatomy/`, `src/lib/anatomy/`, `src/app/anatomy/` — Three.js + GSAP 3D organ viewer. **Licensing caveat:** GLB models and illustrations are from thebuggeddev/anatomy, pending licensing review. Do not ship to production patients without written permission and clinician content review. |
+| Mira identity | `src/lib/mira/` (`contract.ts`, `orbura-mapping.ts`, `persona.ts`, `posture-palette.ts`), `src/components/mira/MiraChatPanel.tsx`, `src/components/screens/DebtOrb.tsx` (dual-mode orb) |
 
 ## Hard Rules
 
