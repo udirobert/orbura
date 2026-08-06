@@ -6,9 +6,9 @@ Deadline: **August 10, 2026**
 - [x] Dataset generated (10k train + 2k val, 7 task types, 4 chart types)
 - [x] Dataset uploaded to Hugging Face — https://huggingface.co/datasets/Papajams/orbura-dataviz-dataset
 - [x] Dataset uploaded to Kaggle — https://www.kaggle.com/datasets/udingethe/orbura-dataviz-dataset
-- [ ] Adaption augmentation run (5k rows, reasoning traces + deduplication) — **in progress**
-- [ ] Augmented dataset uploaded to Hugging Face
-- [ ] Augmented dataset uploaded to Kaggle
+- [x] Adaption augmentation run (5k rows, reasoning traces + deduplication) — **succeeded**
+- [x] Augmented dataset uploaded to Hugging Face — https://huggingface.co/datasets/Papajams/orbura-dataviz-augmented
+- [x] Augmented dataset uploaded to Kaggle — https://www.kaggle.com/datasets/udingethe/orbura-dataviz-augmented
 - [ ] Model trained via AutoScientist (co-optimized SFT)
 - [ ] Trained weights uploaded to Hugging Face Model Hub
 - [ ] Trained weights uploaded to Kaggle Models
