@@ -280,6 +280,7 @@ public/models/*.glb
 # AutoScientist Part 2 — large generated datasets and model weights (regeneratable)
 showcases/autoscientist-dataviz/data/
 showcases/autoscientist-dataviz/model_weights/
+showcases/autoscientist-dataviz/model_weights_mistral/
 
 # Drizzle migration SQL (generated, tracked via meta journal)
 !src/lib/db/migrations/*.sql
