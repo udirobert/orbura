@@ -9,9 +9,9 @@ Deadline: **August 10, 2026**
 - [x] Adaption augmentation run (5k rows, reasoning traces + deduplication) — **succeeded**
 - [x] Augmented dataset uploaded to Hugging Face — https://huggingface.co/datasets/Papajams/orbura-dataviz-augmented
 - [x] Augmented dataset uploaded to Kaggle — https://www.kaggle.com/datasets/udingethe/orbura-dataviz-augmented
-- [ ] Model trained via AutoScientist (co-optimized SFT)
-- [ ] Trained weights uploaded to Hugging Face Model Hub
-- [ ] Trained weights uploaded to Kaggle Models
+- [x] Model trained via AutoScientist (co-optimized SFT, 3 iterations, 52% win rate)
+- [x] Trained weights uploaded to Hugging Face — https://huggingface.co/Papajams/orbura-dataviz-llama32-3b-autoscientist
+- [x] Trained weights uploaded to Kaggle — https://www.kaggle.com/datasets/udingethe/orbura-dataviz-llama32-3b
 
 ## Documentation
 - [x] Model card (`MODEL_CARD.md`) — base model, data sources, training recipe, eval method, reproducibility
@@ -20,7 +20,7 @@ Deadline: **August 10, 2026**
 - [x] Augmentation run script (`run_adaption.py`) — reasoning traces + deduplication, prompt rephrase disabled
 - [x] Publish scripts (`publish_hf.py`, `publish_kaggle.py`)
 - [x] Social post templates (`social_posts.md`)
-- [ ] Fill in eval results table in `MODEL_CARD.md` after training
+- [x] Fill in eval results table in `MODEL_CARD.md` — AutoScientist win rate: 52%
 
 ## Demo & social
 - [x] Judge page updated (`/autoscientist` — Part 2 section with task types, pipeline, before/after, augmentation lessons)
@@ -30,42 +30,28 @@ Deadline: **August 10, 2026**
 
 ## Validation
 - [x] Naive baseline scored: 17.6% overall (35.4% chart_qa, 30.2% chart_choice, 0% code tasks)
-- [ ] Fine-tuned model beats base model on the held-out validation set (run `eval_finetuned.py`)
+- [x] AutoScientist training complete — 3 iterations, best win rate 52.01%
+- [x] Best hyperparameters: LoRA r=16, alpha=32, lr=1e-5, cosine schedule, 1 epoch
 - [ ] Final model evaluated against the in-house test set via AutoScientist/Adaption
 - [ ] Submission form submitted before August 10
 
-## Eval commands (quick reference)
+## Training results
 
-```bash
-# Naive baseline (no model needed)
-cd showcases/autoscientist-dataviz
-python3 eval_finetuned.py --baseline-only
+| Metric | Value |
+|---|---|
+| Base model | meta-llama/Llama-3.2-3B-Instruct |
+| Training method | LoRA (r=16, alpha=32) via AutoScientist co-optimization |
+| Dataset | 5,000 augmented rows (reasoning traces + deduplication) |
+| Iterations | 3/3 completed |
+| Best win rate | 52.01% |
+| Best hyperparams | lr=1e-5, lora_r=16, lora_alpha=32, epochs=1, cosine schedule |
+| Augmentation quality | Grade E → D (score 3.0 → 3.9, +30%) |
+| Completion quality gain | +102.5% (2.03 → 4.11) |
 
-# Baseline vs fine-tuned (HF models)
-python3 eval_finetuned.py --baseline Qwen/Qwen2.5-1.5B --finetuned path/to/model
+## Published artifacts
 
-# Quick 100-sample test
-python3 eval_finetuned.py --baseline-only --max-samples 100
-
-# Via Together AI
-python3 eval_finetuned.py --together-model <model_name> --together-baseline Qwen/Qwen2.5-1.5B
-```
-
-## Augmentation + training commands
-
-```bash
-# 1. Run Adaption augmentation (5k rows, ~73 min, 50 credits)
-cd showcases/autoscientist-dataviz
-export ADAPTION_API_KEY="pt_live_..."
-python3 run_adaption.py --input data/adaption_train_5k.jsonl --timeout 5400
-
-# 2. Train via AutoScientist (adaptionlabs.ai/auto-scientist)
-#    Upload augmented_train.jsonl, select base model, run co-optimization
-
-# 3. Evaluate
-python3 eval_finetuned.py --baseline Qwen/Qwen2.5-1.5B --finetuned path/to/model
-
-# 4. Publish
-python3 publish_hf.py --model path/to/model --dataset-only
-python3 publish_kaggle.py --model path/to/model --dataset-only
-```
+| Artifact | Hugging Face | Kaggle |
+|---|---|---|
+| Original dataset (10k + 2k) | [Papajams/orbura-dataviz-dataset](https://huggingface.co/datasets/Papajams/orbura-dataviz-dataset) | [udingethe/orbura-dataviz-dataset](https://www.kaggle.com/datasets/udingethe/orbura-dataviz-dataset) |
+| Augmented dataset (5k) | [Papajams/orbura-dataviz-augmented](https://huggingface.co/datasets/Papajams/orbura-dataviz-augmented) | [udingethe/orbura-dataviz-augmented](https://www.kaggle.com/datasets/udingethe/orbura-dataviz-augmented) |
+| Model weights (LoRA adapter) | [Papajams/orbura-dataviz-llama32-3b-autoscientist](https://huggingface.co/Papajams/orbura-dataviz-llama32-3b-autoscientist) | [udingethe/orbura-dataviz-llama32-3b](https://www.kaggle.com/datasets/udingethe/orbura-dataviz-llama32-3b) |

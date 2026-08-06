@@ -277,8 +277,9 @@ demo-video/
 # Anatomy 3D model binaries (large, licensed from thebuggeddev/anatomy — pending review)
 public/models/*.glb
 
-# AutoScientist Part 2 — large generated datasets (regeneratable)
+# AutoScientist Part 2 — large generated datasets and model weights (regeneratable)
 showcases/autoscientist-dataviz/data/
+showcases/autoscientist-dataviz/model_weights/
 
 # Drizzle migration SQL (generated, tracked via meta journal)
 !src/lib/db/migrations/*.sql
