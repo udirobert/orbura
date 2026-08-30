@@ -32,7 +32,7 @@
 **Show:** The face scan privacy notice
 
 **Say:**
-> *"The face scan extracts 468 facial landmarks locally using MediaPipe. From those, we compute 7 stress features — eye fatigue, brow tension, mouth asymmetry. These features are then fed into a neural network that generates a deterministic stress score."*
+> *"The face scan extracts 468 facial landmarks locally using MediaPipe. From those, we compute 7 facial-tension features — eye openness, brow-to-eye distance, mouth geometry. An experimental model turns those into a heuristic score. (It's a research proxy, not a validated clinical measurement — see `docs/face-scan-science.md`.)"*
 
 **Show:** The privacy notice with its **"Processed entirely on your device"** badge
 

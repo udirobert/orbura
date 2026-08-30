@@ -3,6 +3,41 @@
 Snapshot of craft + platform work landed together. Longer detail lives in the
 linked docs.
 
+## Face-scan honesty + gating (2026-08-30)
+
+**Credibility hardening** for the ZK face-scan pipeline: the cryptography is
+real, but the 7 facial-geometry features are unvalidated heuristics — so we
+stopped over-claiming and started instrumenting for validation.
+
+- **New [face-scan-science.md](./face-scan-science.md):** per-feature literature
+  table (EAR is validated for drowsiness only; brow/mouth ratios are weak or
+  ad hoc), explicit claims-we-make vs. don't-make, and a validation roadmap
+  (longitudinal capture → correlation → retire/refine circuit features).
+- **Demo copy softened:** `skale-privacy-demo.md` no longer claims a "neural
+  network stress score" — it says facial-tension features → experimental
+  heuristic score, with a pointer to the science doc.
+- **Feature extraction now test-locked:** `face-mesh-features.test.ts` (13
+  tests) verifies EAR/brow/mouth math against hand-computed geometry, plus
+  scale invariance (the property the EZKL circuit depends on), asymmetry
+  handling, degenerate inputs, and 3D distance behavior.
+- **Anatomy explorer gated:** `/anatomy` renders an unavailable notice unless
+  `NEXT_PUBLIC_ANATOMY_ENABLED=true` (models are unlicensed pending review).
+  Static import restored; no `require` hack.
+
+**Next steps (in order):**
+
+1. Send the licensing request email to thebuggeddev/anatomy — the flag makes
+   shipping safe either way, but the email is the actual unblock.
+2. Migrate MediaPipe FaceMesh → Tasks Vision (`@mediapipe/tasks-vision`,
+   ESM-friendly, typed `FaceLandmarker`), validated by the new feature tests
+   to confirm identical feature output; removes the runtime-`require` hack.
+3. Property tests for `src/stressors/scoring.ts`: bounds, monotonicity,
+   `hasData` contract, and modifier-table coverage via canonical input matrix.
+4. Move judge pages (`/evidence`, `/autoscientist`, `/tether`) under a
+   `/showcases/` prefix so the main product flow touches none of them.
+5. Start longitudinal feature-vector capture (no images, PostgreSQL canonical)
+   so the validation roadmap in face-scan-science.md can produce data.
+
 ## Product direction
 
 **Decision:** evolve from a shared mode switcher into separate product shells on

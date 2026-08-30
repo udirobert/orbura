@@ -217,6 +217,7 @@ GOOGLE_FIT_CLIENT_SECRET=
 NEXT_PUBLIC_VERIFIER_ADDRESS=
 DEPLOYER_PRIVATE_KEY=
 NEXT_PUBLIC_APP_URL=
+NEXT_PUBLIC_ANATOMY_ENABLED=   # default off — anatomy assets pending licensing review
 QVAC_MODEL_PATH=
 WDK_SEED_PHRASE=
 ETH_RPC_URL=https://sepolia.drpc.org
@@ -257,6 +258,7 @@ GITHUB_CLIENT_SECRET=
 - Historical Tether / Match Fit plan: `docs/tether-cup-plan.md`
 - Motion & UX craft: `docs/motion-ux.md`
 - Face scan reliability: `docs/face-scan.md`
+- Face scan signal validity (claims + roadmap): `docs/face-scan-science.md`
 - Recent progress: `docs/progress.md`
 - Archived legacy notes: `docs/legacy/`
 - Historical HF Space: https://huggingface.co/spaces/Papajams/orbura (no longer tracked in this repo)

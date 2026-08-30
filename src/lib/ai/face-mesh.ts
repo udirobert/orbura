@@ -36,6 +36,8 @@ interface MediaPipeLandmark {
   z: number;
 }
 
+export type { MediaPipeLandmark };
+
 function distance(p1: MediaPipeLandmark, p2: MediaPipeLandmark): number {
   return Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2 + (p2.z - p1.z) ** 2);
 }
