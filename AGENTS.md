@@ -31,7 +31,7 @@ instead of expanding this guide.
 - Zustand for guest-first state in `src/stores/useBodyDebtStore.ts`
 - Drizzle ORM + PostgreSQL via `DATABASE_URL`
 - shadcn/ui, lucide-react, framer-motion
-- MediaPipe FaceMesh, EZKL, wagmi/viem, SKALE Europa testnet
+- MediaPipe FaceLandmarker (Tasks Vision), EZKL, wagmi/viem, SKALE Europa testnet
 - QVAC LLM worker spawned on the Next.js server host in web deployments
 - Supermemory as an optional server-side retrieval integration
 
@@ -131,7 +131,7 @@ The face-scan privacy path is:
 
 ```text
 Camera frame
-  -> MediaPipe FaceMesh in browser
+  -> MediaPipe FaceLandmarker (Tasks Vision) in browser
   -> 7-dimensional feature vector
   -> EZKL worker proof generation
   -> local EZKL verify

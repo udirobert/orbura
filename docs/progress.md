@@ -54,6 +54,11 @@ stopped over-claiming and started instrumenting for validation.
   input safety, live-score bounds, and counterfactual drop/null invariants —
   over a canonical input matrix spanning every modifier table row.
 - Suite now at **430 tests / 33 files**, all green. Build compiles.
+- **Deployed** to nuncio-vultr via `scripts/deploy.sh`; pm2 online, app 200,
+  model asset serving at `/mediapipe/face_landmarker.task`. One manual camera
+  smoke test of the scan flow in a real browser is still worth doing —
+  automated coverage covers feature math and build integrity, not live WASM
+  init.
 
 **Still open from the earlier list:** move judge pages (`/evidence`,
 `/autoscientist`, `/tether`) under `/showcases/`, and start longitudinal

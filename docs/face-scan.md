@@ -1,11 +1,15 @@
 # Face scan reliability
 
-In-browser MediaPipe FaceMesh → feature vector → EZKL worker → optional SKALE
-anchor. Camera frames and landmarks are never persisted.
+In-browser MediaPipe FaceLandmarker (Tasks Vision) → feature vector → EZKL
+worker → optional SKALE anchor. Camera frames and landmarks are never persisted.
 
 **Status (landed):** still-frame confirm, retake detection restart, worker
 prefetch filter, softer capture gates + “Capture anyway”, prove timeout, and
-manual fallback CTA. Context: [progress.md](./progress.md).
+manual fallback CTA. MediaPipe migrated from the legacy `@mediapipe/face_mesh`
+solution bundle to `@mediapipe/tasks-vision` (ESM, typed, self-hosted
+`face_landmarker.task` + WASM under `public/mediapipe/`); the legacy
+`onResults`/`send({image})` surface is preserved by `FaceMeshAdapter`, so the
+pipeline hook and feature math are unchanged. Context: [progress.md](./progress.md).
 
 ## Known failure modes (fixed / guarded)
 
@@ -15,7 +19,7 @@ manual fallback CTA. Context: [progress.md](./progress.md).
 | Retake left detection dead (video remount race) | `phase === "camera"` effect waits for `<video>`, then restarts detection loop |
 | Prefetch `{ success }` treated as a proof | Worker handler ignores `type === "prefetch-result"`; requires `proof`/`proofHex` |
 | Strict lighting/blur/distance bricked Capture | Softened thresholds; after ~6s of face lock, **Capture anyway** |
-| MediaPipe WASM never ready | `initializeFaceMeshAsync` with timeout → `mediapipe_error` / manual fallback |
+| MediaPipe WASM never ready | Landmarker creation failure inside `send()` → `mediapipe_error` / manual fallback; warm-up failure is retried on next send |
 | Prove hangs forever | 90s prove timeout; clearer analysis error + manual fallback CTA |
 
 ## State machine
