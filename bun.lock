@@ -7,8 +7,7 @@
         "@auth/drizzle-adapter": "^1.11.2",
         "@base-ui/react": "^1.4.0",
         "@ezkljs/engine": "^22.0.1",
-        "@mediapipe/camera_utils": "^0.3.1632432234",
-        "@mediapipe/face_mesh": "^0.4.1633559619",
+        "@mediapipe/tasks-vision": "^1.0.1",
         "@modelcontextprotocol/sdk": "^1.29.0",
         "@qvac/sdk": "^0.12.2",
         "@tailwindcss/postcss": "^4",
@@ -697,9 +696,7 @@
 
     "@lit/reactive-element": ["@lit/reactive-element@2.1.2", "", { "dependencies": { "@lit-labs/ssr-dom-shim": "^1.5.0" } }, "sha512-pbCDiVMnne1lYUIaYNN5wrwQXDtHaYtg7YEFPeW+hws6U47WeFvISGUWekPGKWOP1ygrs0ef0o1VJMk1exos5A=="],
 
-    "@mediapipe/camera_utils": ["@mediapipe/camera_utils@0.3.1675466862", "", {}, "sha512-siuXBoUxWo9WL0MeAxIxvxY04bvbtdNl7uCxoJxiAiRtNnCYrurr7Vl5VYQ94P7Sq0gVq6PxIDhWWeZ/pLnSzw=="],
-
-    "@mediapipe/face_mesh": ["@mediapipe/face_mesh@0.4.1633559619", "", {}, "sha512-Vc8cdjxS5+O2gnjWH9KncYpUCVXT0h714KlWAsyqJvJbIgUJBqpppbIx8yWcAzBDxm/5cYSuBI5p5ySIPxzcEg=="],
+    "@mediapipe/tasks-vision": ["@mediapipe/tasks-vision@1.0.1", "", {}, "sha512-rvRE2FmAZ6ZxKSw7wq+e+jQDpN3t1B/tD2mJz9SmAzb1msoDkd4dMoE4wAh8Z30Um0PQwLiHr9QtomhmXk3aUQ=="],
 
     "@metamask/eth-json-rpc-provider": ["@metamask/eth-json-rpc-provider@1.0.1", "", { "dependencies": { "@metamask/json-rpc-engine": "^7.0.0", "@metamask/safe-event-emitter": "^3.0.0", "@metamask/utils": "^5.0.1" } }, "sha512-whiUMPlAOrVGmX8aKYVPvlKyG4CpQXiNNyt74vE1xb5sPvmx5oA7B/kOi/JdBvhGQq97U1/AVdXEdk2zkP8qyA=="],
 

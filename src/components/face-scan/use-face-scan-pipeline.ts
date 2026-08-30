@@ -448,9 +448,9 @@ export function useFaceScanPipeline() {
       streamRef.current = stream;
 
       // ── Initialise MediaPipe Face Mesh ────────────────────────────
-      // The dynamic require inside initializeFaceMesh can throw if the
-      // @mediapipe/face_mesh bundle is missing, the WASM/CDN assets are
-      // blocked, or the browser doesn't support the required APIs.
+      // initializeFaceMeshAsync can reject if the tasks-vision bundle is
+      // missing, the self-hosted WASM/model assets are missing or blocked,
+      // or the browser doesn't support the required APIs.
       // We catch that here and transition to the manual fallback flow
       // instead of showing a generic camera error.
       try {

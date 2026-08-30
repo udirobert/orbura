@@ -1,5 +1,13 @@
-// MediaPipe uses a non-ESM format that Turbopack can't statically resolve.
-// We load it dynamically at runtime in the browser only.
+// MediaPipe Tasks Vision is ESM-friendly and properly typed, unlike the
+// legacy @mediapipe/face_mesh solution bundle (which attached to globalThis
+// and required a runtime require hack). WASM + model are self-hosted from
+// public/mediapipe so the face scan doesn't depend on a CDN at runtime.
+
+import {
+  FaceLandmarker,
+  FilesetResolver,
+  type FaceLandmarkerResult,
+} from "@mediapipe/tasks-vision";
 
 const LANDMARKS = {
   LEFT_EYE_OUTER: 33,
@@ -37,6 +45,97 @@ interface MediaPipeLandmark {
 }
 
 export type { MediaPipeLandmark };
+
+/** Legacy FaceMesh callback shape — kept so the pipeline hook is unchanged. */
+export interface FaceMeshResults {
+  multiFaceLandmarks: MediaPipeLandmark[][];
+}
+
+/**
+ * Adapter exposing the legacy FaceMesh surface (onResults/send) on top of
+ * FaceLandmarker, so callers don't need to know about the Tasks API.
+ */
+export interface FaceMeshAdapter {
+  onResults(cb: (results: FaceMeshResults) => void): void;
+  send({ image }: { image: HTMLCanvasElement | HTMLVideoElement | ImageBitmap }): Promise<void>;
+  close(): void;
+}
+
+async function createLandmarker(): Promise<FaceLandmarker> {
+  const fileset = await FilesetResolver.forVisionTasks("/mediapipe/tasks");
+  return FaceLandmarker.createFromOptions(fileset, {
+    baseOptions: {
+      modelAssetPath: "/mediapipe/face_landmarker.task",
+      delegate: "GPU",
+    },
+    runningMode: "IMAGE",
+    numFaces: 1,
+    minFaceDetectionConfidence: 0.5,
+    minFacePresenceConfidence: 0.5,
+    minTrackingConfidence: 0.5,
+    outputFaceBlendshapes: false,
+  });
+}
+
+function toLegacyResults(result: FaceLandmarkerResult): FaceMeshResults {
+  return {
+    multiFaceLandmarks: result.faceLandmarks.map((face) =>
+      face.map((lm) => ({ x: lm.x, y: lm.y, z: lm.z }))
+    ),
+  };
+}
+
+export function initializeFaceMesh(
+  onResults: (results: FaceMeshResults) => void
+): FaceMeshAdapter {
+  let callback = onResults;
+  // Created lazily on first send() so init errors surface through the same
+  // try/catch path the pipeline hook already handles.
+  let landmarker: FaceLandmarker | null = null;
+  let creating: Promise<FaceLandmarker> | null = null;
+
+  const ensure = async (): Promise<FaceLandmarker> => {
+    if (landmarker) return landmarker;
+    if (!creating) {
+      creating = createLandmarker().then((lm) => {
+        landmarker = lm;
+        return lm;
+      });
+    }
+    return creating;
+  };
+
+  return {
+    onResults(cb) {
+      callback = cb;
+    },
+    async send({ image }) {
+      const lm = await ensure();
+      // IMAGE running mode: detect() is synchronous and stateless per frame,
+      // which matches the legacy FaceMesh.send() semantics.
+      callback(toLegacyResults(lm.detect(image)));
+    },
+    close() {
+      landmarker?.close();
+      landmarker = null;
+      creating = null;
+    },
+  };
+}
+
+/** Kept for API compatibility. WASM warm-up starts here, in the background. */
+export async function initializeFaceMeshAsync(
+  onResults: (results: FaceMeshResults) => void
+): Promise<FaceMeshAdapter> {
+  const adapter = initializeFaceMesh(onResults);
+  // Warm up WASM in the background so it overlaps the camera permission
+  // prompt. Failures are ignored here; a real send() surfaces them through
+  // the pipeline's existing mediapipe_error path.
+  void adapter
+    .send({ image: document.createElement("canvas") })
+    .catch(() => {});
+  return adapter;
+}
 
 function distance(p1: MediaPipeLandmark, p2: MediaPipeLandmark): number {
   return Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2 + (p2.z - p1.z) ** 2);
@@ -89,48 +188,3 @@ export function extractStressFeatures(landmarks: MediaPipeLandmark[]): StressFea
   return { leftEyeAspect: leftEAR, rightEyeAspect: rightEAR, browTension, mouthTension, eyeSymmetry, mouthOpening, timestamp: Date.now() };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function initializeFaceMesh(onResults: (results: { multiFaceLandmarks: MediaPipeLandmark[][] }) => void): any {
-  // Dynamic require — MediaPipe attaches to globalThis at runtime
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { FaceMesh } = require("@mediapipe/face_mesh");
-
-  const faceMesh = new FaceMesh({
-    // Self-hosted from public/mediapipe so the face scan doesn't depend on
-    // jsdelivr at runtime. Keep the bundle small by only shipping the
-    // files FaceMesh actually requests via locateFile.
-    locateFile: (file: string) => `/mediapipe/${file}`,
-  });
-
-  faceMesh.setOptions({
-    maxNumFaces: 1,
-    refineLandmarks: true,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5,
-  });
-
-  faceMesh.onResults(onResults);
-  return faceMesh;
-}
-
-/**
- * Async init with WASM warm-up. Falls back to sync construct if
- * `initialize()` is unavailable. Times out so callers can show fallback.
- */
-export async function initializeFaceMeshAsync(
-  onResults: (results: { multiFaceLandmarks: MediaPipeLandmark[][] }) => void,
-  timeoutMs = 12_000,
-  // MediaPipe's FaceMesh type is not exported as a proper ESM type.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<any> {
-  const faceMesh = initializeFaceMesh(onResults);
-  if (typeof faceMesh.initialize === "function") {
-    await Promise.race([
-      faceMesh.initialize(),
-      new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("MediaPipe initialize timed out")), timeoutMs);
-      }),
-    ]);
-  }
-  return faceMesh;
-}

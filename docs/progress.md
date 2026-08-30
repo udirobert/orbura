@@ -38,6 +38,27 @@ stopped over-claiming and started instrumenting for validation.
 5. Start longitudinal feature-vector capture (no images, PostgreSQL canonical)
    so the validation roadmap in face-scan-science.md can produce data.
 
+## MediaPipe Tasks Vision migration + scoring property tests (2026-08-30)
+
+- **MediaPipe FaceMesh → Tasks Vision** (`@mediapipe/tasks-vision`): ESM
+  import, proper types, no more runtime `require`/globalThis hack. Legacy
+  `onResults`/`send({image})` surface preserved via a `FaceMeshAdapter`
+  wrapper, so `use-face-scan-pipeline.ts` behavior is unchanged. Model
+  (`face_landmarker.task`) and WASM are self-hosted under `public/mediapipe/`.
+  `extractStressFeatures` untouched — the feature tests prove the circuit
+  boundary is unchanged. Legacy `@mediapipe/face_mesh` and
+  `@mediapipe/camera_utils` removed from dependencies.
+- **Scoring property tests** (`scoring-properties.test.ts`, 12 tests):
+  bounds (0–100), finiteness, `hasData` contract, monotonicity in alcohol
+  count, mobility-clamping behavior, circadian penalty ordering + unparseable
+  input safety, live-score bounds, and counterfactual drop/null invariants —
+  over a canonical input matrix spanning every modifier table row.
+- Suite now at **430 tests / 33 files**, all green. Build compiles.
+
+**Still open from the earlier list:** move judge pages (`/evidence`,
+`/autoscientist`, `/tether`) under `/showcases/`, and start longitudinal
+feature-vector capture for the face-scan validation roadmap.
+
 ## Product direction
 
 **Decision:** evolve from a shared mode switcher into separate product shells on
