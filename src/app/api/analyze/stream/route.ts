@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { createDebtSession, getUserPatterns, formatPatternsForPrompt, getLatestDebtSession } from "@/lib/db/queries";
+import {
+  createDebtSession,
+  getUserPatterns,
+  formatPatternsForPrompt,
+  getLatestDebtSession,
+  getWearableTrend,
+  formatWearableTrendForPrompt,
+} from "@/lib/db/queries";
 import type { AnalyzeBodyRequest, DebtAnalysis } from "@/lib/types";
 import { computeScore, deterministicPrescription, deterministicSchedule } from "../score/route";
 import { ai } from "@/lib/sdk/eazo-client";
@@ -99,18 +106,33 @@ export async function POST(request: NextRequest) {
         ? getUserPatterns(userId).then(p => p ? formatPatternsForPrompt(p) : null)
         : Promise.resolve(null);
 
+      // ── Wearable history (parallel, authed users only) ───────────────────
+      // Adds recent HRV/resting-HR/sleep trends to the agent context so the
+      // prescription reflects direction, not just last night's delta.
+      const wearableSummaryPromise = userId
+        ? getWearableTrend(userId, 7).then((trend) =>
+            formatWearableTrendForPrompt(trend, body.hrvData ?? null)
+          )
+        : Promise.resolve(null);
+
       const priorScorePromise = userId
         ? getLatestDebtSession(userId).then((s) => s?.debtScore ?? null)
         : memoryPromise.then((ctx) =>
             ctx ? parsePriorDebtScoreFromMemory(ctx.profile, ctx.memories) : null,
           );
 
+      // ── Layer 3: QVAC multi-agent pipeline (primary AI path) ─────────────
+      // Resolve memory context + DB patterns before building the QVAC input.
+      const memoryCtx = await memoryPromise;
+      const dbPatterns = await patternsPromise;
+      const wearableSummary = await wearableSummaryPromise;
+
       // ── Layer 2: AI verdict (runs in parallel with agents) ──────────────
       // When NEXT_PUBLIC_ENABLE_CLOUD_VERDICT is off, skip the cloud AI
       // call and use the deterministic Layer 1 score as the verdict.
       const cloudStartTime = Date.now();
       const verdictPromise = ENABLE_CLOUD_VERDICT
-        ? fetchVerdict(body, layer1).then((result) => {
+        ? fetchVerdict(body, layer1, wearableSummary).then((result) => {
             const cloudDurationMs = Date.now() - cloudStartTime;
             return { ...result, _cloudDurationMs: cloudDurationMs };
           }).catch(() => ({
@@ -128,11 +150,6 @@ export async function POST(request: NextRequest) {
             _cloudDurationMs: undefined,
           });
 
-      // ── Layer 3: QVAC multi-agent pipeline (primary AI path) ─────────────
-      // Resolve memory context + DB patterns before building the QVAC input.
-      const memoryCtx = await memoryPromise;
-      const dbPatterns = await patternsPromise;
-
       const profileLines = memoryCtx?.profile?.split("\n").filter(Boolean) ?? [];
       const memoryLines = memoryCtx?.memories?.split("\n").filter(Boolean) ?? [];
       const factCount = profileLines.length + memoryLines.length;
@@ -148,6 +165,7 @@ export async function POST(request: NextRequest) {
         memoryCtx?.profile && `User profile:\n${memoryCtx.profile}`,
         memoryCtx?.memories && `Relevant past memories:\n${memoryCtx.memories}`,
         dbPatterns && `Historical analysis:\n${dbPatterns}`,
+        wearableSummary && `Wearable history:\n${wearableSummary}`,
       ].filter(Boolean).join("\n\n") || null;
 
       const qvacInput: MultiAgentInput = {
@@ -198,14 +216,14 @@ export async function POST(request: NextRequest) {
           // QVAC unavailable — attempt cloud AI fallback. In standalone builds
           // ai.chat() rejects, so fetchPrescriptionFromCloud returns the
           // deterministic fallback.
-          prescriptionData = await fetchPrescriptionFromCloud(body, layer1);
+          prescriptionData = await fetchPrescriptionFromCloud(body, layer1, wearableSummary);
           // Generate deterministic schedule fallback so the UI always has output
           schedule = deterministicSchedule(layer1.systemScores ?? [], layer1.debtScore, body.locale ?? "en", body.mode ?? "personal");
         }
       } catch {
         // QVAC worker threw; cloud AI is disabled in standalone builds,
         // so fetchPrescriptionFromCloud falls back to deterministic output.
-        prescriptionData = await fetchPrescriptionFromCloud(body, layer1);
+        prescriptionData = await fetchPrescriptionFromCloud(body, layer1, wearableSummary);
         // Generate deterministic schedule fallback
         schedule = deterministicSchedule(layer1.systemScores ?? [], layer1.debtScore, body.locale ?? "en");
       }
@@ -317,7 +335,7 @@ export async function POST(request: NextRequest) {
 
 // ─── Layer 2: verdict + recovery arc (only called when ENABLE_CLOUD_VERDICT is true) ─
 
-async function fetchVerdict(body: AnalyzeBodyRequest, layer1: ReturnType<typeof computeScore>) {
+async function fetchVerdict(body: AnalyzeBodyRequest, layer1: ReturnType<typeof computeScore>, wearableSummary?: string | null) {
   const { stressors, hrvData, currentTime } = body;
   const now = currentTime ?? new Date().toLocaleTimeString("en-US", {
     hour: "numeric", minute: "2-digit", hour12: true,
@@ -326,7 +344,7 @@ async function fetchVerdict(body: AnalyzeBodyRequest, layer1: ReturnType<typeof 
   const prompt = `Body debt score: ${layer1.debtScore}/100
 Stressors: ${stressors.map(s => `${s.type}${s.context ? ` (${s.context})` : ""}`).join(", ")}
 Current time: ${now}
-HRV: ${hrvData ? `${hrvData.hrvDeltaPercent}% from baseline` : "not available"}
+${wearableSummary ? wearableSummary + "\n" : ""}HRV: ${hrvData ? `${hrvData.hrvDeltaPercent}% from baseline` : "not available"}
 
 Respond with JSON only:
 {
@@ -375,7 +393,8 @@ Respond with JSON only:
 
 async function fetchPrescriptionFromCloud(
   body: AnalyzeBodyRequest,
-  layer1: ReturnType<typeof computeScore>
+  layer1: ReturnType<typeof computeScore>,
+  wearableSummary?: string | null
 ): Promise<{ prescription: DebtAnalysis["prescription"]; _layer: string }> {
   const { stressors, faceAnalysis, hrvData, currentTime } = body;
   const now = currentTime ?? new Date().toLocaleTimeString("en-US", {
@@ -385,7 +404,7 @@ async function fetchPrescriptionFromCloud(
   const prompt = `Debt score: ${layer1.debtScore}/100. Time: ${now}.
 Stressors: ${stressors.map(s => `${s.type}${s.context ? ` (${s.context})` : ""}`).join(", ")}
 ${faceAnalysis ? `Face: ${faceAnalysis.inflammation} inflammation, ${faceAnalysis.eyeClarity} clarity` : ""}
-${hrvData ? `HRV: ${hrvData.hrvDeltaPercent}% from baseline` : ""}
+${wearableSummary ? wearableSummary + "\n" : ""}${hrvData ? `HRV: ${hrvData.hrvDeltaPercent}% from baseline` : ""}
 
 Respond with JSON only:
 {

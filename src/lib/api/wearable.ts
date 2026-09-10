@@ -170,3 +170,32 @@ export async function resolveHrv(
   const res = await request(`/api/hrv/resolve?${params.toString()}`);
   return (await res.json()) as HrvResolveResponse;
 }
+
+// ─── Trend history ─────────────────────────────────────────────────────────────
+
+export interface WearableTrendPoint {
+  date: string;
+  hrv?: number;
+  restingHr?: number;
+  deep?: number;
+  rem?: number;
+  light?: number;
+}
+
+export interface WearableTrendResponse {
+  trend: WearableTrendPoint[];
+  days: number;
+}
+
+/**
+ * Fetches the authenticated user's per-day wearable trend.
+ * GET /api/wearables/trend?days=...
+ */
+export async function getWearableTrend(days = 14): Promise<WearableTrendResponse> {
+  const res = await request(`/api/wearables/trend?days=${days}`);
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json.message ?? "Failed to load wearable trend");
+  }
+  return (await res.json()) as WearableTrendResponse;
+}

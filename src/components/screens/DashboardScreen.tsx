@@ -42,6 +42,7 @@ import { SystemIconRow } from "./dashboard/SystemIconRow";
 import { PatternLayer } from "./dashboard/PatternLayer";
 import { AgentSchedule } from "./dashboard/AgentSchedule";
 import { MemoryCard } from "./dashboard/MemoryCard";
+import { WearableTrendPanel } from "./dashboard/WearableTrendPanel";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
 import { useMemoryContainerTag } from "@/hooks/useMemoryContainerTag";
 import type { DebtAnalysis, ConfidenceTier } from "@/lib/types";
@@ -735,6 +736,9 @@ export function DashboardScreen() {
           body="Sign in to keep a recoverable history of verdicts and stressors."
         />
       )}
+
+      {/* ── Layer 6b: Wearable baseline trend (auth-only) ───────────── */}
+      {user && <WearableTrendPanel />}
 
       {/* ── Layer 7: Notifications (auth-only) ──────────────────────── */}
       {user && <NotificationsToggle />}
