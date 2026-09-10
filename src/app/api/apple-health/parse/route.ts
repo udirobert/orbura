@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parser as createParser } from "sax";
 import { requireAuth } from "@/lib/auth";
-import type { HRVData } from "@/lib/types";
+import { buildHRVData, type WearableSnapshot } from "@/lib/baselines";
 
 export const maxDuration = 30;
-
-const POPULATION_BASELINE_HRV = 65;
-const POPULATION_BASELINE_HR = 60;
 
 const TARGET_TYPES = new Set([
   "HKQuantityTypeIdentifierHeartRate",
@@ -14,11 +11,6 @@ const TARGET_TYPES = new Set([
   "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
   "HKCategoryTypeIdentifierSleepAnalysis",
 ]);
-
-const SLEEP_STAGE_VALUES = {
-  deep: "HKCategoryValueSleepAnalysisAsleepDeep",
-  rem: "HKCategoryValueSleepAnalysisAsleepREM",
-} as const;
 
 interface RawRecord {
   type: string;
@@ -47,11 +39,13 @@ interface SleepRecord {
  * Accepts an Apple Health "Export All Health Data" XML file as multipart
  * form data (field name: "xml"). Parses the XML with a streaming SAX parser,
  * extracts HRV, resting heart rate, heart rate, and sleep-stage records, and
- * returns an HRVData object. The full export never leaves the device except for
- * the extracted records.
+ * returns an HRVData object. When the user is authenticated, metrics are
+ * persisted and the delta is computed against a personal rolling baseline.
  */
 export async function POST(request: NextRequest) {
-  await requireAuth(request); // guest-first; continue on failure
+  const auth = await requireAuth(request);
+  const userId = auth.ok ? auth.user.id : null;
+
   let xmlText: string;
   try {
     const form = await request.formData();
@@ -66,7 +60,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const records = parseAppleHealthXml(xmlText);
-    const hrvData = extractHRVData(records);
+    const snapshot = extractSnapshotFromRecords(records);
+    if (!snapshot) {
+      return NextResponse.json(
+        { error: "PARSE_FAILED", message: "Could not find usable health data." },
+        { status: 422 }
+      );
+    }
+    const hrvData = await buildHRVData(snapshot, userId);
     if (!hrvData) {
       return NextResponse.json(
         { error: "PARSE_FAILED", message: "Could not find usable health data." },
@@ -114,10 +115,7 @@ function parseAppleHealthXml(xml: string): RawRecord[] {
   return records;
 }
 
-function extractHRVData(records: RawRecord[]): HRVData | null {
-  const now = new Date();
-  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
+function extractSnapshotFromRecords(records: RawRecord[]): WearableSnapshot | null {
   const hrvRecords: TimedRecord[] = [];
   const hrRecords: TimedRecord[] = [];
   const restingRecords: TimedRecord[] = [];
@@ -142,45 +140,53 @@ function extractHRVData(records: RawRecord[]): HRVData | null {
     }
   }
 
-  const sleepWindow = findMainSleepWindow(sleepRecords, oneDayAgo);
+  const sleepWindow = findMainSleepWindow(sleepRecords);
 
   // Resting HR: prefer Apple's RestingHeartRate, then 5th percentile of HR in sleep.
   let restingHr: number | null = null;
-  const recentResting = restingRecords.filter(r => r.end >= oneDayAgo);
+  const recentResting = restingRecords.filter((r) =>
+    isWithinLast(r.end, 24 * 60 * 60 * 1000)
+  );
   if (recentResting.length > 0) {
-    // Latest value
-    restingHr = [...recentResting].sort((a, b) => a.start.getTime() - b.start.getTime()).pop()?.v ?? null;
+    restingHr = recentResting.sort((a, b) => a.start.getTime() - b.start.getTime()).pop()?.v ?? null;
   } else if (sleepWindow && hrRecords.length > 0) {
-    const windowHrs = hrRecords.filter(r => r.start >= sleepWindow.start && r.end <= sleepWindow.end);
+    const windowHrs = hrRecords.filter(
+      (r) => r.start >= sleepWindow.start && r.end <= sleepWindow.end
+    );
     if (windowHrs.length > 0) {
-      const sorted = windowHrs.map(r => r.v).sort((a, b) => a - b);
+      const sorted = windowHrs.map((r) => r.v).sort((a, b) => a - b);
       restingHr = sorted[Math.floor(sorted.length * 0.05)] ?? sorted[0];
     }
   }
   if (restingHr == null && hrRecords.length > 0) {
-    const recentHr = hrRecords.filter(r => r.end >= oneDayAgo);
+    const recentHr = hrRecords.filter((r) =>
+      isWithinLast(r.end, 24 * 60 * 60 * 1000)
+    );
     if (recentHr.length > 0) {
-      const sorted = recentHr.map(r => r.v).sort((a, b) => a - b);
+      const sorted = recentHr.map((r) => r.v).sort((a, b) => a - b);
       restingHr = sorted[Math.floor(sorted.length * 0.05)] ?? sorted[0];
     }
   }
 
   // HRV: average SDNN during the main sleep window, or last 24h if no sleep.
   let lastNightHrv: number | null = null;
-  let confidence: HRVData["confidence"] = "medium";
-
+  let hrvTimestamp: Date | undefined;
   if (sleepWindow && hrvRecords.length > 0) {
-    const windowHrv = hrvRecords.filter(r => r.start >= sleepWindow.start && r.end <= sleepWindow.end);
+    const windowHrv = hrvRecords.filter(
+      (r) => r.start >= sleepWindow.start && r.end <= sleepWindow.end
+    );
     if (windowHrv.length > 0) {
       lastNightHrv = Math.round(windowHrv.reduce((a, r) => a + r.v, 0) / windowHrv.length);
-      confidence = "high";
+      hrvTimestamp = sleepWindow.end;
     }
   }
   if (lastNightHrv == null && hrvRecords.length > 0) {
-    const recentHrv = hrvRecords.filter(r => r.end >= oneDayAgo);
+    const recentHrv = hrvRecords.filter((r) =>
+      isWithinLast(r.end, 24 * 60 * 60 * 1000)
+    );
     if (recentHrv.length > 0) {
       lastNightHrv = Math.round(recentHrv.reduce((a, r) => a + r.v, 0) / recentHrv.length);
-      confidence = "medium";
+      hrvTimestamp = recentHrv[recentHrv.length - 1]?.end;
     }
   }
 
@@ -188,38 +194,31 @@ function extractHRVData(records: RawRecord[]): HRVData | null {
     return null;
   }
 
-  let hrvDeltaPercent: number;
-  if (lastNightHrv != null) {
-    hrvDeltaPercent = Math.round(((lastNightHrv - POPULATION_BASELINE_HRV) / POPULATION_BASELINE_HRV) * 100);
-  } else {
-    const hrDelta = (restingHr ?? POPULATION_BASELINE_HR) - POPULATION_BASELINE_HR;
-    hrvDeltaPercent = Math.max(-60, Math.min(20, Math.round(-hrDelta * 1.5)));
-  }
-
-  const restingHrDelta = restingHr != null ? Math.round(restingHr - POPULATION_BASELINE_HR) : 0;
   const sleepStages = sleepWindow ? extractSleepStages(sleepRecords, sleepWindow) : null;
 
   return {
-    hrvDeltaPercent: Math.max(-80, Math.min(30, hrvDeltaPercent)),
-    restingHrDelta,
     source: "apple_health",
-    confidence,
-    ...(sleepStages ? { sleepStages } : {}),
+    recordedAt: hrvTimestamp ?? sleepWindow?.end ?? new Date(),
+    hrvValue: lastNightHrv ?? undefined,
+    hrvMetric: "hrv_sdnn",
+    restingHr: restingHr ?? undefined,
+    sleepStages: sleepStages ?? undefined,
+    confidence: lastNightHrv != null ? "high" : "medium",
   };
 }
 
-function findMainSleepWindow(sleepRecords: SleepRecord[], cutoff: Date): SleepRecord | null {
-  const recent = sleepRecords.filter(r => r.end >= cutoff);
+function findMainSleepWindow(sleepRecords: SleepRecord[]): SleepRecord | null {
+  const recent = sleepRecords.filter((r) =>
+    isWithinLast(r.end, 24 * 60 * 60 * 1000)
+  );
   if (recent.length === 0) return null;
 
-  // Prefer an InBed record; it contains the stage records within it.
   const inBed = recent
-    .filter(r => r.v === "HKCategoryValueSleepAnalysisInBed")
+    .filter((r) => r.v === "HKCategoryValueSleepAnalysisInBed")
     .sort((a, b) => (b.end.getTime() - b.start.getTime()) - (a.end.getTime() - a.start.getTime()));
   if (inBed.length > 0) return inBed[0];
 
-  // No InBed: fall back to the longest contiguous Asleep* block.
-  const asleep = recent.filter(r =>
+  const asleep = recent.filter((r) =>
     r.v === "HKCategoryValueSleepAnalysisAsleep" ||
     r.v === "HKCategoryValueSleepAnalysisAsleepCore" ||
     r.v === "HKCategoryValueSleepAnalysisAsleepDeep" ||
@@ -233,10 +232,7 @@ function findMainSleepWindow(sleepRecords: SleepRecord[], cutoff: Date): SleepRe
   let current: SleepRecord | null = null;
 
   for (const r of sorted) {
-    if (!current) {
-      current = r;
-      continue;
-    }
+    if (!current) { current = r; continue; }
     const gap = r.start.getTime() - current.end.getTime();
     if (gap < 30 * 60 * 1000) {
       current = { start: current.start, end: r.end, v: current.v };
@@ -256,17 +252,17 @@ function findMainSleepWindow(sleepRecords: SleepRecord[], cutoff: Date): SleepRe
 
 function extractSleepStages(sleepRecords: SleepRecord[], window: SleepRecord) {
   const inside = sleepRecords.filter(
-    r => r.start >= window.start && r.end <= window.end
+    (r) => r.start >= window.start && r.end <= window.end
   );
 
   const deepMs = inside
-    .filter(r => r.v === SLEEP_STAGE_VALUES.deep)
+    .filter((r) => r.v === "HKCategoryValueSleepAnalysisAsleepDeep")
     .reduce((a, r) => a + (r.end.getTime() - r.start.getTime()), 0);
   const remMs = inside
-    .filter(r => r.v === SLEEP_STAGE_VALUES.rem)
+    .filter((r) => r.v === "HKCategoryValueSleepAnalysisAsleepREM")
     .reduce((a, r) => a + (r.end.getTime() - r.start.getTime()), 0);
   const lightMs = inside
-    .filter(r =>
+    .filter((r) =>
       r.v === "HKCategoryValueSleepAnalysisAsleepCore" ||
       r.v === "HKCategoryValueSleepAnalysisAsleepUnspecified" ||
       r.v === "HKCategoryValueSleepAnalysisAsleep"
@@ -280,6 +276,10 @@ function extractSleepStages(sleepRecords: SleepRecord[], window: SleepRecord) {
   if (deep === 0 && rem === 0 && light === 0) return null;
 
   return { deep, rem, light };
+}
+
+function isWithinLast(end: Date, ms: number) {
+  return end.getTime() >= Date.now() - ms;
 }
 
 function parseAppleDate(s: string | undefined): Date | null {

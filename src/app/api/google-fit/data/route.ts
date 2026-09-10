@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { HRVData } from "@/lib/types";
+import { requireAuth } from "@/lib/auth";
+import { buildHRVData, type WearableSnapshot } from "@/lib/baselines";
 
 export const maxDuration = 20;
-
-const POPULATION_BASELINE_HR = 60; // resting HR reference
 
 /**
  * POST /api/google-fit/data
@@ -18,6 +17,9 @@ const POPULATION_BASELINE_HR = 60; // resting HR reference
  * Labelled as confidence: "medium" to reflect this limitation.
  */
 export async function POST(request: NextRequest) {
+  const auth = await requireAuth(request);
+  const userId = auth.ok ? auth.user.id : null;
+
   let body: { accessToken?: string };
   try {
     body = await request.json();
@@ -57,12 +59,15 @@ export async function POST(request: NextRequest) {
   let avgRestingHr: number | null = null;
   if (hrRes.ok) {
     const hrJson = await hrRes.json();
-    const buckets = hrJson.bucket ?? [];
+    const buckets: unknown[] = hrJson.bucket ?? [];
     const points: number[] = [];
     for (const bucket of buckets) {
-      for (const ds of bucket.dataset ?? []) {
-        for (const pt of ds.point ?? []) {
-          const val = pt.value?.[0]?.fpVal;
+      const b = bucket as Record<string, unknown>;
+      for (const ds of (b.dataset ?? []) as unknown[]) {
+        const d = ds as Record<string, unknown>;
+        for (const pt of (d.point ?? []) as unknown[]) {
+          const p = pt as Record<string, unknown>;
+          const val = (p.value as Record<string, unknown>[] | undefined)?.[0]?.fpVal as number | undefined;
           if (val != null) points.push(val);
         }
       }
@@ -86,35 +91,36 @@ export async function POST(request: NextRequest) {
 
   if (sleepRes.ok) {
     const sleepJson = await sleepRes.json();
-    for (const session of sleepJson.session ?? []) {
-      const durationMs = Number(session.endTimeMillis) - Number(session.startTimeMillis);
+    for (const session of (sleepJson.session ?? []) as unknown[]) {
+      const s = session as Record<string, unknown>;
+      const durationMs = Number(s.endTimeMillis) - Number(s.startTimeMillis);
       const durationMins = Math.round(durationMs / 60000);
       // Google Fit sleep activity types: 110=light, 111=deep, 112=REM
-      const actType = session.activityType;
+      const actType = s.activityType;
       if (actType === 111) deepMins += durationMins;
       else if (actType === 112) remMins += durationMins;
       else if (actType === 110) lightMins += durationMins;
     }
   }
 
-  // ── Derive HRV proxy from resting HR ─────────────────────────────────────
-  // Google Fit has no RMSSD endpoint — higher resting HR → lower HRV proxy
-  const restingHrDelta = avgRestingHr !== null
-    ? Math.round(avgRestingHr - POPULATION_BASELINE_HR)
-    : 5;
-
-  // Each +1 bpm above baseline ≈ -1.5% HRV (rough empirical correlation)
-  const hrvDeltaPercent = Math.max(-60, Math.min(20, Math.round(-restingHrDelta * 1.5)));
-
-  const hrvData: HRVData = {
-    hrvDeltaPercent,
-    restingHrDelta,
+  const snapshot: WearableSnapshot = {
     source: "google_fit",
+    recordedAt: new Date(),
+    restingHr: avgRestingHr ?? undefined,
+    sleepStages:
+      deepMins > 0 || remMins > 0 || lightMins > 0
+        ? { deep: deepMins, rem: remMins, light: lightMins }
+        : undefined,
     confidence: "medium", // no RMSSD available — derived proxy
-    ...(deepMins > 0 || remMins > 0 || lightMins > 0
-      ? { sleepStages: { deep: deepMins, rem: remMins, light: lightMins } }
-      : {}),
   };
+
+  const hrvData = await buildHRVData(snapshot, userId);
+  if (!hrvData) {
+    return NextResponse.json(
+      { error: "NO_USABLE_DATA", message: "Could not derive a score from Google Fit." },
+      { status: 422 }
+    );
+  }
 
   return NextResponse.json({ hrvData });
 }

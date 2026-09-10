@@ -126,6 +126,10 @@ export interface HRVData {
     rem: number;
     light: number;
   };
+  /** The HRV baseline (ms) used to compute hrvDeltaPercent, if known. */
+  baselineHrv?: number;
+  /** The resting HR baseline (bpm) used to compute restingHrDelta, if known. */
+  baselineHr?: number;
 }
 
 // ─── Debt analysis ────────────────────────────────────────────────────────────

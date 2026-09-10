@@ -241,9 +241,11 @@ to the live Terra and Google Fit adapters.
 - **Open Wearables** — Self-hosted FastAPI/Postgres aggregator (MIT) with SDKs
   for Apple Health, Google Health Connect, Garmin, Whoop, Oura, etc. Relevant
   only if a dedicated wearable backend is needed.
-- **Personal baselines** — HRV and resting HR should be compared to a user’s
-  own 14/28-day rolling average stored in PostgreSQL, not the current
-  population constants. This is the next priority.
-
-Immediate priority: replace the population baselines with personal rolling
-baselines, then broaden the observation schema to store raw time-series samples.
+- **Personal baselines** — Implemented. `src/lib/db/schema/wearable-observations.ts`
+  stores daily HRV, resting HR, and sleep-stage summaries keyed by user, source,
+  metric, and calendar date. `src/lib/baselines.ts` computes a 28-day rolling
+  average per metric and falls back to a source-provided or population baseline
+  until enough data exists.
+- **Raw time-series samples** — Not yet implemented. The current table stores
+  daily aggregates only; preserving per-record samples is the next step if users
+  need second-by-second history or export-grade provenance.

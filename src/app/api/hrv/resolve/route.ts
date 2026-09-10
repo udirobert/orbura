@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
+import { fetchTerraHRV } from "@/lib/wearables/terra";
 import type { HRVData } from "@/lib/types";
 
 export const maxDuration = 20;
@@ -16,20 +18,25 @@ export const maxDuration = 20;
  * REMOVE or gate the demo param before public launch.
  */
 export async function GET(request: NextRequest) {
+  const auth = await requireAuth(request);
+  const userId = auth.ok ? auth.user.id : null;
+
   const { searchParams } = new URL(request.url);
 
   // ── Demo mode ─────────────────────────────────────────────────────────────
   if (searchParams.get("demo") === "true") {
     const demoData: HRVData = {
       hrvDeltaPercent: -31,
-      restingHrDelta:  14,   // 72bpm vs 58bpm baseline
-      source:          "demo",
-      confidence:      "high",
+      restingHrDelta: 14,   // 72bpm vs 58bpm baseline
+      source: "demo",
+      confidence: "high",
       sleepStages: {
-        deep:  28,
-        rem:   44,
+        deep: 28,
+        rem: 44,
         light: 248, // 5h 20m total, predominantly light
       },
+      baselineHrv: 65,
+      baselineHr: 60,
     };
     return NextResponse.json({
       hrvData: demoData,
@@ -39,55 +46,16 @@ export async function GET(request: NextRequest) {
   }
 
   const terraUserId = searchParams.get("terraUserId");
-  const terraDev  = process.env.TERRA_DEV_ID;
-  const terraKey  = process.env.TERRA_API_KEY;
 
   // ── Layer 1 — Terra ───────────────────────────────────────────────────────
-  if (terraDev && terraKey && terraUserId) {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-    const today = new Date().toISOString().split("T")[0];
-
-    const terraRes = await fetch(
-      `https://api.tryterra.co/v2/sleep?user_id=${encodeURIComponent(terraUserId)}&start_date=${yesterday}&end_date=${today}&to_webhook=false`,
-      { headers: { "dev-id": terraDev, "x-api-key": terraKey } }
-    ).catch(() => null);
-
-    if (terraRes?.ok) {
-      const json = await terraRes.json();
-      const entry = (json.data ?? [])[0] as Record<string, unknown> | undefined;
-      if (entry) {
-        const hrData    = entry.heart_rate_data   as Record<string, unknown> | undefined;
-        const sleepData = entry.sleep_durations_data as Record<string, unknown> | undefined;
-        const asleep    = sleepData?.asleep        as Record<string, unknown> | undefined;
-
-        const rmssd = hrData?.avg_hrv_rmssd       as number | undefined;
-        const restHr = hrData?.avg_resting_heart_rate as number | undefined;
-        const deepS  = asleep?.duration_deep_sleep_state_seconds as number | undefined;
-        const remS   = asleep?.duration_REM_sleep_state_seconds  as number | undefined;
-        const lightS = asleep?.duration_light_sleep_state_seconds as number | undefined;
-
-        const BASE_HRV = 65;
-        const BASE_HR  = 60;
-        const delta = rmssd != null
-          ? Math.round(((rmssd - BASE_HRV) / BASE_HRV) * 100)
-          : -20;
-
-        const data: HRVData = {
-          hrvDeltaPercent: delta,
-          restingHrDelta: restHr != null ? Math.round(restHr - BASE_HR) : 5,
-          source: "terra",
-          confidence: "high",
-          ...(deepS != null || remS != null || lightS != null ? {
-            sleepStages: {
-              deep:  deepS  != null ? Math.round(deepS  / 60) : 45,
-              rem:   remS   != null ? Math.round(remS   / 60) : 60,
-              light: lightS != null ? Math.round(lightS / 60) : 180,
-            },
-          } : {}),
-        };
-
-        return NextResponse.json({ hrvData: data, resolvedLayer: "terra", sourceLabel: `Live from your wearable` });
-      }
+  if (terraUserId) {
+    const result = await fetchTerraHRV(terraUserId, userId);
+    if (result) {
+      return NextResponse.json({
+        hrvData: result.hrvData,
+        resolvedLayer: "terra",
+        sourceLabel: "Live from your wearable",
+      });
     }
   }
 

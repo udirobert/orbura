@@ -192,4 +192,19 @@ user-owned exports, keeping live Terra and Google Fit in place.
     requiring a third-party conversion app.
   - Added `apple_health` to `HRVSource` and the HRV device picker.
 
-Type check passes with `bun x tsc --noEmit`.
+- **Personal rolling baselines** (`src/lib/baselines.ts`,
+  `src/lib/db/schema/wearable-observations.ts`):
+  - New `wearable_observations` table with Drizzle migration
+    `0011_nervous_martin_li.sql`.
+  - Each upload/source route normalizes extracted HRV, resting HR, and sleep
+    stages into daily observations keyed by user, source, metric, and date.
+  - `getPersonalBaseline` computes a 28-day rolling average per metric from
+    the observation table before the current day.
+  - `buildHRVData` compares the current value against the personal baseline
+    when one exists, falling back to source-provided baselines or population
+    constants (`65` ms HRV, `60` bpm HR) until enough history is available.
+  - Garmin, Apple Health, Terra, and Google Fit routes now call `buildHRVData`
+    and persist observations for authenticated users.
+
+Type check passes with `bun x tsc --noEmit` and `bun run lint` has no errors.
+Drizzle migration generated with `bun run db:generate`.
