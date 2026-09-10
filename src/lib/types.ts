@@ -109,6 +109,8 @@ export type HRVSource =
   | "healthkit"
   | "google_fit"
   | "garmin_export"
+  | "garmin_fit"
+  | "apple_health"
   | "manual_proxy"
   | "demo";
 

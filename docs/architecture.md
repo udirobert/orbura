@@ -215,3 +215,35 @@ whose names preserve product intent: `CarePlanGenerator`,
 
 Do not introduce microservices until independent scaling, isolation, deployment,
 or team ownership creates a demonstrated need.
+
+## Wearable data parsing
+
+The measurement-source layer now accepts richer user-owned exports in addition
+to the live Terra and Google Fit adapters.
+
+- **Garmin .FIT** — Implemented. The Garmin adapter
+  (`src/app/api/garmin/parse/route.ts`) accepts a base64-encoded `.FIT` file
+  using `fit-file-parser` (MIT, TypeScript), which can run in the browser or on
+  the server. It extracts HRV summaries, resting heart rate, and sleep levels
+  where present. The legacy HRV CSV path is preserved.
+- **Apple Health** — Implemented. Users export `export.zip` from the Health app;
+  `src/components/screens/apple-health-upload.tsx` unzips it in the browser with
+  `fflate`, sends only the `export.xml` to
+  `src/app/api/apple-health/parse/route.ts`, and the route streams the XML with
+  `sax` to extract HRV (SDNN), resting heart rate, heart rate, and sleep stages.
+  No third-party conversion app is needed.
+- **Google Fit / Health Connect** — The Google Fit REST API exposes heart-rate
+  and sleep sessions but not RMSSD HRV. Health Connect is an on-device Android
+  store. The current Google Fit route is already near the free ceiling.
+- **Open mHealth** — `openmhealth/schemas` provides the open standard for
+  wearable data shapes. Useful as a canonical model if multi-source
+  normalization becomes important.
+- **Open Wearables** — Self-hosted FastAPI/Postgres aggregator (MIT) with SDKs
+  for Apple Health, Google Health Connect, Garmin, Whoop, Oura, etc. Relevant
+  only if a dedicated wearable backend is needed.
+- **Personal baselines** — HRV and resting HR should be compared to a user’s
+  own 14/28-day rolling average stored in PostgreSQL, not the current
+  population constants. This is the next priority.
+
+Immediate priority: replace the population baselines with personal rolling
+baselines, then broaden the observation schema to store raw time-series samples.

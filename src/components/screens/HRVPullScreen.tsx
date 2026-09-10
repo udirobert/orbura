@@ -16,11 +16,12 @@ import { resolveHrv, getGoogleFitData } from "@/lib/api";
 import type { HRVData } from "@/lib/types";
 import { DEVICE_OPTIONS } from "./hrv-config";
 import { GarminUpload } from "./garmin-upload";
+import { AppleHealthUpload } from "./apple-health-upload";
 import { ConnectedPanel } from "./connected-panel";
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
-type Layer = "picker" | "terra" | "google_fit" | "garmin" | "manual" | "connected" | "handoff" | "analyzing";
+type Layer = "picker" | "terra" | "google_fit" | "garmin" | "apple_health" | "manual" | "connected" | "handoff" | "analyzing";
 
 export function HRVPullScreen() {
   const searchParams = useSearchParams();
@@ -113,10 +114,21 @@ export function HRVPullScreen() {
     setResolvedHrv(data);
     setLayer("connected");
     memory.reportAction({
-      content: "User uploaded Garmin CSV data.",
+      content: "User uploaded Garmin data.",
       event_type: "create",
       page: "hrv-pull",
-      metadata: { type: "garmin_csv_upload", source: "garmin_export" },
+      metadata: { type: "garmin_upload", source: data.source ?? "garmin_export" },
+    }).catch(() => {});
+  };
+
+  const handleAppleHealthData = (data: HRVData) => {
+    setResolvedHrv(data);
+    setLayer("connected");
+    memory.reportAction({
+      content: "User uploaded an Apple Health export.",
+      event_type: "create",
+      page: "hrv-pull",
+      metadata: { type: "apple_health_upload", source: data.source ?? "apple_health" },
     }).catch(() => {});
   };
 
@@ -211,11 +223,19 @@ export function HRVPullScreen() {
           </motion.div>
         )}
 
-        {/* ── Garmin CSV ─────────────────────────────────────────── */}
+        {/* ── Garmin CSV / FIT ───────────────────────────────────── */}
         {layer === "garmin" && (
           <motion.div key="garmin" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className="relative z-10 flex-1 flex flex-col pb-10">
             <GarminUpload onData={handleGarminData} onSkip={() => setLayer("manual")} />
+          </motion.div>
+        )}
+
+        {/* ── Apple Health export ────────────────────────────────── */}
+        {layer === "apple_health" && (
+          <motion.div key="apple_health" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="relative z-10 flex-1 flex flex-col pb-10">
+            <AppleHealthUpload onData={handleAppleHealthData} onSkip={() => setLayer("manual")} />
           </motion.div>
         )}
 

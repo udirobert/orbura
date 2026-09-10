@@ -68,9 +68,25 @@ export interface GarminParseResponse {
 export async function parseGarminCsv(
   csvText: string
 ): Promise<GarminParseResponse> {
+  return parseGarminUpload({ csvText });
+}
+
+/**
+ * Parses a Garmin .FIT file (base64-encoded).
+ * POST /api/garmin/parse
+ */
+export async function parseGarminFit(
+  fitBase64: string
+): Promise<GarminParseResponse> {
+  return parseGarminUpload({ fitBase64 });
+}
+
+async function parseGarminUpload(
+  body: { csvText: string } | { fitBase64: string }
+): Promise<GarminParseResponse> {
   const res = await request("/api/garmin/parse", {
     method: "POST",
-    body: JSON.stringify({ csvText }),
+    body: JSON.stringify(body),
   });
   const json = await res.json();
   if (!res.ok || !json.hrvData) {
@@ -100,6 +116,34 @@ export async function getGoogleFitData(
   const json = await res.json();
   if (!res.ok) throw new Error(json.error ?? "Google Fit fetch failed");
   return json as GoogleFitDataResponse;
+}
+
+// ─── Apple Health ──────────────────────────────────────────────────────────────
+
+export interface AppleHealthParseResponse {
+  hrvData: HRVData;
+}
+
+/**
+ * Parses an Apple Health export XML extracted from export.zip.
+ * POST /api/apple-health/parse
+ */
+export async function parseAppleHealth(
+  xmlText: string,
+  filename = "export.xml"
+): Promise<AppleHealthParseResponse> {
+  const form = new FormData();
+  form.append("xml", new Blob([xmlText], { type: "text/xml" }), filename);
+
+  const res = await request("/api/apple-health/parse", {
+    method: "POST",
+    body: form,
+  });
+  const json = await res.json();
+  if (!res.ok || !json.hrvData) {
+    throw new Error(json.message ?? "Could not parse Apple Health export.");
+  }
+  return json as AppleHealthParseResponse;
 }
 
 // ─── Unified HRV resolve ───────────────────────────────────────────────────────

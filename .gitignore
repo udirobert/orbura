@@ -282,5 +282,12 @@ showcases/autoscientist-dataviz/data/
 showcases/autoscientist-dataviz/model_weights/
 showcases/autoscientist-dataviz/model_weights_mistral/
 
+# User-owned wearable exports / health fixtures (should never be committed)
+*.fit
+*.FIT
+*.zip
+export*.xml
+apple_health_export/
+
 # Drizzle migration SQL (generated, tracked via meta journal)
 !src/lib/db/migrations/*.sql

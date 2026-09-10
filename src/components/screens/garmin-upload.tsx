@@ -3,9 +3,18 @@
 import { useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { AlertCircle, Upload } from "lucide-react";
-import { parseGarminCsv } from "@/lib/api";
+import { parseGarminCsv, parseGarminFit } from "@/lib/api";
 import { memory } from "@/lib/sdk/eazo-client";
 import type { HRVData } from "@/lib/types";
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
 
 export function GarminUpload({ onData, onSkip }: { onData: (d: HRVData) => void; onSkip: () => void }) {
   const [state, setState] = useState<"idle" | "parsing" | "error">("idle");
@@ -16,18 +25,30 @@ export function GarminUpload({ onData, onSkip }: { onData: (d: HRVData) => void;
     if (!file) return;
     setState("parsing");
     try {
-      const text = await file.text();
-      const result = await parseGarminCsv(text);
+      const name = file.name.toLowerCase();
+      let result: { hrvData: HRVData };
+
+      if (name.endsWith(".csv")) {
+        const text = await file.text();
+        result = await parseGarminCsv(text);
+      } else if (name.endsWith(".fit")) {
+        const buffer = await file.arrayBuffer();
+        const base64 = arrayBufferToBase64(buffer);
+        result = await parseGarminFit(base64);
+      } else {
+        throw new Error("Please upload a Garmin .csv or .fit file.");
+      }
+
       if (!result.hrvData) {
         setErrMsg("Couldn't read this file. Try a different export.");
         setState("error");
         return;
       }
       memory.reportAction({
-        content: "User uploaded and parsed Garmin CSV.",
+        content: "User uploaded and parsed a Garmin file.",
         event_type: "create",
         page: "hrv-pull",
-        metadata: { type: "garmin_csv", has_data: true },
+        metadata: { type: name.endsWith(".fit") ? "garmin_fit" : "garmin_csv", has_data: true },
       }).catch(() => {});
       onData(result.hrvData);
     } catch (err) {
@@ -47,7 +68,7 @@ export function GarminUpload({ onData, onSkip }: { onData: (d: HRVData) => void;
 
       {/* Steps */}
       {[
-        { n: 1, text: "Open Garmin Connect → Health Stats → Heart Rate Variability → Export CSV" },
+        { n: 1, text: "From Garmin Connect or your device, export a HRV .csv or an activity/sleep .fit file" },
         { n: 2, text: "Download the file to your phone" },
         { n: 3, text: "Upload it below" },
       ].map((s) => (
@@ -67,7 +88,7 @@ export function GarminUpload({ onData, onSkip }: { onData: (d: HRVData) => void;
       )}
 
       {/* Upload button */}
-      <input ref={inputRef} type="file" accept=".csv,.zip" className="hidden"
+      <input ref={inputRef} type="file" accept=".csv,.fit,.FIT" className="hidden"
         onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
       <motion.button whileTap={{ scale: 0.98 }}
         onClick={() => inputRef.current?.click()}
@@ -75,7 +96,7 @@ export function GarminUpload({ onData, onSkip }: { onData: (d: HRVData) => void;
         className="w-full font-semibold text-sm rounded-2xl flex items-center justify-center gap-2"
         style={{ backgroundColor: state === "parsing" ? "var(--color-bg-elevated)" : "var(--color-brand-primary)", color: state === "parsing" ? "var(--color-text-faint)" : "var(--color-text-primary)", fontFamily: "var(--font-body)", minHeight: "58px" }}>
         <Upload className="w-4 h-4" />
-        {state === "parsing" ? "Reading file..." : "Upload Garmin CSV"}
+        {state === "parsing" ? "Reading file..." : "Upload Garmin CSV or FIT"}
       </motion.button>
       <button onClick={onSkip} className="w-full text-center text-[11px] py-2 font-medium" style={{ color: "var(--color-text-faint)" }}>
         Skip — answer manually instead

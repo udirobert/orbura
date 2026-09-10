@@ -165,3 +165,31 @@ action and escalation, with a required audit trail for clinical decisions.
   longitudinal record.
 - New migration `0009_tearful_silver_surfer.sql` adds `care_audit_logs` plus
   `outcome_code` and `outcome_note` to `care_interventions`.
+
+## Wearable measurement-source adapters
+
+Extended the Garmin and Apple Health measurement-source adapters to accept
+user-owned exports, keeping live Terra and Google Fit in place.
+
+- **Garmin .FIT parser** (`src/app/api/garmin/parse/route.ts`):
+  - Accepts `{ csvText }` for the legacy HRV CSV and `{ fitBase64 }` for
+    binary `.FIT` files.
+  - Uses `fit-file-parser` to read HRV status summaries, resting heart rate,
+    and sleep levels.
+  - Maps extracted data into the existing `HRVData` shape with
+    `source: "garmin_fit"`.
+  - Updated `src/components/screens/garmin-upload.tsx` to branch between CSV
+    text and FIT binary input.
+
+- **Apple Health `export.zip` parser**
+  (`src/components/screens/apple-health-upload.tsx` and
+  `src/app/api/apple-health/parse/route.ts`):
+  - Unzips the user's `export.zip` in the browser with `fflate`, extracts the
+    `export.xml`, and sends only that XML to the server.
+  - Server streams the XML with `sax` and pulls `HKQuantityTypeIdentifier*` and
+    `HKCategoryTypeIdentifierSleepAnalysis` records.
+  - Derives HRV (SDNN), resting heart rate, and sleep-stage minutes without
+    requiring a third-party conversion app.
+  - Added `apple_health` to `HRVSource` and the HRV device picker.
+
+Type check passes with `bun x tsc --noEmit`.
