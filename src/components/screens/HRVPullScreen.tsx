@@ -326,7 +326,7 @@ export function HRVPullScreen() {
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 {resolvedHrv.hrvDeltaPercent != null
-                  ? `Factoring ${resolvedHrv.hrvDeltaPercent > 0 ? "+" : ""}${resolvedHrv.hrvDeltaPercent}% HRV delta into your body systems…`
+                  ? `Factoring ${resolvedHrv.hrvDeltaPercent > 0 ? "+" : ""}${resolvedHrv.hrvDeltaPercent}% HRV delta (baseline ${Math.round(resolvedHrv.baselineHrv ?? 65)} ms) into your body systems…`
                   : "Preparing your personalized analysis…"}
               </motion.p>
             </motion.div>
@@ -391,6 +391,8 @@ export function HRVPullScreen() {
               hrvContext={resolvedHrv ? {
                 deltaPercent: resolvedHrv.hrvDeltaPercent ?? 0,
                 source: resolvedHrv.source ?? "manual_proxy",
+                baselineHrv: resolvedHrv.baselineHrv,
+                baselineHr: resolvedHrv.baselineHr,
               } : undefined}
               agentEvents={agentEvents}
               agentProgress={agentProgress}

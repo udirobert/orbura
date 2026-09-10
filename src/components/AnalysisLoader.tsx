@@ -41,7 +41,7 @@ interface AnalysisLoaderProps {
   hasFaceScan: boolean;
   hasHRV: boolean;
   /** Optional HRV context for personalised loading messages. */
-  hrvContext?: { deltaPercent: number; source: string };
+  hrvContext?: { deltaPercent: number; source: string; baselineHrv?: number; baselineHr?: number };
   /** Optional face-scan context for personalised loading messages. */
   faceContext?: { summary: string };
   agentEvents?: AgentEventState[];
@@ -81,7 +81,9 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, a
       const prefix = hrvContext.deltaPercent > 0
         ? `HRV +${hrvContext.deltaPercent}%`
         : `HRV ${hrvContext.deltaPercent}%`;
-      return { ...s, label: `${prefix} (${hrvContext.source.replace("_", " ")})` };
+      const baseline = hrvContext.baselineHrv != null ? `baseline ${Math.round(hrvContext.baselineHrv)} ms` : null;
+      const source = hrvContext.source.replace("_", " ");
+      return { ...s, label: `${prefix} · ${source}${baseline ? ` · ${baseline}` : ""}` };
     }
     if (s.id === "face" && faceContext) {
       return { ...s, label: `Face: ${faceContext.summary.slice(0, 32)}…` };
