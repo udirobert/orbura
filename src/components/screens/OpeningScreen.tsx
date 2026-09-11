@@ -43,31 +43,48 @@ export function OpeningScreen() {
   const squish = useSquishProps();
 
   // Strip the [YYYY-MM-DD] stamps Supermemory adds to stored events, then drop
-  // third-person "User ..." lines so raw reportAction logs never render here.
+  // action-log noise — both "User did X" lines and passive variants like
+  // "Personal check-in was started from the welcome screen." Only durable
+  // facts and preferences should render here.
   const stripStamp = (m: string) => m.replace(/^\[\d{4}-\d{2}-\d{2}\]\s*/, "").trim();
-  const rawMemories = memoryData?.memories ?? [];
-  const usefulMemories = rawMemories
-    .map(stripStamp)
-    .filter(
-      (m) =>
-        m &&
-        !m.includes("anonymousId") &&
-        !m.includes("memory_migration") &&
-        !m.startsWith("User "),
+  const isNoise = (m: string) =>
+    !m ||
+    m.includes("anonymousId") ||
+    m.includes("memory_migration") ||
+    m.startsWith("User ") ||
+    /check-in|welcome screen|\bwas (started|logged|recorded|opened|initiated|completed|connected|viewed)\b|from the \w+ screen/i.test(
+      m,
     );
+  const rawMemories = memoryData?.memories ?? [];
+  const usefulMemories = rawMemories.map(stripStamp).filter((m) => !isNoise(m));
   const profileFacts = (memoryData?.profile ?? "")
     .split("\n")
     .map(stripStamp)
-    .filter((m) => m && !m.startsWith("User "));
+    .filter((m) => !isNoise(m));
   const memoryReturning =
     memoryData?.enabled && (profileFacts.length > 0 || usefulMemories.length > 0);
   const localReturning = hasSeenOpening || streakDays > 0 || !!(lastWakeTime && lastBedTime);
   const isReturning = memoryReturning || localReturning;
   const memorySummary = memoryReturning
-    ? (profileFacts.slice(0, 2).join(" · ") || usefulMemories.slice(0, 2).join(" · ")).trim()
+    ? (profileFacts[0] || usefulMemories[0] || "").trim()
     : "";
   const sleepHabit =
     lastWakeTime && lastBedTime ? `${lastBedTime} → ${lastWakeTime}` : null;
+
+  // One context line, chosen by priority — never a stack of competing captions.
+  const signalLine = !isReturning
+    ? null
+    : trendSignal
+      ? { text: streakDays > 0 ? `${streakDays}d streak · ${trendSignal}` : trendSignal }
+      : memorySummary
+        ? { text: memorySummary, coachLink: true }
+        : user && trendChecked
+          ? { text: "No wearable history yet · connect a device during check-in" }
+          : sleepHabit
+            ? { text: `Usual sleep · ${sleepHabit}` }
+            : streakDays > 0
+              ? { text: `${streakDays}d streak · keep the chain going`, success: true }
+              : null;
 
   useEffect(() => {
     if (analysis) {
@@ -279,29 +296,31 @@ export function OpeningScreen() {
                   See a full example session →
                 </button>
               )}
-              {isReturning && trendSignal && (
-                <p
-                  className="mt-3 text-[11px] font-mono"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  {streakDays > 0 ? `${streakDays}d streak · ${trendSignal}` : trendSignal}
-                </p>
-              )}
-              {isReturning && !trendSignal && user && trendChecked && (
-                <p
-                  className="mt-3 text-[11px] font-mono"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  No wearable history yet · connect a device during check-in to build your baseline
-                </p>
-              )}
-              {isReturning && !trendSignal && (!user || !trendChecked) && sleepHabit && (
-                <p
-                  className="mt-3 text-[11px] font-mono"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  Usual sleep · {sleepHabit}
-                </p>
+              {isReturning && signalLine && (
+                <>
+                  <p
+                    className="mt-3 text-[11px] font-mono leading-relaxed"
+                    style={{
+                      color: signalLine.success
+                        ? "var(--color-states-success)"
+                        : "var(--color-text-secondary)",
+                    }}
+                  >
+                    {signalLine.text.length > 110
+                      ? signalLine.text.slice(0, 110) + "…"
+                      : signalLine.text}
+                  </p>
+                  {signalLine.coachLink && (
+                    <button
+                      type="button"
+                      onClick={() => router.push("/coach-memory")}
+                      className="mt-1.5 text-[9px] font-mono"
+                      style={{ color: "var(--color-system-muscular)" }}
+                    >
+                      How your coach uses this →
+                    </button>
+                  )}
+                </>
               )}
               {isReturning && !user && (
                 <button
@@ -312,34 +331,6 @@ export function OpeningScreen() {
                 >
                   Sign in to keep your history and build a personal baseline →
                 </button>
-              )}
-              {isReturning && memorySummary && (
-                <p
-                  className="text-[11px] mt-3 font-mono leading-relaxed"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  {memorySummary.length > 120
-                    ? memorySummary.slice(0, 120) + "…"
-                    : memorySummary}
-                </p>
-              )}
-              {isReturning && memoryReturning && (
-                <button
-                  type="button"
-                  onClick={() => router.push("/coach-memory")}
-                  className="mt-2 text-[9px] font-mono"
-                  style={{ color: "var(--color-system-muscular)" }}
-                >
-                  How your coach uses this →
-                </button>
-              )}
-              {isReturning && streakDays > 0 && !memorySummary && !trendSignal && (
-                <p
-                  className="mt-3 text-[11px] font-mono"
-                  style={{ color: "var(--color-states-success)" }}
-                >
-                  {streakDays}d streak · keep the chain going
-                </p>
               )}
             </motion.div>
           )}
