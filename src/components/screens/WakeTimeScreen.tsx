@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory } from "@/lib/sdk/eazo-client";
 import { DawnParticle } from "./dawn-particle";
 import { TimeDrum } from "./time-drum";
+import { SleepArc } from "./sleep-arc";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import {
@@ -14,6 +15,7 @@ import {
   buildBedtimeSlots,
   getCircadianNote,
   sleepDurationLabel,
+  slotToMinutes,
 } from "@/lib/time-utils";
 import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 
@@ -51,10 +53,36 @@ export function WakeTimeScreen() {
     idxOr(BED_SLOTS, lastBedTime, DEFAULT_BED === -1 ? 10 : DEFAULT_BED),
   );
 
+  const [roomy, setRoomy] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-height: 760px)");
+    const apply = () => setRoomy(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
   const wakeTime = WAKE_SLOTS[wakeIdx];
   const bedTime = BED_SLOTS[bedIdx];
   const note = getCircadianNote(bedTime);
   const duration = sleepDurationLabel(bedTime, wakeTime);
+
+  // Duration-aware insight — turns the raw window into a small coaching nudge
+  const sleepMins = (() => {
+    let m = slotToMinutes(wakeTime) - slotToMinutes(bedTime);
+    if (m <= 0) m += 24 * 60;
+    return m;
+  })();
+  const insight =
+    sleepMins < 360
+      ? "Short night — deep sleep will be compressed"
+      : sleepMins < 420
+        ? "Under 7h — expect some sleep debt"
+        : sleepMins <= 540
+          ? "Within the 7–9h sweet spot"
+          : sleepMins <= 600
+            ? "Long sleep — your body may be catching up"
+            : "Very long sleep — worth noting if you're still tired";
   const matchesHabit =
     remembered && wakeTime === lastWakeTime && bedTime === lastBedTime;
 
@@ -143,53 +171,73 @@ export function WakeTimeScreen() {
         </motion.p>
       </div>
 
-      {/* Side-by-side drums — halves vertical cost on short phones */}
-      <div className="relative z-10 w-full px-3 flex-1 flex flex-col min-h-0">
-        <div className="grid grid-cols-2 gap-1 items-start">
-          <div>
-            <p
-              className="text-[9px] font-mono uppercase tracking-widest text-center mb-0.5"
-              style={{ color: "var(--color-text-faint)" }}
-            >
-              Bedtime
-            </p>
-            <TimeDrum
-              slots={BED_SLOTS}
-              selectedIdx={bedIdx}
-              onSelect={setBedIdx}
-              size="compact"
-            />
-          </div>
-          <div>
-            <p
-              className="text-[9px] font-mono uppercase tracking-widest text-center mb-0.5"
-              style={{ color: "var(--color-text-faint)" }}
-            >
-              Wake
-            </p>
-            <TimeDrum
-              slots={WAKE_SLOTS}
-              selectedIdx={wakeIdx}
-              onSelect={setWakeIdx}
-              size="compact"
-            />
-          </div>
-        </div>
-
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={`${bedTime}-${wakeTime}`}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
-            className="text-center text-[11px] font-mono mt-1.5 px-4"
-            style={{ color: note.color, opacity: 0.9 }}
+      {/* Sleep window arc + drums — centered so tall screens don't leave a void */}
+      <div className="relative z-10 w-full px-3 flex-1 flex flex-col justify-center min-h-0">
+        <div className="w-full max-w-sm mx-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: EASE_PROTOCOL }}
           >
-            {matchesHabit ? "Same as last time · " : ""}
-            {duration} · {note.label}
-          </motion.p>
-        </AnimatePresence>
+            <SleepArc bedTime={bedTime} wakeTime={wakeTime} duration={duration} />
+          </motion.div>
+
+          <div className="grid grid-cols-2 gap-1 items-start mt-3">
+            <div>
+              <p
+                className="text-[9px] font-mono uppercase tracking-widest text-center mb-0.5"
+                style={{ color: "var(--color-text-faint)" }}
+              >
+                Bedtime
+              </p>
+              <TimeDrum
+                slots={BED_SLOTS}
+                selectedIdx={bedIdx}
+                onSelect={setBedIdx}
+                size={roomy ? "default" : "compact"}
+              />
+            </div>
+            <div>
+              <p
+                className="text-[9px] font-mono uppercase tracking-widest text-center mb-0.5"
+                style={{ color: "var(--color-text-faint)" }}
+              >
+                Wake
+              </p>
+              <TimeDrum
+                slots={WAKE_SLOTS}
+                selectedIdx={wakeIdx}
+                onSelect={setWakeIdx}
+                size={roomy ? "default" : "compact"}
+              />
+            </div>
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${bedTime}-${wakeTime}`}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              className="text-center mt-2 px-4 space-y-0.5"
+            >
+              <p
+                className="text-[11px] font-mono"
+                style={{ color: note.color, opacity: 0.9 }}
+              >
+                {matchesHabit ? "Same as last time · " : ""}
+                {duration} · {note.label}
+              </p>
+              <p
+                className="text-[10px] font-mono"
+                style={{ color: "var(--color-text-faint)" }}
+              >
+                {insight}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
 
       <motion.div
