@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { getContextConfig } from "@/lib/contexts";
 import { memory } from "@/lib/sdk/eazo-client";
+import { useEazo } from "@/lib/sdk/eazo-react";
+import { getWearableTrend } from "@/lib/api";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
 import { UserBadge } from "@/components/user-profile/user-badge";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -29,25 +31,35 @@ export function OpeningScreen() {
   const { analysis, setHasSeenOpening, setMode, hasSeenOpening, lastWakeTime, lastBedTime, streakDays } =
     useBodyDebtStore();
   const { data: memoryData } = useMemoryContext("user body debt recovery patterns and habits");
+  const user = useEazo((s) => s.auth.user);
   const [orbVisible, setOrbVisible] = useState(false);
   const [copyVisible, setCopyVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const [trendSignal, setTrendSignal] = useState<string | null>(null);
 
+  // Strip the [YYYY-MM-DD] stamps Supermemory adds to stored events, then drop
+  // third-person "User ..." lines so raw reportAction logs never render here.
+  const stripStamp = (m: string) => m.replace(/^\[\d{4}-\d{2}-\d{2}\]\s*/, "").trim();
   const rawMemories = memoryData?.memories ?? [];
-  const usefulMemories = rawMemories.filter(
-    (m) =>
-      m &&
-      !m.includes("anonymousId") &&
-      !m.includes("User migrated from guest session") &&
-      !m.startsWith("User ") &&
-      !m.includes("memory_migration"),
-  );
+  const usefulMemories = rawMemories
+    .map(stripStamp)
+    .filter(
+      (m) =>
+        m &&
+        !m.includes("anonymousId") &&
+        !m.includes("memory_migration") &&
+        !m.startsWith("User "),
+    );
+  const profileFacts = (memoryData?.profile ?? "")
+    .split("\n")
+    .map(stripStamp)
+    .filter((m) => m && !m.startsWith("User "));
   const memoryReturning =
-    memoryData?.enabled && (memoryData.profile || usefulMemories.length > 0);
+    memoryData?.enabled && (profileFacts.length > 0 || usefulMemories.length > 0);
   const localReturning = hasSeenOpening || streakDays > 0 || !!(lastWakeTime && lastBedTime);
   const isReturning = memoryReturning || localReturning;
   const memorySummary = memoryReturning
-    ? (memoryData.profile || usefulMemories.slice(0, 2).join(" · ")).trim()
+    ? (profileFacts.slice(0, 2).join(" · ") || usefulMemories.slice(0, 2).join(" · ")).trim()
     : "";
   const sleepHabit =
     lastWakeTime && lastBedTime ? `${lastBedTime} → ${lastWakeTime}` : null;
@@ -66,6 +78,35 @@ export function OpeningScreen() {
       clearTimeout(t2);
     };
   }, [analysis, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    getWearableTrend(7)
+      .then((res) => {
+        if (cancelled) return;
+        const hrvNights = res.trend.filter((p) => p.hrv != null);
+        const last = hrvNights[hrvNights.length - 1];
+        if (!last?.hrv) return;
+        const prior = hrvNights.slice(0, -1);
+        const avg = prior.length
+          ? Math.round(prior.reduce((a, p) => a + (p.hrv ?? 0), 0) / prior.length)
+          : null;
+        if (avg) {
+          const delta = Math.round(((last.hrv - avg) / avg) * 100);
+          const dir = delta <= -5 ? "below" : delta >= 5 ? "above" : "near";
+          setTrendSignal(
+            `HRV ${last.hrv} ms · ${Math.abs(delta)}% ${dir} your ${hrvNights.length}-night avg`,
+          );
+        } else {
+          setTrendSignal(
+            `Last night: HRV ${last.hrv} ms${last.restingHr ? ` · resting HR ${last.restingHr} bpm` : ""}`,
+          );
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [user]);
 
   const handleSelectMode = (mode: RecoveryMode) => {
     setMode(mode);
@@ -193,7 +234,7 @@ export function OpeningScreen() {
                 }}
               >
                 {isReturning
-                  ? "Welcome back. Ready to check today's debt?"
+                  ? "Welcome back. Ready to check today's recovery?"
                   : "Your body keeps the score."}
               </p>
               {!isReturning && (
@@ -201,7 +242,7 @@ export function OpeningScreen() {
                   className="mt-3 text-sm leading-relaxed"
                   style={{ color: "var(--color-text-faint)" }}
                 >
-                  Tell the orb what happened last night. Get a recovery plan you can read and trust.
+                  Connect a wearable or import your health data. Get one safe action, calibrated to your own baseline.
                 </p>
               )}
               {!isReturning && (
@@ -224,7 +265,15 @@ export function OpeningScreen() {
                   See a full example session →
                 </button>
               )}
-              {isReturning && sleepHabit && (
+              {isReturning && trendSignal && (
+                <p
+                  className="mt-3 text-[11px] font-mono"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  {trendSignal}
+                </p>
+              )}
+              {isReturning && !trendSignal && sleepHabit && (
                 <p
                   className="mt-3 text-[11px] font-mono"
                   style={{ color: "var(--color-text-secondary)" }}
@@ -280,7 +329,7 @@ export function OpeningScreen() {
                 shimmer
                 onClick={() => handleSelectMode("personal")}
               >
-                {isReturning ? "Check today's debt" : "Check my debt"}
+                {isReturning ? "Check today's recovery" : "Check my recovery"}
               </PrimaryButton>
 
               <div className="flex flex-col items-center gap-2.5">

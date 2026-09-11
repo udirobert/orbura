@@ -34,7 +34,7 @@ Ports
   AI planner | summarizer | memory index | measurement source | notifier
         |
 Adapters
-  OpenAI | QVAC | Supermemory | Terra | Google Fit | Garmin | EZKL/SKALE | WDK
+  OpenAI | QVAC | Supermemory | Terra | Google Fit | Garmin | Apple Health | Withings | EZKL/SKALE | WDK
         |
 Platform
   Auth.js | PostgreSQL | organizations | authorization | consent | audit
@@ -232,6 +232,12 @@ to the live Terra and Google Fit adapters.
   `src/app/api/apple-health/parse/route.ts`, and the route streams the XML with
   `sax` to extract HRV (SDNN), resting heart rate, heart rate, and sleep stages.
   No third-party conversion app is needed.
+- **Withings** — Implemented. OAuth 2.0 web flow against the public API.
+  `src/app/api/withings/` provides auth, callback, and data routes; encrypted
+  tokens live in `withings_tokens` via `src/lib/crypto/token-vault.ts`. The
+  adapter normalizes sleep summary data (HRV RMSSD, resting HR, sleep stages)
+  into the shared baseline pipeline. Weight, blood pressure, and other measures
+  are available via `measure` once the adapter is extended.
 - **Google Fit / Health Connect** — The Google Fit REST API exposes heart-rate
   and sleep sessions but not RMSSD HRV. Health Connect is an on-device Android
   store. The current Google Fit route is already near the free ceiling.
