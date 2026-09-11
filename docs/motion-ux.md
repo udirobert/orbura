@@ -27,6 +27,15 @@ disclosures, Opening/page/sheet aligned, dither-kit spike rejected. See
    Long bounce/scale entries are not — especially on screens users revisit.
 6. **Hover only on fine pointers.** Gate hover color shifts with
    `[@media(hover:hover)]:hover:…` so touch doesn’t stick “hovered” styles.
+7. **One icon vocabulary.** Every domain signal and wearable source has a
+   canonical lucide glyph in `src/lib/signal-icons.ts` (`SIGNAL_ICONS`,
+   `SOURCE_ICONS`). The icon carries the domain so text stays short — reuse
+   these instead of picking per-file icons or emoji. (Showcase pages and the
+   five body-system glyphs are exempt.)
+8. **Touch feels physical.** Buttons squash-and-stretch via
+   `useSquishProps()` (`TAP_SQUISH` + `SPRING_TAP` in `protocol.ts`) and tick
+   on `pointerdown` via `haptic()` in `src/lib/haptics.ts`. Haptics are a
+   safe no-op where the Vibration API is unsupported.
 
 ## Timing scale
 
@@ -54,7 +63,9 @@ disclosures, Opening/page/sheet aligned, dither-kit spike rejected. See
 
 | Concern | Path |
 | --- | --- |
-| Framer tokens + reveal variants | `src/lib/motion/protocol.ts` |
+| Framer tokens + reveal variants + press physics | `src/lib/motion/protocol.ts` |
+| Haptic feedback | `src/lib/haptics.ts` |
+| Icon vocabulary (signals + sources) | `src/lib/signal-icons.ts` |
 | App `MotionConfig` | `src/components/providers/MotionProvider.tsx` |
 | Grid-rows accordion | `src/components/ui/collapse.tsx` |
 | Page enter/exit | `src/components/PageTransition.tsx` |

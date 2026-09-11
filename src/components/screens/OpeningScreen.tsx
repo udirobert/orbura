@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Activity, Brain, Flame, Moon, Trophy, Tv, Watch } from "lucide-react";
+import { ChevronDown, Trophy, Tv } from "lucide-react";
+import { SIGNAL_ICONS } from "@/lib/signal-icons";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory, auth } from "@/lib/sdk/eazo-client";
@@ -77,17 +78,17 @@ export function OpeningScreen() {
     ? null
     : trendSignal
       ? {
-          Icon: streakDays > 0 ? Flame : Activity,
+          Icon: streakDays > 0 ? SIGNAL_ICONS.streak : SIGNAL_ICONS.hrv,
           text: streakDays > 0 ? `${streakDays}d streak · ${trendSignal}` : trendSignal,
         }
       : memorySummary
-        ? { Icon: Brain, text: memorySummary, coachLink: true }
+        ? { Icon: SIGNAL_ICONS.memory, text: memorySummary, coachLink: true }
         : user && trendChecked
-          ? { Icon: Watch, text: "No wearable history yet · connect a device during check-in" }
+          ? { Icon: SIGNAL_ICONS.wearable, text: "No wearable history yet · connect a device during check-in" }
           : sleepHabit
-            ? { Icon: Moon, text: `Usual sleep · ${sleepHabit}` }
+            ? { Icon: SIGNAL_ICONS.sleep, text: `Usual sleep · ${sleepHabit}` }
             : streakDays > 0
-              ? { Icon: Flame, text: `${streakDays}d streak · keep the chain going`, success: true }
+              ? { Icon: SIGNAL_ICONS.streak, text: `${streakDays}d streak · keep the chain going`, success: true }
               : null;
 
   useEffect(() => {
@@ -321,9 +322,10 @@ export function OpeningScreen() {
                     <button
                       type="button"
                       onClick={() => router.push("/coach-memory")}
-                      className="mt-1.5 text-[9px] font-mono"
+                      className="mt-1.5 text-[9px] font-mono flex items-center gap-1 mx-auto"
                       style={{ color: "var(--color-system-muscular)" }}
                     >
+                      <SIGNAL_ICONS.memory className="w-2.5 h-2.5" aria-hidden />
                       How your coach uses this →
                     </button>
                   )}
@@ -333,9 +335,10 @@ export function OpeningScreen() {
                 <button
                   type="button"
                   onClick={() => auth.login().catch(() => undefined)}
-                  className="mt-3 text-[10px] font-mono underline-offset-2 hover:underline"
+                  className="mt-3 text-[10px] font-mono underline-offset-2 hover:underline flex items-center justify-center gap-1.5"
                   style={{ color: "var(--color-system-muscular)" }}
                 >
+                  <SIGNAL_ICONS.auth className="w-3 h-3" aria-hidden />
                   Sign in to keep your history and build a personal baseline →
                 </button>
               )}

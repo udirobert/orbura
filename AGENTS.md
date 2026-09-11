@@ -71,7 +71,8 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 | State | `src/stores/useBodyDebtStore.ts` (4 slices: `profile-slice`, `session-slice`, `stream-slice`, `wallet-slice`) |
 | Types | `src/lib/types.ts` |
 | Design tokens | `src/lib/design-tokens.ts` (CSS vars in `globals.css`) |
-| Motion tokens | `src/lib/motion/protocol.ts`, CSS `--duration-*` / `--ease-*` in `globals.css` |
+| Motion tokens | `src/lib/motion/protocol.ts`, CSS `--duration-*` / `--ease-*` in `globals.css`, `src/lib/haptics.ts` |
+| Icon vocabulary | `src/lib/signal-icons.ts` (`SIGNAL_ICONS` domains, `SOURCE_ICONS` wearable sources) |
 | Collapse (accordion) | `src/components/ui/collapse.tsx` |
 | Motion provider | `src/components/providers/MotionProvider.tsx` |
 | Recovery contexts | `src/lib/contexts/` (registry: `index.ts`, configs: `personal.ts`, `football.ts`, `fan.ts`) |
@@ -247,8 +248,11 @@ GITHUB_CLIENT_SECRET=
 - Do not touch generated or large artifacts unless the task explicitly needs it.
 - **Motion/UX:** polish existing metaphors (orbs, gauges, systems) — do not
   introduce decorative chart kits or a second motion system. Use
-  `src/lib/motion/protocol.ts`, CSS `--duration-*` / `--ease-*` tokens, and
-  `Collapse` for disclosures. See `docs/motion-ux.md`.
+  `src/lib/motion/protocol.ts` (`useSquishProps` for press feel), CSS
+  `--duration-*` / `--ease-*` tokens, `haptic()` for touch ticks,
+  `Collapse` for disclosures, and `src/lib/signal-icons.ts` for the
+  canonical lucide icon vocabulary (no emoji in core product surfaces).
+  See `docs/motion-ux.md`.
 
 ## Docs
 

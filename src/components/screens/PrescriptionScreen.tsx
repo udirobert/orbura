@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory, auth } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Lock } from "lucide-react";
 import { RecoverySchedule } from "@/components/screens/RecoverySchedule";
 import { getOrbCopy } from "@/lib/orbPersonality";
 import { GuestAuthCard } from "@/components/GuestAuthCard";
@@ -277,9 +277,10 @@ export function PrescriptionScreen() {
           <button
             type="button"
             onClick={() => auth.login().catch(() => undefined)}
-            className="mt-3 text-[10px] font-mono text-center underline-offset-2 hover:underline"
+            className="mt-3 text-[10px] font-mono text-center underline-offset-2 hover:underline flex items-center justify-center gap-1.5 w-full"
             style={{ color: "var(--color-text-faint)" }}
           >
+            <Lock className="w-3 h-3" aria-hidden />
             Sign in to compare this to tomorrow →
           </button>
         )}

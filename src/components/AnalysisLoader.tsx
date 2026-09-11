@@ -2,17 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Bot, Calendar, ClipboardList, Drama, Eye, Microscope, Pill, Search, TrendingUp, type LucideIcon } from "lucide-react";
 import { bandMeta } from "@/lib/debt-band";
+import { SIGNAL_ICONS } from "@/lib/signal-icons";
 
 // ─── Signals being "processed" — animate through these ───────────────────────
-const SIGNALS = [
-  { id: "stressors", label: "Stressor intake",     icon: "📋", doneAt: 0.12 },
-  { id: "context",   label: "Context depth",        icon: "🔍", doneAt: 0.25 },
-  { id: "memory",    label: "Recalling your history", icon: "🧠", doneAt: 0.35 },
-  { id: "face",      label: "Face biomarkers",       icon: "👁", doneAt: 0.45 },
-  { id: "hrv",       label: "Autonomic signals",     icon: "❤️", doneAt: 0.62 },
-  { id: "timeline",  label: "Recovery arc",          icon: "📈", doneAt: 0.78 },
-  { id: "rx",        label: "Generating prescription",icon: "💊", doneAt: 0.92 },
+const SIGNALS: { id: string; label: string; Icon: LucideIcon; doneAt: number }[] = [
+  { id: "stressors", label: "Stressor intake",       Icon: ClipboardList,       doneAt: 0.12 },
+  { id: "context",   label: "Context depth",          Icon: Search,              doneAt: 0.25 },
+  { id: "memory",    label: "Recalling your history", Icon: SIGNAL_ICONS.memory, doneAt: 0.35 },
+  { id: "face",      label: "Face biomarkers",        Icon: Eye,                 doneAt: 0.45 },
+  { id: "hrv",       label: "Autonomic signals",      Icon: SIGNAL_ICONS.hrv,    doneAt: 0.62 },
+  { id: "timeline",  label: "Recovery arc",           Icon: TrendingUp,          doneAt: 0.78 },
+  { id: "rx",        label: "Generating prescription",Icon: Pill,                doneAt: 0.92 },
 ];
 
 export interface AgentEventState {
@@ -23,11 +25,11 @@ export interface AgentEventState {
   tokens?: string;
 }
 
-const AGENT_ICONS: Record<string, string> = {
-  triage: "🔬",
-  coach: "💊",
-  schedule: "📅",
-  reflection: "🎭",
+const AGENT_ICONS: Record<string, LucideIcon> = {
+  triage: Microscope,
+  coach: Pill,
+  schedule: Calendar,
+  reflection: Drama,
 };
 
 const AGENT_LABELS: Record<string, string> = {
@@ -304,7 +306,15 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, a
                     border: `1px solid ${isDone ? "rgba(74,222,128,0.2)" : "rgba(234,88,12,0.2)"}`,
                   }}>
                   <div className="flex items-center gap-2.5">
-                    <span className="text-sm flex-shrink-0">{AGENT_ICONS[agent.agent] ?? "🤖"}</span>
+                    {(() => {
+                      const AgentIcon = AGENT_ICONS[agent.agent] ?? Bot;
+                      return (
+                        <AgentIcon
+                          className="w-3.5 h-3.5 flex-shrink-0"
+                          style={{ color: isDone ? "var(--color-states-success)" : "var(--color-text-secondary)" }}
+                        />
+                      );
+                    })()}
                     <span className="text-xs font-medium flex-1" style={{
                       color: isDone ? "var(--color-states-success)" : "var(--color-text-primary)",
                     }}>
@@ -355,7 +365,11 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, a
                     border: `1px solid ${done ? "rgba(74,222,128,0.2)" : active ? "rgba(234,88,12,0.2)" : "rgba(168,162,158,0.08)"}`,
                     transition: "background-color 0.4s, border-color 0.4s",
                   }}>
-                  <span className="text-sm flex-shrink-0">{sig.icon}</span>
+                  <sig.Icon
+                    className="w-3.5 h-3.5 flex-shrink-0"
+                    style={{ color: done ? "var(--color-states-success)" : active ? "var(--color-text-primary)" : "var(--color-text-faint)" }}
+                    aria-hidden
+                  />
                   <span className="text-xs font-medium flex-1" style={{ color: done ? "var(--color-states-success)" : active ? "var(--color-text-primary)" : "var(--color-text-faint)" }}>
                     {sig.label}
                   </span>

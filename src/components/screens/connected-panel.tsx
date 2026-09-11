@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Lock } from "lucide-react";
 import { HRVDeltaBar } from "./hrv-delta-bar";
 import { SOURCE_META } from "./hrv-config";
+import { SOURCE_ICONS } from "@/lib/signal-icons";
 import { auth } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { useSquishProps } from "@/lib/motion/protocol";
@@ -14,6 +15,7 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
   const user = useEazo((s) => s.auth.user);
   const squish = useSquishProps();
   const meta = SOURCE_META[data.source ?? "manual_proxy"];
+  const SourceIcon = SOURCE_ICONS[data.source ?? "manual_proxy"];
   const isBad = (data.hrvDeltaPercent ?? 0) <= -20;
   const isWarning = (data.hrvDeltaPercent ?? 0) <= -10;
 
@@ -66,6 +68,7 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
       {/* Source + confidence badge */}
       <div className="flex items-center gap-2 flex-wrap">
         <CheckCircle2 className="w-4 h-4" style={{ color: meta.color }} />
+        <SourceIcon className="w-3.5 h-3.5" style={{ color: meta.color }} aria-hidden />
         <span
           className="text-[10px] font-mono uppercase tracking-widest"
           style={{ color: meta.color }}
@@ -232,9 +235,10 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
         <button
           type="button"
           onClick={() => auth.login().catch(() => undefined)}
-          className="text-[10px] font-mono text-center underline-offset-2 hover:underline"
+          className="text-[10px] font-mono text-center underline-offset-2 hover:underline flex items-center justify-center gap-1.5 w-full"
           style={{ color: "var(--color-text-faint)" }}
         >
+          <Lock className="w-3 h-3" aria-hidden />
           Guest session · sign in to keep this history and build your baseline →
         </button>
       )}

@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
+import { SIGNAL_ICONS } from "@/lib/signal-icons";
 import { getWearableTrend } from "@/lib/api";
 import type { WearableTrendPoint } from "@/lib/api";
 
@@ -111,7 +112,8 @@ export function WearableTrendPanel() {
       style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}
     >
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-text-faint)" }}>
+        <p className="text-[10px] font-mono uppercase tracking-widest flex items-center gap-1.5" style={{ color: "var(--color-text-faint)" }}>
+          <SIGNAL_ICONS.wearable className="w-3 h-3" aria-hidden />
           Wearable baseline · last {DAYS} nights
         </p>
         <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full" style={{ color: "var(--color-text-faint)", backgroundColor: "var(--color-bg-base)" }}>
@@ -120,27 +122,20 @@ export function WearableTrendPanel() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-        {stats.hrv != null && (
-          <div className="rounded-xl px-2 py-2 text-center" style={{ backgroundColor: "var(--color-bg-base)" }}>
-            <div className="text-[9px] uppercase tracking-widest" style={{ color: "var(--color-text-disabled)" }}>Avg HRV</div>
-            <div className="text-xs font-mono font-bold mt-0.5" style={{ color: "var(--color-brand-primary)" }}>{stats.hrv} ms</div>
-          </div>
-        )}
-        {stats.restingHr != null && (
-          <div className="rounded-xl px-2 py-2 text-center" style={{ backgroundColor: "var(--color-bg-base)" }}>
-            <div className="text-[9px] uppercase tracking-widest" style={{ color: "var(--color-text-disabled)" }}>Avg Resting HR</div>
-            <div className="text-xs font-mono font-bold mt-0.5" style={{ color: "var(--color-text-primary)" }}>{stats.restingHr} bpm</div>
-          </div>
-        )}
-        {stats.deep != null && stats.rem != null && stats.light != null && (
-          <div className="rounded-xl px-2 py-2 text-center col-span-2" style={{ backgroundColor: "var(--color-bg-base)" }}>
-            <div className="text-[9px] uppercase tracking-widest" style={{ color: "var(--color-text-disabled)" }}>Avg Sleep</div>
-            <div className="text-xs font-mono font-bold mt-0.5" style={{ color: "var(--color-text-primary)" }}>
-              {stats.deep}m · {stats.rem}m · {stats.light}m
+        {[
+          { show: stats.hrv != null, label: "Avg HRV", value: `${stats.hrv} ms`, Icon: SIGNAL_ICONS.hrv, color: "var(--color-brand-primary)", wide: false },
+          { show: stats.restingHr != null, label: "Avg Resting HR", value: `${stats.restingHr} bpm`, Icon: SIGNAL_ICONS.restingHr, color: "var(--color-text-primary)", wide: false },
+          { show: stats.deep != null && stats.rem != null && stats.light != null, label: "Avg Sleep", value: `${stats.deep}m · ${stats.rem}m · ${stats.light}m`, Icon: SIGNAL_ICONS.sleep, color: "var(--color-text-primary)", wide: true, sub: "deep · REM · light" },
+        ].filter((t) => t.show).map((t) => (
+          <div key={t.label} className={`rounded-xl px-2 py-2 text-center ${t.wide ? "col-span-2" : ""}`} style={{ backgroundColor: "var(--color-bg-base)" }}>
+            <div className="text-[9px] uppercase tracking-widest flex items-center justify-center gap-1" style={{ color: "var(--color-text-disabled)" }}>
+              <t.Icon className="w-2.5 h-2.5" aria-hidden />
+              {t.label}
             </div>
-            <div className="text-[9px] font-mono" style={{ color: "var(--color-text-faint)" }}>deep · REM · light</div>
+            <div className="text-xs font-mono font-bold mt-0.5" style={{ color: t.color }}>{t.value}</div>
+            {t.sub && <div className="text-[9px] font-mono" style={{ color: "var(--color-text-faint)" }}>{t.sub}</div>}
           </div>
-        )}
+        ))}
       </div>
 
       {(hasHrv || hasHr) && (

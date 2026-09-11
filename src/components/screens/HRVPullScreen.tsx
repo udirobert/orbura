@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
-import { ChevronLeft, AlertCircle, Activity, Heart, Zap } from "lucide-react";
+import { ChevronLeft, AlertCircle, ClipboardList, Zap } from "lucide-react";
+import { SIGNAL_ICONS } from "@/lib/signal-icons";
 import { MiniOrb } from "@/components/MiniOrb";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { memory } from "@/lib/sdk/eazo-client";
@@ -246,7 +247,10 @@ export function HRVPullScreen() {
                   onClick={() => handleDeviceSelect(opt)}
                   className="relative w-full rounded-2xl flex items-center text-left"
                   style={{ minHeight: "56px", padding: "12px 16px", backgroundColor: "var(--color-bg-surface)", border: "1.5px solid rgba(168,162,158,0.12)" }}>
-                  <span className="text-xl mr-3.5 flex-shrink-0">{opt.icon}</span>
+                  <opt.Icon
+                    className="w-5 h-5 mr-3.5 flex-shrink-0"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  />
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-semibold block" style={{ color: "var(--color-text-primary)" }}>{opt.name}</span>
                     <span className="text-[11px] block mt-0.5" style={{ color: opt.note ? "var(--color-text-faint)" : "var(--color-text-disabled)" }}>
@@ -376,8 +380,8 @@ export function HRVPullScreen() {
               className="flex items-center gap-2 mt-5"
             >
               {[
-                { icon: <Activity className="w-3 h-3" />, label: "Stressors", done: true },
-                { icon: <Heart className="w-3 h-3" />, label: "HRV", done: true },
+                { icon: <ClipboardList className="w-3 h-3" />, label: "Stressors", done: true },
+                { icon: <SIGNAL_ICONS.hrv className="w-3 h-3" />, label: "HRV", done: true },
                 { icon: <Zap className="w-3 h-3" />, label: "Algorithms", done: false },
               ].map((s, i) => (
                 <motion.div
