@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useCallback, useEffect } from "react";
-import { motion, useMotionValue, animate, PanInfo } from "framer-motion";
+import { motion, useMotionValue, useMotionValueEvent, animate, PanInfo } from "framer-motion";
+import { haptic } from "@/lib/haptics";
 
 type DrumSize = "default" | "compact";
 
@@ -52,6 +53,17 @@ export function TimeDrum({
     y.set(-selectedIdx * itemH);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Ratchet tick — light haptic each time the selection line crosses a slot,
+  // during drags, taps, and settle animations alike.
+  const lastTickIdx = useRef(selectedIdx);
+  useMotionValueEvent(y, "change", (v) => {
+    const i = Math.round(-v / itemH);
+    if (i !== lastTickIdx.current && i >= 0 && i < slots.length) {
+      lastTickIdx.current = i;
+      haptic("light");
+    }
+  });
 
   const handleDragEnd = (_: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
     isDragging.current = false;
