@@ -2,17 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { getContextConfig } from "@/lib/contexts";
 import { memory, auth } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { getWearableTrend } from "@/lib/api";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
 import { UserBadge } from "@/components/user-profile/user-badge";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { Collapse } from "@/components/ui/collapse";
 import type { RecoveryMode } from "@/lib/types";
-import { EASE_PROTOCOL } from "@/lib/motion/protocol";
+import { EASE_PROTOCOL, useSquishProps } from "@/lib/motion/protocol";
+import { haptic } from "@/lib/haptics";
 
 const DORMANT_FRAMES = [
   "52% 48% 50% 50% / 50% 52% 48% 50%",
@@ -21,9 +23,9 @@ const DORMANT_FRAMES = [
   "50% 50% 48% 52% / 48% 52% 50% 50%",
 ];
 
-const SECONDARY_MODES: { mode: RecoveryMode; label: string }[] = [
-  { mode: "football", label: "Match Fit" },
-  { mode: "fan", label: "Fan Recovery" },
+const SECONDARY_MODES: { mode: RecoveryMode; label: string; blurb: string }[] = [
+  { mode: "football", label: "Match Fit", blurb: "Squad match-day readiness" },
+  { mode: "fan", label: "Fan Recovery", blurb: "Post-match wind-down" },
 ];
 
 export function OpeningScreen() {
@@ -37,6 +39,8 @@ export function OpeningScreen() {
   const [exiting, setExiting] = useState(false);
   const [trendSignal, setTrendSignal] = useState<string | null>(null);
   const [trendChecked, setTrendChecked] = useState(false);
+  const [modesOpen, setModesOpen] = useState(false);
+  const squish = useSquishProps();
 
   // Strip the [YYYY-MM-DD] stamps Supermemory adds to stored events, then drop
   // third-person "User ..." lines so raw reportAction logs never render here.
@@ -360,37 +364,57 @@ export function OpeningScreen() {
                 {isReturning ? "Check today's recovery" : "Check my recovery"}
               </PrimaryButton>
 
-              <div className="flex flex-col items-center gap-2.5">
-                <p
-                  className="text-[10px] font-mono uppercase tracking-widest"
-                  style={{ color: "var(--color-text-faint)" }}
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic("light");
+                    setModesOpen((v) => !v);
+                  }}
+                  aria-expanded={modesOpen}
+                  className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest"
+                  style={{ color: "var(--color-text-faint)", minHeight: 32 }}
                 >
-                  Or continue as
-                </p>
-                <div className="flex items-center justify-center gap-1 flex-wrap">
-                  {SECONDARY_MODES.map((m, i) => (
-                    <span key={m.mode} className="flex items-center">
-                      {i > 0 && (
-                        <span
-                          className="mx-2 text-[10px]"
-                          style={{ color: "var(--color-text-disabled)" }}
-                          aria-hidden
-                        >
-                          ·
-                        </span>
-                      )}
-                      <button
+                  Different context?
+                  <ChevronDown
+                    className="w-3 h-3 transition-transform"
+                    style={{
+                      transform: modesOpen ? "rotate(180deg)" : "none",
+                      transitionDuration: "var(--duration-collapse)",
+                    }}
+                  />
+                </button>
+                <Collapse open={modesOpen} className="w-full">
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    {SECONDARY_MODES.map((m) => (
+                      <motion.button
+                        key={m.mode}
                         type="button"
+                        {...squish}
+                        onPointerDown={() => haptic("light")}
                         onClick={() => handleSelectMode(m.mode)}
-                        className="text-[12px] font-medium underline-offset-4 hover:underline transition-colors"
-                        style={{ color: "var(--color-text-secondary)", minHeight: 44 }}
-                        title={getContextConfig(m.mode).vocabulary.tagline}
+                        className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left"
+                        style={{
+                          backgroundColor: "var(--color-bg-surface)",
+                          border: "1px solid var(--color-border-subtle)",
+                        }}
                       >
-                        {m.label}
-                      </button>
-                    </span>
-                  ))}
-                </div>
+                        <span
+                          className="text-[12px] font-medium"
+                          style={{ color: "var(--color-text-secondary)" }}
+                        >
+                          {m.label}
+                        </span>
+                        <span
+                          className="text-[9px] font-mono"
+                          style={{ color: "var(--color-text-faint)" }}
+                        >
+                          {m.blurb}
+                        </span>
+                      </motion.button>
+                    ))}
+                  </div>
+                </Collapse>
               </div>
 
               <p

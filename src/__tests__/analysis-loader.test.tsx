@@ -65,7 +65,7 @@ describe("AnalysisLoader — personalized signal labels", () => {
         hrvContext={{ deltaPercent: -15, source: "manual_proxy" }}
       />
     );
-    expect(screen.getByText("HRV -15% (manual proxy)")).toBeDefined();
+    expect(screen.getByText("HRV -15% · manual proxy")).toBeDefined();
   });
 
   it("shows personalized HRV label with positive delta and + prefix when above baseline", () => {
@@ -77,7 +77,7 @@ describe("AnalysisLoader — personalized signal labels", () => {
       />
     );
     // Should include the + sign for positive values
-    expect(screen.getByText("HRV +10% (garmin export)")).toBeDefined();
+    expect(screen.getByText("HRV +10% · garmin export")).toBeDefined();
   });
 
   it("shows personalized HRV label with zero delta", () => {
@@ -88,7 +88,7 @@ describe("AnalysisLoader — personalized signal labels", () => {
         hrvContext={{ deltaPercent: 0, source: "terra" }}
       />
     );
-    expect(screen.getByText("HRV 0% (terra)")).toBeDefined();
+    expect(screen.getByText("HRV 0% · terra")).toBeDefined();
   });
 
   it("replaces underscores in source name with spaces", () => {
@@ -100,7 +100,7 @@ describe("AnalysisLoader — personalized signal labels", () => {
       />
     );
     // "google_fit" should become "google fit"
-    expect(screen.getByText("HRV -20% (google fit)")).toBeDefined();
+    expect(screen.getByText("HRV -20% · google fit")).toBeDefined();
   });
 
   it("shows generic 'Face biomarkers' label when no face context is provided", () => {
@@ -159,7 +159,7 @@ describe("AnalysisLoader — personalized signal labels", () => {
         hrvContext={{ deltaPercent: -5, source: "manual_proxy" }}
       />
     );
-    expect(screen.getByText("HRV -5% (manual proxy)")).toBeDefined();
+    expect(screen.getByText("HRV -5% · manual proxy")).toBeDefined();
   });
 
   it("hides HRV signal when both hasHRV is false and hrvContext is undefined", () => {
@@ -295,6 +295,6 @@ describe("AnalysisLoader — signal filtering", () => {
         hrvContext={{ deltaPercent: -10, source: "terra" }}
       />
     );
-    expect(screen.getByText("HRV -10% (terra)")).toBeDefined();
+    expect(screen.getByText("HRV -10% · terra")).toBeDefined();
   });
 });

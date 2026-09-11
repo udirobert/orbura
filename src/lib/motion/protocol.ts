@@ -24,6 +24,38 @@ export const DURATION_COLLAPSE = 0.22;
 export const DURATION_DRAWER_OPEN = 0.25;
 export const DURATION_DRAWER_CLOSE = 0.15;
 
+/**
+ * Squash-and-stretch press target — compress vertically, widen slightly, and
+ * sink 1px so buttons feel like they give under the finger.
+ */
+export const TAP_SQUISH = { scaleX: 1.03, scaleY: 0.94, y: 1 } as const;
+
+/** Snappy spring for press/release — pops back rather than tweening. */
+export const SPRING_TAP = {
+  type: "spring",
+  stiffness: 550,
+  damping: 22,
+  mass: 0.6,
+} as const;
+
+/** Subtle pointer lift for hover-capable devices. */
+export const HOVER_LIFT = { scale: 1.01, y: -1 } as const;
+
+/**
+ * Press/hover props honoring prefers-reduced-motion. Spread onto a
+ * motion.button: `{...useSquishProps()}`. When reduced motion is requested,
+ * returns empty targets so presses resolve instantly.
+ */
+export function useSquishProps(): {
+  whileTap?: typeof TAP_SQUISH;
+  whileHover?: typeof HOVER_LIFT;
+  transition: typeof SPRING_TAP;
+} {
+  const reduced = useReducedMotion();
+  if (reduced) return { transition: SPRING_TAP };
+  return { whileTap: TAP_SQUISH, whileHover: HOVER_LIFT, transition: SPRING_TAP };
+}
+
 const containerBase: Variants = {
   hidden: { opacity: 1 },
   show: {

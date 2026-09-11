@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 import { memory } from "@/lib/sdk/eazo-client";
+import { haptic } from "@/lib/haptics";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { DebtOrb } from "./DebtOrb";
 import { MiniOrb } from "@/components/MiniOrb";
@@ -127,9 +128,7 @@ export function DashboardScreen() {
       setDisplayScore(Math.round(current));
       if (current >= target) {
         clearInterval(countRef.current!);
-        if (typeof navigator !== "undefined" && navigator.vibrate) {
-          navigator.vibrate(target >= 60 ? [10, 50, 30] : 15);
-        }
+        haptic(target >= 60 ? "success" : "medium");
       }
     }, duration / steps);
     return () => clearInterval(countRef.current!);

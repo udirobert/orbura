@@ -6,10 +6,13 @@ import { HRVDeltaBar } from "./hrv-delta-bar";
 import { SOURCE_META } from "./hrv-config";
 import { auth } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
+import { useSquishProps } from "@/lib/motion/protocol";
+import { haptic } from "@/lib/haptics";
 import type { HRVData } from "@/lib/types";
 
 export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue: () => void }) {
   const user = useEazo((s) => s.auth.user);
+  const squish = useSquishProps();
   const meta = SOURCE_META[data.source ?? "manual_proxy"];
   const isBad = (data.hrvDeltaPercent ?? 0) <= -20;
   const isWarning = (data.hrvDeltaPercent ?? 0) <= -10;
@@ -211,7 +214,8 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
       </div>
 
       <motion.button
-        whileTap={{ scale: 0.98 }}
+        {...squish}
+        onPointerDown={() => haptic("light")}
         onClick={onContinue}
         className="w-full font-semibold text-sm rounded-2xl"
         style={{

@@ -2,6 +2,8 @@
 
 import { motion, type HTMLMotionProps } from "framer-motion";
 import { type ReactNode } from "react";
+import { useSquishProps } from "@/lib/motion/protocol";
+import { haptic } from "@/lib/haptics";
 
 type ButtonSize = "sm" | "md" | "lg";
 
@@ -29,11 +31,17 @@ export function SecondaryButton({
   fullWidth = true,
   className,
   style,
+  onPointerDown,
   ...rest
 }: SecondaryButtonProps) {
+  const squish = useSquishProps();
   return (
     <motion.button
-      whileTap={{ scale: 0.98 }}
+      {...squish}
+      onPointerDown={(e) => {
+        haptic("light");
+        onPointerDown?.(e);
+      }}
       className={[
         fullWidth ? "w-full" : "",
         "font-semibold rounded-2xl",

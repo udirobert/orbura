@@ -82,7 +82,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, a
         ? `HRV +${hrvContext.deltaPercent}%`
         : `HRV ${hrvContext.deltaPercent}%`;
       const baseline = hrvContext.baselineHrv != null ? `baseline ${Math.round(hrvContext.baselineHrv)} ms` : null;
-      const source = hrvContext.source.replace("_", " ");
+      const source = hrvContext.source.replaceAll("_", " ");
       return { ...s, label: `${prefix} · ${source}${baseline ? ` · ${baseline}` : ""}` };
     }
     if (s.id === "face" && faceContext) {

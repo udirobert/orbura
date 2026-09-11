@@ -6,6 +6,7 @@ import type { SystemScore } from "@/lib/types";
 import { SystemOrb } from "@/components/SystemOrb";
 import { Collapse } from "@/components/ui/collapse";
 import { EASE_PROTOCOL } from "@/lib/motion/protocol";
+import { haptic } from "@/lib/haptics";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -70,9 +71,7 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
     if (isCleared && !wasClearedRef.current) {
       wasClearedRef.current = true;
       setJustCleared(true);
-      if (typeof navigator !== "undefined" && navigator.vibrate) {
-        navigator.vibrate([10, 40, 10]);
-      }
+      haptic("success");
       const t = setTimeout(() => setJustCleared(false), 1500);
       return () => clearTimeout(t);
     }

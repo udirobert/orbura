@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory } from "@/lib/sdk/eazo-client";
+import { haptic } from "@/lib/haptics";
 import type { Stressor, StressorType } from "@/lib/types";
 import { MiniOrb } from "@/components/MiniOrb";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -41,7 +42,7 @@ export function DebtIntakeScreen() {
   };
 
   const handleToggle = (type: StressorType) => {
-    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
+    haptic("light");
     toggleStressor(type);
     const isNowSelected = !selectedStressors.some((s) => s.type === type);
     if (isNowSelected) {

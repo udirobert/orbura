@@ -2,6 +2,8 @@
 
 import { motion, type HTMLMotionProps } from "framer-motion";
 import { type ReactNode } from "react";
+import { useSquishProps } from "@/lib/motion/protocol";
+import { haptic } from "@/lib/haptics";
 
 type ButtonSize = "sm" | "md" | "lg";
 
@@ -37,11 +39,17 @@ export function PrimaryButton({
   fullWidth = true,
   className,
   style,
+  onPointerDown,
   ...rest
 }: PrimaryButtonProps) {
+  const squish = useSquishProps();
   return (
     <motion.button
-      whileTap={disabled ? undefined : { scale: 0.98 }}
+      {...(disabled ? { transition: squish.transition } : squish)}
+      onPointerDown={(e) => {
+        if (!disabled) haptic("light");
+        onPointerDown?.(e);
+      }}
       disabled={disabled}
       className={[
         fullWidth ? "w-full" : "",
