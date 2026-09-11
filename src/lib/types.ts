@@ -117,6 +117,9 @@ export type HRVSource =
 
 export type HRVConfidence = "high" | "medium" | "low";
 
+/** How mature the personal rolling baseline is (sample-count driven). */
+export type BaselineMaturity = "forming" | "established" | "stable";
+
 export interface HRVData {
   hrvDeltaPercent: number;
   restingHrDelta: number;
@@ -131,6 +134,10 @@ export interface HRVData {
   baselineHrv?: number;
   /** The resting HR baseline (bpm) used to compute restingHrDelta, if known. */
   baselineHr?: number;
+  /** Maturity of the personal baseline: forming (<7 samples), established (7-20), stable (21+). */
+  baselineMaturity?: BaselineMaturity;
+  /** ISO timestamp of the underlying wearable reading, when known. */
+  recordedAt?: string;
 }
 
 // ─── Debt analysis ────────────────────────────────────────────────────────────

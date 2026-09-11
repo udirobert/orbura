@@ -42,6 +42,18 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
   const delta = data.hrvDeltaPercent ?? 0;
   const baselineLabel = `${baselineHrv ?? 65} ms`;
 
+  const freshness = (() => {
+    if (!data.recordedAt) return null;
+    const d = new Date(data.recordedAt);
+    if (Number.isNaN(d.getTime())) return null;
+    const startOfDay = (t: Date) =>
+      new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
+    const diffDays = Math.round((startOfDay(new Date()) - startOfDay(d)) / 86400000);
+    if (diffDays <= 0) return "today";
+    if (diffDays === 1) return "last night";
+    return `${diffDays}d ago`;
+  })();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -57,6 +69,14 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
         >
           {meta.label}
         </span>
+        {freshness && (
+          <span
+            className="text-[9px] font-mono"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            · {freshness}
+          </span>
+        )}
         {data.confidence && (
           <span
             className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-full"
@@ -128,7 +148,7 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
                   className="text-[9px] font-mono"
                   style={{ color: "var(--color-text-faint)" }}
                 >
-                  baseline {baselineHrv} ms
+                  baseline {baselineHrv} ms{data.baselineMaturity ? ` · ${data.baselineMaturity}` : ""}
                 </div>
               </div>
             )}
@@ -153,7 +173,7 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
                   className="text-[9px] font-mono"
                   style={{ color: "var(--color-text-faint)" }}
                 >
-                  baseline {baselineHr} bpm
+                  baseline {baselineHr} bpm{data.baselineMaturity ? ` · ${data.baselineMaturity}` : ""}
                 </div>
               </div>
             )}

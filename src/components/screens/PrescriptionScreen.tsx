@@ -4,7 +4,7 @@ import { useEffect, useRef, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { memory } from "@/lib/sdk/eazo-client";
+import { memory, auth } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { ChevronLeft } from "lucide-react";
 import { RecoverySchedule } from "@/components/screens/RecoverySchedule";
@@ -270,6 +270,18 @@ export function PrescriptionScreen() {
               </span>
             </div>
           </motion.div>
+        )}
+
+        {/* Guest save nudge — peak value moment */}
+        {isGuest && (
+          <button
+            type="button"
+            onClick={() => auth.login().catch(() => undefined)}
+            className="mt-3 text-[10px] font-mono text-center underline-offset-2 hover:underline"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            Sign in to compare this to tomorrow →
+          </button>
         )}
 
         {/* Upsell — only at low confidence */}

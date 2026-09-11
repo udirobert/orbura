@@ -43,18 +43,21 @@ export interface PersonalBaselineOptions {
   minSamples?: number;
 }
 
+export interface BaselineStats {
+  avg: number;
+  count: number;
+}
+
 /**
- * Returns the personal rolling average for a metric using observations from
- * the prior `windowDays` calendar days (excluding the current day). Falls back
- * to null when there are fewer than `minSamples` matching rows.
+ * Returns the rolling average and sample count for a metric using observations
+ * from the prior `windowDays` calendar days (excluding the current day).
  */
-export async function getPersonalBaseline({
+export async function getBaselineStats({
   userId,
   metricType,
   recordedAt,
   windowDays = 28,
-  minSamples = 3,
-}: PersonalBaselineOptions): Promise<number | null> {
+}: Omit<PersonalBaselineOptions, "minSamples">): Promise<BaselineStats | null> {
   const startOfDay = new Date(
     recordedAt.getFullYear(),
     recordedAt.getMonth(),
@@ -78,9 +81,23 @@ export async function getPersonalBaseline({
       )
     );
 
-  if (!row || row.count < minSamples) return null;
+  const count = Number(row?.count ?? 0);
+  if (!row || count === 0) return null;
   const avg = parseFloat(row.avg ?? "0");
-  return Number.isFinite(avg) ? avg : null;
+  return Number.isFinite(avg) ? { avg, count } : null;
+}
+
+/**
+ * Returns the personal rolling average for a metric. Falls back to null when
+ * there are fewer than `minSamples` matching rows.
+ */
+export async function getPersonalBaseline({
+  minSamples = 3,
+  ...options
+}: PersonalBaselineOptions): Promise<number | null> {
+  const stats = await getBaselineStats(options);
+  if (!stats || stats.count < minSamples) return null;
+  return stats.avg;
 }
 
 export interface WearableTrendPoint {

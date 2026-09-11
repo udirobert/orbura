@@ -1,5 +1,5 @@
-import { getPersonalBaseline, upsertWearableObservation } from "@/lib/db/queries/wearable-observations";
-import type { HRVConfidence, HRVData, HRVSource } from "@/lib/types";
+import { getBaselineStats, upsertWearableObservation } from "@/lib/db/queries/wearable-observations";
+import type { BaselineMaturity, HRVConfidence, HRVData, HRVSource } from "@/lib/types";
 
 export type HrvMetric = "hrv_rmssd" | "hrv_sdnn";
 
@@ -17,6 +17,14 @@ export interface WearableSnapshot {
 
 const POPULATION_BASELINE_HRV = 65;
 const POPULATION_BASELINE_HR = 60;
+const BASELINE_MIN_SAMPLES = 3;
+
+function maturityFromCount(count: number): BaselineMaturity | undefined {
+  if (count >= 21) return "stable";
+  if (count >= 7) return "established";
+  if (count >= BASELINE_MIN_SAMPLES) return "forming";
+  return undefined;
+}
 
 /**
  * Builds an HRVData result from a wearable snapshot. When a userId is supplied,
@@ -34,22 +42,28 @@ export async function buildHRVData(
     return null;
   }
 
-  const personalHrv =
+  const hrvStats =
     userId && snapshot.hrvMetric
-      ? await getPersonalBaseline({
+      ? await getBaselineStats({
           userId,
           metricType: snapshot.hrvMetric,
           recordedAt: snapshot.recordedAt,
         })
       : null;
-  const personalHr =
+  const hrStats =
     userId && snapshot.restingHr != null
-      ? await getPersonalBaseline({
+      ? await getBaselineStats({
           userId,
           metricType: "resting_hr",
           recordedAt: snapshot.recordedAt,
         })
       : null;
+
+  const personalHrv =
+    hrvStats && hrvStats.count >= BASELINE_MIN_SAMPLES ? hrvStats.avg : null;
+  const personalHr =
+    hrStats && hrStats.count >= BASELINE_MIN_SAMPLES ? hrStats.avg : null;
+  const baselineMaturity = hrvStats ? maturityFromCount(hrvStats.count) : undefined;
 
   const baselineHrv =
     personalHrv ??
@@ -81,7 +95,12 @@ export async function buildHRVData(
     confidence: snapshot.confidence,
     baselineHrv,
     baselineHr,
+    recordedAt: snapshot.recordedAt.toISOString(),
   };
+
+  if (baselineMaturity) {
+    result.baselineMaturity = baselineMaturity;
+  }
 
   if (snapshot.sleepStages) {
     result.sleepStages = snapshot.sleepStages;

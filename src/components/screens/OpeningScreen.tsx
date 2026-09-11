@@ -280,7 +280,7 @@ export function OpeningScreen() {
                   className="mt-3 text-[11px] font-mono"
                   style={{ color: "var(--color-text-secondary)" }}
                 >
-                  {trendSignal}
+                  {streakDays > 0 ? `${streakDays}d streak · ${trendSignal}` : trendSignal}
                 </p>
               )}
               {isReturning && !trendSignal && user && trendChecked && (
@@ -329,7 +329,7 @@ export function OpeningScreen() {
                   How your coach uses this →
                 </button>
               )}
-              {isReturning && streakDays > 0 && !memorySummary && (
+              {isReturning && streakDays > 0 && !memorySummary && !trendSignal && (
                 <p
                   className="mt-3 text-[11px] font-mono"
                   style={{ color: "var(--color-states-success)" }}
