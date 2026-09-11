@@ -56,6 +56,8 @@ function TrendTooltip({ active, payload, label }: any) {
 
 export function WearableTrendPanel() {
   const [data, setData] = useState<WearableTrendPoint[]>([]);
+  const [baselineHrv, setBaselineHrv] = useState<number | null>(null);
+  const [baselineCount, setBaselineCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,6 +65,11 @@ export function WearableTrendPanel() {
     getWearableTrend(DAYS)
       .then((res) => {
         setData(res.trend);
+        const b = res.baseline?.hrv;
+        if (b && b.count >= 3) {
+          setBaselineHrv(Math.round(b.avg));
+          setBaselineCount(b.count);
+        }
       })
       .catch((e) => {
         setError(e instanceof Error ? e.message : "Could not load trend");
@@ -166,9 +173,9 @@ export function WearableTrendPanel() {
                 width={30}
               />
               <Tooltip content={<TrendTooltip />} />
-              {hasHrv && stats.hrv != null && (
+              {hasHrv && baselineHrv != null && (
                 <ReferenceLine
-                  y={stats.hrv}
+                  y={baselineHrv}
                   yAxisId="left"
                   stroke="var(--color-text-faint)"
                   strokeDasharray="4 4"
@@ -202,9 +209,9 @@ export function WearableTrendPanel() {
         </div>
       )}
 
-      {hasHrv && stats.hrv != null && (
+      {hasHrv && baselineHrv != null && (
         <p className="mt-2 text-[9px] font-mono" style={{ color: "var(--color-text-faint)" }}>
-          - - your {data.length}-night avg baseline · {stats.hrv} ms
+          - - your rolling baseline · {baselineHrv} ms · {baselineCount} samples
         </p>
       )}
     </motion.div>

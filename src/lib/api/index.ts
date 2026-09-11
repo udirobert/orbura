@@ -6,3 +6,4 @@ export * from "./qvac";
 export * from "./wearable";
 export * from "./debt-history";
 export * from "./heatmap";
+export * from "./interventions";

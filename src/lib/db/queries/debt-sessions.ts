@@ -1,6 +1,6 @@
 import { db } from "../client";
 import { debtSessions, NewDebtSession, DebtSession } from "../schema";
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lt } from "drizzle-orm";
 
 export async function createDebtSession(
   data: NewDebtSession
@@ -31,6 +31,68 @@ export async function getLatestDebtSession(
     .orderBy(desc(debtSessions.createdAt))
     .limit(1);
   return session ?? null;
+}
+
+// ─── Intervention loop ───────────────────────────────────────────────────────
+
+/** Picks the one actionable line from a prescription. */
+export function pickInterventionAction(
+  prescription: DebtSession["prescription"] | null,
+): string | null {
+  if (!prescription) return null;
+  return (
+    prescription.today ||
+    prescription.thisMorning ||
+    prescription.rightNow ||
+    prescription.avoid ||
+    null
+  );
+}
+
+/**
+ * The most recent session with an unanswered follow-through. Only sessions
+ * from before today qualify — a session never asks about itself.
+ */
+export async function getPendingIntervention(
+  userId: string,
+): Promise<DebtSession | null> {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const sessions = await db
+    .select()
+    .from(debtSessions)
+    .where(
+      and(
+        eq(debtSessions.userId, userId),
+        isNull(debtSessions.adherence),
+        lt(debtSessions.createdAt, startOfToday),
+      ),
+    )
+    .orderBy(desc(debtSessions.createdAt))
+    .limit(5);
+
+  return sessions.find((s) => pickInterventionAction(s.prescription)) ?? null;
+}
+
+/** Records whether the user followed a session's action. First answer wins. */
+export async function setSessionAdherence(
+  sessionId: number,
+  userId: string,
+  adherence: "did" | "skipped",
+): Promise<boolean> {
+  const rows = await db
+    .update(debtSessions)
+    .set({ adherence, adherenceRespondedAt: new Date() })
+    .where(
+      and(
+        eq(debtSessions.id, BigInt(sessionId)),
+        eq(debtSessions.userId, userId),
+        isNull(debtSessions.adherence),
+      ),
+    )
+    .returning({ id: debtSessions.id });
+  return rows.length > 0;
 }
 
 /** Daily-aggregated score for the heatmap — one entry per day with a score. */

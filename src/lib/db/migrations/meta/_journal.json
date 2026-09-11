@@ -92,6 +92,13 @@
       "when": 1789082998931,
       "tag": "0012_curvy_nightshade",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1789126151174,
+      "tag": "0013_shocking_nick_fury",
+      "breakpoints": true
     }
   ]
 }

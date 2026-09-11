@@ -8,7 +8,8 @@ import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory, auth } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
-import { getWearableTrend } from "@/lib/api";
+import { getWearableTrend, getLatestIntervention, respondToIntervention } from "@/lib/api";
+import type { PendingIntervention, InterventionOutcome } from "@/lib/api";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
 import { UserBadge } from "@/components/user-profile/user-badge";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -40,6 +41,10 @@ export function OpeningScreen() {
   const [exiting, setExiting] = useState(false);
   const [trendSignal, setTrendSignal] = useState<string | null>(null);
   const [trendChecked, setTrendChecked] = useState(false);
+  const [intervention, setIntervention] = useState<PendingIntervention | null>(null);
+  const [interventionOutcome, setInterventionOutcome] = useState<InterventionOutcome | null>(null);
+  const [interventionChecked, setInterventionChecked] = useState(false);
+  const [interventionAnswered, setInterventionAnswered] = useState<"did" | "skipped" | null>(null);
   const [modesOpen, setModesOpen] = useState(false);
   const squish = useSquishProps();
 
@@ -73,8 +78,10 @@ export function OpeningScreen() {
     lastWakeTime && lastBedTime ? `${lastBedTime} → ${lastWakeTime}` : null;
 
   // One context line, chosen by priority — never a stack of competing captions.
-  // The icon carries the domain so the text can stay short.
-  const signalLine = !isReturning
+  // The icon carries the domain so the text can stay short. A pending
+  // follow-through card outranks the line entirely — it IS the signal.
+  const showIntervention = isReturning && !!user && !!intervention;
+  const signalLine = !isReturning || (user && !interventionChecked) || showIntervention
     ? null
     : trendSignal
       ? {
@@ -141,8 +148,31 @@ export function OpeningScreen() {
       .finally(() => {
         if (!cancelled) setTrendChecked(true);
       });
+    getLatestIntervention()
+      .then((res) => {
+        if (cancelled) return;
+        setIntervention(res.intervention);
+        setInterventionOutcome(res.outcome);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setInterventionChecked(true);
+      });
     return () => { cancelled = true; };
   }, [user]);
+
+  const answerIntervention = (adherence: "did" | "skipped") => {
+    if (!intervention) return;
+    haptic("light");
+    setInterventionAnswered(adherence);
+    respondToIntervention(intervention.sessionId, adherence).catch(() => {});
+    memory.reportAction({
+      content: `User ${adherence === "did" ? "followed" : "skipped"} yesterday's recovery action: ${intervention.action}`,
+      event_type: "create",
+      page: "opening",
+      metadata: { type: "intervention_response", adherence, sessionId: intervention.sessionId },
+    }).catch(() => {});
+  };
 
   const handleSelectMode = (mode: RecoveryMode) => {
     setMode(mode);
@@ -300,6 +330,85 @@ export function OpeningScreen() {
                 >
                   See a full example session →
                 </button>
+              )}
+              {isReturning && user && intervention && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease: EASE_PROTOCOL }}
+                  className="mt-3 w-full rounded-2xl px-4 py-3 text-left"
+                  style={{
+                    backgroundColor: "var(--color-bg-surface)",
+                    border: "1px solid var(--color-border-subtle)",
+                  }}
+                >
+                  {interventionAnswered ? (
+                    <p
+                      className="text-[10px] font-mono"
+                      style={{ color: "var(--color-states-success)" }}
+                    >
+                      ✓ Logged{interventionAnswered === "did" ? " — nice follow-through" : " — your coach will adjust"}
+                    </p>
+                  ) : (
+                    <>
+                      <p
+                        className="text-[9px] font-mono uppercase tracking-widest"
+                        style={{ color: "var(--color-text-faint)" }}
+                      >
+                        {(() => {
+                          const days = Math.round(
+                            (new Date().setHours(0, 0, 0, 0) -
+                              new Date(`${intervention.date}T00:00:00`).getTime()) / 86400000,
+                          );
+                          return days <= 1 ? "Yesterday's plan" : `Plan from ${days}d ago`;
+                        })()} · score {intervention.debtScore}
+                      </p>
+                      <p
+                        className="text-xs mt-1 leading-snug"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {intervention.action}
+                      </p>
+                      {interventionOutcome && (
+                        <p
+                          className="text-[10px] font-mono mt-1.5 flex items-center gap-1.5"
+                          style={{ color: "var(--color-text-secondary)" }}
+                        >
+                          <SIGNAL_ICONS.hrv className="w-3 h-3" aria-hidden />
+                          HRV {interventionOutcome.hrvBefore ?? "?"} → {interventionOutcome.hrvAfter} ms
+                        </p>
+                      )}
+                      <div className="flex gap-2 mt-2.5">
+                        <motion.button
+                          {...squish}
+                          type="button"
+                          onClick={() => answerIntervention("did")}
+                          className="flex-1 rounded-xl py-2 text-[11px] font-semibold"
+                          style={{
+                            backgroundColor: "color-mix(in srgb, var(--color-states-success) 12%, transparent)",
+                            color: "var(--color-states-success)",
+                            border: "1px solid color-mix(in srgb, var(--color-states-success) 25%, transparent)",
+                          }}
+                        >
+                          Did it
+                        </motion.button>
+                        <motion.button
+                          {...squish}
+                          type="button"
+                          onClick={() => answerIntervention("skipped")}
+                          className="flex-1 rounded-xl py-2 text-[11px] font-semibold"
+                          style={{
+                            backgroundColor: "var(--color-bg-base)",
+                            color: "var(--color-text-secondary)",
+                            border: "1px solid var(--color-border-subtle)",
+                          }}
+                        >
+                          Skipped
+                        </motion.button>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
               )}
               {isReturning && signalLine && (
                 <>

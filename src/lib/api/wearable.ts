@@ -185,6 +185,10 @@ export interface WearableTrendPoint {
 export interface WearableTrendResponse {
   trend: WearableTrendPoint[];
   days: number;
+  baseline?: {
+    hrv: { avg: number; count: number } | null;
+    restingHr: { avg: number; count: number } | null;
+  };
 }
 
 /**

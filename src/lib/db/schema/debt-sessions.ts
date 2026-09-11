@@ -32,6 +32,10 @@ export const debtSessions = pgTable("debt_sessions", {
   hrvData: json("hrv_data").$type<{
     hrvDeltaPercent: number; // % below baseline
     restingHrDelta: number; // bpm above baseline
+    baselineHrv?: number;
+    baselineHr?: number;
+    baselineMaturity?: "forming" | "established" | "stable";
+    recordedAt?: string;
     sleepStages?: {
       deep: number;
       rem: number;
@@ -56,6 +60,11 @@ export const debtSessions = pgTable("debt_sessions", {
       insight: string;
     }>
   >(),
+
+  // Intervention loop — whether the user followed yesterday's action.
+  // NULL until they answer the follow-through prompt on a later visit.
+  adherence: varchar("adherence", { length: 16 }), // "did" | "skipped"
+  adherenceRespondedAt: timestamp("adherence_responded_at"),
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

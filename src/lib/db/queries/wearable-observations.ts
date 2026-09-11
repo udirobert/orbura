@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { db } from "../client";
 import {
   wearableObservations,
@@ -173,6 +173,58 @@ export async function getWearableTrend(
   }
 
   return result.sort((a, b) => (a.date > b.date ? 1 : -1));
+}
+
+/**
+ * Rolling baselines for the trend chart. HRV combines rmssd + sdnn (weighted
+ * by sample count) to match how getWearableTrend merges them into `hrv`.
+ * Excludes today's samples, same as getBaselineStats.
+ */
+export async function getCombinedWearableBaseline(
+  userId: string,
+  windowDays = 28,
+): Promise<{ hrv: BaselineStats | null; restingHr: BaselineStats | null }> {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const cutoff = new Date(startOfDay);
+  cutoff.setDate(cutoff.getDate() - windowDays);
+
+  const rows = await db
+    .select({
+      metricType: wearableObservations.metricType,
+      avg: sql<string | null>`avg(${wearableObservations.value})`,
+      count: sql<number>`count(*)`,
+    })
+    .from(wearableObservations)
+    .where(
+      and(
+        eq(wearableObservations.userId, userId),
+        inArray(wearableObservations.metricType, ["hrv_rmssd", "hrv_sdnn", "resting_hr"]),
+        gte(wearableObservations.recordedAt, cutoff),
+        lt(wearableObservations.recordedAt, startOfDay),
+      ),
+    )
+    .groupBy(wearableObservations.metricType);
+
+  const combine = (types: string[]): BaselineStats | null => {
+    let sum = 0;
+    let n = 0;
+    for (const r of rows) {
+      if (!types.includes(r.metricType)) continue;
+      const c = Number(r.count ?? 0);
+      const a = parseFloat(r.avg ?? "NaN");
+      if (c > 0 && Number.isFinite(a)) {
+        sum += a * c;
+        n += c;
+      }
+    }
+    return n > 0 ? { avg: sum / n, count: n } : null;
+  };
+
+  return {
+    hrv: combine(["hrv_rmssd", "hrv_sdnn"]),
+    restingHr: combine(["resting_hr"]),
+  };
 }
 
 function pctChange(current: number, previous: number): string {
