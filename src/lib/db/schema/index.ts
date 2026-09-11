@@ -6,3 +6,4 @@ export * from "./user-preferences";
 export * from "./squad-players";
 export * from "./care";
 export * from "./wearable-observations";
+export * from "./withings-tokens";

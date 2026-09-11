@@ -199,3 +199,38 @@ export async function getWearableTrend(days = 14): Promise<WearableTrendResponse
   }
   return (await res.json()) as WearableTrendResponse;
 }
+
+// ─── Withings ──────────────────────────────────────────────────────────────────
+
+export interface WithingsAuthResponse {
+  url: string;
+  state: string;
+}
+
+export interface WithingsDataResponse {
+  hrvData: HRVData;
+}
+
+/**
+ * Starts a Withings OAuth popup flow.
+ * POST /api/withings/auth
+ */
+export async function startWithingsAuth(): Promise<WithingsAuthResponse> {
+  const res = await request("/api/withings/auth", { method: "POST", body: "{}" });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message ?? "Withings auth failed");
+  return json as WithingsAuthResponse;
+}
+
+/**
+ * Polls Withings sleep data for the authenticated user.
+ * GET /api/withings/data
+ */
+export async function getWithingsData(): Promise<WithingsDataResponse> {
+  const res = await request("/api/withings/data");
+  const json = await res.json();
+  if (!res.ok || !json.hrvData) {
+    throw new Error(json.message ?? "Withings data fetch failed");
+  }
+  return json as WithingsDataResponse;
+}

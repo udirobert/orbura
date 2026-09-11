@@ -12,7 +12,7 @@ import { useTerraConnect } from "@/components/hrv/useTerraConnect";
 import { AnalysisLoader } from "@/components/AnalysisLoader";
 import { useStreamingAnalysis } from "@/hooks/useStreamingAnalysis";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { resolveHrv, getGoogleFitData } from "@/lib/api";
+import { resolveHrv, getGoogleFitData, startWithingsAuth, getWithingsData } from "@/lib/api";
 import type { HRVData } from "@/lib/types";
 import { DEVICE_OPTIONS } from "./hrv-config";
 import { GarminUpload } from "./garmin-upload";
@@ -21,7 +21,7 @@ import { ConnectedPanel } from "./connected-panel";
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
-type Layer = "picker" | "terra" | "google_fit" | "garmin" | "apple_health" | "manual" | "connected" | "handoff" | "analyzing";
+type Layer = "picker" | "terra" | "google_fit" | "withings" | "garmin" | "apple_health" | "manual" | "connected" | "handoff" | "analyzing";
 
 export function HRVPullScreen() {
   const searchParams = useSearchParams();
@@ -84,6 +84,28 @@ export function HRVPullScreen() {
     }
   }, [terra.phase, terra.hrvData]);
 
+  // Withings — listen for popup postMessage
+  useEffect(() => {
+    const handler = async (ev: MessageEvent) => {
+      if (ev.data?.type !== "WITHINGS_AUTH") return;
+      if (ev.data.status !== "success") {
+        setAnalysisError("Withings connection failed. Try the manual check-in.");
+        setLayer("manual");
+        return;
+      }
+      try {
+        const result = await getWithingsData();
+        if (result.hrvData) { setResolvedHrv(result.hrvData); setLayer("connected"); }
+        else { setLayer("manual"); }
+      } catch {
+        setAnalysisError("Withings data fetch failed. Try the manual check-in.");
+        setLayer("manual");
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
+
   const openGoogleFit = () => {
     const popup = window.open("/api/google-fit/auth", "google_fit_auth", "width=480,height=640,popup=1");
     if (!popup) {
@@ -93,8 +115,23 @@ export function HRVPullScreen() {
     }
   };
 
+  const openWithings = async () => {
+    try {
+      const { url } = await startWithingsAuth();
+      const popup = window.open(url, "withings_auth", "width=520,height=720,popup=1");
+      if (!popup) {
+        setAnalysisError("Popup blocked by your browser. Use the manual check-in below instead.");
+        setLayer("manual");
+      }
+    } catch {
+      setAnalysisError("Could not start Withings connection. Try the manual check-in.");
+      setLayer("manual");
+    }
+  };
+
   const handleDeviceSelect = (opt: typeof DEVICE_OPTIONS[number]) => {
     if (opt.layer === "terra") { openWidget(); return; }
+    if (opt.layer === "withings") { openWithings(); return; }
     if (opt.id === "fitbit" || opt.id === "android") { openGoogleFit(); return; }
     setLayer(opt.layer);
   };

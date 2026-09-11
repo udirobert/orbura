@@ -111,6 +111,7 @@ export type HRVSource =
   | "garmin_export"
   | "garmin_fit"
   | "apple_health"
+  | "withings"
   | "manual_proxy"
   | "demo";
 
