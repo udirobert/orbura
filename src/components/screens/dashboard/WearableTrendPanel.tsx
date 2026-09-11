@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
 import { getWearableTrend } from "@/lib/api";
 import type { WearableTrendPoint } from "@/lib/api";
 
@@ -171,6 +171,15 @@ export function WearableTrendPanel() {
                 width={30}
               />
               <Tooltip content={<TrendTooltip />} />
+              {hasHrv && stats.hrv != null && (
+                <ReferenceLine
+                  y={stats.hrv}
+                  yAxisId="left"
+                  stroke="var(--color-text-faint)"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.6}
+                />
+              )}
               {hasHrv && (
                 <Line
                   type="monotone"
@@ -196,6 +205,12 @@ export function WearableTrendPanel() {
             </LineChart>
           </ResponsiveContainer>
         </div>
+      )}
+
+      {hasHrv && stats.hrv != null && (
+        <p className="mt-2 text-[9px] font-mono" style={{ color: "var(--color-text-faint)" }}>
+          - - your {data.length}-night avg baseline · {stats.hrv} ms
+        </p>
       )}
     </motion.div>
   );

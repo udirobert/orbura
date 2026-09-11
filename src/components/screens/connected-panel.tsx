@@ -4,9 +4,12 @@ import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 import { HRVDeltaBar } from "./hrv-delta-bar";
 import { SOURCE_META } from "./hrv-config";
+import { auth } from "@/lib/sdk/eazo-client";
+import { useEazo } from "@/lib/sdk/eazo-react";
 import type { HRVData } from "@/lib/types";
 
 export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue: () => void }) {
+  const user = useEazo((s) => s.auth.user);
   const meta = SOURCE_META[data.source ?? "manual_proxy"];
   const isBad = (data.hrvDeltaPercent ?? 0) <= -20;
   const isWarning = (data.hrvDeltaPercent ?? 0) <= -10;
@@ -200,6 +203,17 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
       >
         Calculate my full score
       </motion.button>
+
+      {!user && (
+        <button
+          type="button"
+          onClick={() => auth.login().catch(() => undefined)}
+          className="text-[10px] font-mono text-center underline-offset-2 hover:underline"
+          style={{ color: "var(--color-text-faint)" }}
+        >
+          Guest session · sign in to keep this history and build your baseline →
+        </button>
+      )}
     </motion.div>
   );
 }

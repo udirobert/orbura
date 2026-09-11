@@ -737,8 +737,15 @@ export function DashboardScreen() {
         />
       )}
 
-      {/* ── Layer 6b: Wearable baseline trend (auth-only) ───────────── */}
-      {user && <WearableTrendPanel />}
+      {/* ── Layer 6b: Wearable baseline trend (auth) / locked teaser ── */}
+      {user ? (
+        <WearableTrendPanel />
+      ) : (
+        <AuthLockedTeaser
+          title="Wearable baseline"
+          body="Sign in to see your HRV and resting HR trend against your personal baseline."
+        />
+      )}
 
       {/* ── Layer 7: Notifications (auth-only) ──────────────────────── */}
       {user && <NotificationsToggle />}

@@ -89,6 +89,12 @@ export function OpeningScreen() {
         const hrvNights = res.trend.filter((p) => p.hrv != null);
         const last = hrvNights[hrvNights.length - 1];
         if (!last?.hrv) return;
+        if (hrvNights.length < 3) {
+          setTrendSignal(
+            `Baseline building · ${hrvNights.length}/3 nights · HRV ${last.hrv} ms last night`,
+          );
+          return;
+        }
         const prior = hrvNights.slice(0, -1);
         const avg = prior.length
           ? Math.round(prior.reduce((a, p) => a + (p.hrv ?? 0), 0) / prior.length)
