@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Activity, Brain, Flame, Moon, Trophy, Tv, Watch } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory, auth } from "@/lib/sdk/eazo-client";
@@ -23,9 +23,9 @@ const DORMANT_FRAMES = [
   "50% 50% 48% 52% / 48% 52% 50% 50%",
 ];
 
-const SECONDARY_MODES: { mode: RecoveryMode; label: string; blurb: string }[] = [
-  { mode: "football", label: "Match Fit", blurb: "Squad match-day readiness" },
-  { mode: "fan", label: "Fan Recovery", blurb: "Post-match wind-down" },
+const SECONDARY_MODES: { mode: RecoveryMode; label: string; blurb: string; Icon: typeof Trophy }[] = [
+  { mode: "football", label: "Match Fit", blurb: "Squad match-day readiness", Icon: Trophy },
+  { mode: "fan", label: "Fan Recovery", blurb: "Post-match wind-down", Icon: Tv },
 ];
 
 export function OpeningScreen() {
@@ -72,18 +72,22 @@ export function OpeningScreen() {
     lastWakeTime && lastBedTime ? `${lastBedTime} → ${lastWakeTime}` : null;
 
   // One context line, chosen by priority — never a stack of competing captions.
+  // The icon carries the domain so the text can stay short.
   const signalLine = !isReturning
     ? null
     : trendSignal
-      ? { text: streakDays > 0 ? `${streakDays}d streak · ${trendSignal}` : trendSignal }
+      ? {
+          Icon: streakDays > 0 ? Flame : Activity,
+          text: streakDays > 0 ? `${streakDays}d streak · ${trendSignal}` : trendSignal,
+        }
       : memorySummary
-        ? { text: memorySummary, coachLink: true }
+        ? { Icon: Brain, text: memorySummary, coachLink: true }
         : user && trendChecked
-          ? { text: "No wearable history yet · connect a device during check-in" }
+          ? { Icon: Watch, text: "No wearable history yet · connect a device during check-in" }
           : sleepHabit
-            ? { text: `Usual sleep · ${sleepHabit}` }
+            ? { Icon: Moon, text: `Usual sleep · ${sleepHabit}` }
             : streakDays > 0
-              ? { text: `${streakDays}d streak · keep the chain going`, success: true }
+              ? { Icon: Flame, text: `${streakDays}d streak · keep the chain going`, success: true }
               : null;
 
   useEffect(() => {
@@ -299,16 +303,19 @@ export function OpeningScreen() {
               {isReturning && signalLine && (
                 <>
                   <p
-                    className="mt-3 text-[11px] font-mono leading-relaxed"
+                    className="mt-3 text-[11px] font-mono leading-relaxed flex items-center justify-center gap-1.5"
                     style={{
                       color: signalLine.success
                         ? "var(--color-states-success)"
                         : "var(--color-text-secondary)",
                     }}
                   >
-                    {signalLine.text.length > 110
-                      ? signalLine.text.slice(0, 110) + "…"
-                      : signalLine.text}
+                    <signalLine.Icon className="w-3 h-3 flex-shrink-0" aria-hidden />
+                    <span>
+                      {signalLine.text.length > 110
+                        ? signalLine.text.slice(0, 110) + "…"
+                        : signalLine.text}
+                    </span>
                   </p>
                   {signalLine.coachLink && (
                     <button
@@ -391,9 +398,14 @@ export function OpeningScreen() {
                         }}
                       >
                         <span
-                          className="text-[12px] font-medium"
+                          className="flex items-center gap-2 text-[12px] font-medium"
                           style={{ color: "var(--color-text-secondary)" }}
                         >
+                          <m.Icon
+                            className="w-3.5 h-3.5"
+                            style={{ color: "var(--color-text-faint)" }}
+                            aria-hidden
+                          />
                           {m.label}
                         </span>
                         <span

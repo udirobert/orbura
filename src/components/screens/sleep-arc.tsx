@@ -47,6 +47,15 @@ export function SleepArc({
   const wakeH = slotToMinutes(wakeTime) / 60;
   const bed = polar(bedH);
   const wake = polar(wakeH);
+  // Midpoint of the window — the "deepest" hour of the night, pulled inside
+  // the ring so the moon floats within the sleep window rather than on it.
+  let sweep = wakeH - bedH;
+  if (sweep <= 0) sweep += 24;
+  const midOnRing = polar(bedH + sweep / 2);
+  const mid = {
+    x: CX + (midOnRing.x - CX) * 0.72,
+    y: CY + (midOnRing.y - CY) * 0.72,
+  };
 
   return (
     <div className="relative w-full" style={{ maxWidth: 190, margin: "0 auto" }}>
@@ -75,6 +84,17 @@ export function SleepArc({
         {/* Endpoint markers */}
         <circle cx={bed.x} cy={bed.y} r={5} fill="var(--color-brand-primary)" />
         <circle cx={wake.x} cy={wake.y} r={5} fill="var(--color-text-primary)" />
+        {/* Moon at the midpoint of the night, drifting inside the window */}
+        <motion.text
+          x={mid.x}
+          y={mid.y + 4}
+          textAnchor="middle"
+          fontSize={11}
+          animate={{ opacity: [0.55, 1, 0.55] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        >
+          🌙
+        </motion.text>
         {/* Cardinal hour labels */}
         {TICKS.map((t) => {
           const p = polar(t.h);
