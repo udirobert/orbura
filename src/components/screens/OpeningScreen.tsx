@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { getContextConfig } from "@/lib/contexts";
-import { memory } from "@/lib/sdk/eazo-client";
+import { memory, auth } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { getWearableTrend } from "@/lib/api";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
@@ -36,6 +36,7 @@ export function OpeningScreen() {
   const [copyVisible, setCopyVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [trendSignal, setTrendSignal] = useState<string | null>(null);
+  const [trendChecked, setTrendChecked] = useState(false);
 
   // Strip the [YYYY-MM-DD] stamps Supermemory adds to stored events, then drop
   // third-person "User ..." lines so raw reportAction logs never render here.
@@ -104,7 +105,10 @@ export function OpeningScreen() {
           );
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setTrendChecked(true);
+      });
     return () => { cancelled = true; };
   }, [user]);
 
@@ -273,13 +277,31 @@ export function OpeningScreen() {
                   {trendSignal}
                 </p>
               )}
-              {isReturning && !trendSignal && sleepHabit && (
+              {isReturning && !trendSignal && user && trendChecked && (
+                <p
+                  className="mt-3 text-[11px] font-mono"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  No wearable history yet · connect a device during check-in to build your baseline
+                </p>
+              )}
+              {isReturning && !trendSignal && (!user || !trendChecked) && sleepHabit && (
                 <p
                   className="mt-3 text-[11px] font-mono"
                   style={{ color: "var(--color-text-secondary)" }}
                 >
                   Usual sleep · {sleepHabit}
                 </p>
+              )}
+              {isReturning && !user && (
+                <button
+                  type="button"
+                  onClick={() => auth.login().catch(() => undefined)}
+                  className="mt-3 text-[10px] font-mono underline-offset-2 hover:underline"
+                  style={{ color: "var(--color-system-muscular)" }}
+                >
+                  Sign in to keep your history and build a personal baseline →
+                </button>
               )}
               {isReturning && memorySummary && (
                 <p
