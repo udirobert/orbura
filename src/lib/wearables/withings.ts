@@ -5,6 +5,12 @@ import { getWithingsToken, saveWithingsToken, type WithingsTokenRecord } from "@
 const AUTHORIZE_URL = "https://account.withings.com/oauth2_user/authorize2";
 const TOKEN_URL = "https://wbsapi.withings.net/v2/oauth2";
 const SLEEP_URL = "https://wbsapi.withings.net/v2/sleep";
+const MEASURE_URL = "https://wbsapi.withings.net/measure";
+
+// Withings meastypes: 1=weight(kg), 9=diastolic BP, 10=systolic BP
+const MEASTYPE_WEIGHT = 1;
+const MEASTYPE_BP_DIASTOLIC = 9;
+const MEASTYPE_BP_SYSTOLIC = 10;
 
 function getConfig() {
   const clientId = process.env.WITHINGS_CLIENT_ID;
@@ -204,6 +210,65 @@ async function fetchSleepSummary(accessToken: string, startYmd: string, endYmd: 
   return json.body.series;
 }
 
+interface MeasureValue {
+  type: number;
+  value: number;
+  unit: number; // real value = value * 10^unit
+}
+
+interface MeasureGroup {
+  grpid: number;
+  date: number; // unix seconds
+  measures: MeasureValue[];
+}
+
+interface MeasureResponse {
+  status: number;
+  body?: {
+    measuregrps?: MeasureGroup[];
+    more?: number;
+  };
+}
+
+async function fetchMeasures(
+  accessToken: string,
+  startdate: number,
+  enddate: number
+): Promise<MeasureGroup[]> {
+  const body = new URLSearchParams({
+    action: "getmeas",
+    meastypes: `${MEASTYPE_WEIGHT},${MEASTYPE_BP_SYSTOLIC},${MEASTYPE_BP_DIASTOLIC}`,
+    category: "1", // real measurements only — excludes objectives/ambiguous
+    startdate: String(startdate),
+    enddate: String(enddate),
+  });
+
+  const res = await fetch(MEASURE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: body.toString(),
+  });
+
+  const json = (await res.json()) as MeasureResponse;
+  if (json.status !== 0 || !json.body?.measuregrps) return [];
+  return json.body.measuregrps;
+}
+
+/** Real-world value of a measure entry — Withings encodes as value * 10^unit. */
+function measureValue(m: MeasureValue): number {
+  return m.value * Math.pow(10, m.unit);
+}
+
+function pickMeasure(grp: MeasureGroup, type: number): number | undefined {
+  const m = grp.measures.find((x) => x.type === type);
+  if (!m) return undefined;
+  const v = measureValue(m);
+  return Number.isFinite(v) ? Math.round(v * 10) / 10 : undefined;
+}
+
 function avg(...values: (number | undefined)[]): number | undefined {
   const nums = values.filter((v): v is number => v != null && Number.isFinite(v));
   return nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : undefined;
@@ -217,8 +282,26 @@ export async function fetchWithingsHRV(userId: string): Promise<WearableSnapshot
   const start = new Date();
   start.setDate(start.getDate() - 6);
 
-  const series = await fetchSleepSummary(token.accessToken, ymd(start), ymd(end));
+  const [series, measureGroups] = await Promise.all([
+    fetchSleepSummary(token.accessToken, ymd(start), ymd(end)),
+    fetchMeasures(
+      token.accessToken,
+      Math.floor(start.getTime() / 1000),
+      Math.floor(end.getTime() / 1000)
+    ).catch(() => [] as MeasureGroup[]),
+  ]);
   if (!series.length) return null;
+
+  // Latest measurement group — scale/BP readings have their own timestamp.
+  const latestGrp = [...measureGroups].sort((a, b) => b.date - a.date)[0];
+  const measures = latestGrp
+    ? {
+        weightKg: pickMeasure(latestGrp, MEASTYPE_WEIGHT),
+        bpSystolic: pickMeasure(latestGrp, MEASTYPE_BP_SYSTOLIC),
+        bpDiastolic: pickMeasure(latestGrp, MEASTYPE_BP_DIASTOLIC),
+        recordedAt: new Date(latestGrp.date * 1000),
+      }
+    : undefined;
 
   // Withings returns series oldest first; use the latest completed night.
   const latest = [...series].reverse().find((s) => s.data && s.enddate > 0) ?? series[series.length - 1];
@@ -249,6 +332,7 @@ export async function fetchWithingsHRV(userId: string): Promise<WearableSnapshot
     hrvMetric: hasHrv ? "hrv_rmssd" : undefined,
     restingHr: restingHr != null ? Math.round(restingHr) : undefined,
     sleepStages,
+    measures,
     confidence: hasHrv ? "high" : restingHr != null ? "medium" : "low",
   };
 }

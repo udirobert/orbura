@@ -45,6 +45,11 @@ function TrendTooltip({ active, payload, label }: any) {
           Resting HR {point.restingHr} bpm
         </p>
       )}
+      {point.weight != null && (
+        <p style={{ color: "var(--color-text-secondary)" }}>
+          Weight {point.weight} kg
+        </p>
+      )}
       {point.deep != null && point.rem != null && point.light != null && (
         <p className="mt-1" style={{ color: "var(--color-text-faint)" }}>
           Sleep deep {point.deep}m · REM {point.rem}m · light {point.light}m
@@ -78,12 +83,20 @@ export function WearableTrendPanel() {
   }, []);
 
   const stats = useMemo(() => {
+    const weightPoints = data.filter((d) => d.weight != null);
+    const latestWeight = weightPoints[weightPoints.length - 1]?.weight;
+    const firstWeight = weightPoints[0]?.weight;
     return {
       hrv: average(data.map((d) => d.hrv)),
       restingHr: average(data.map((d) => d.restingHr)),
       deep: average(data.map((d) => d.deep)),
       rem: average(data.map((d) => d.rem)),
       light: average(data.map((d) => d.light)),
+      weight: latestWeight,
+      weightDelta:
+        latestWeight != null && firstWeight != null && weightPoints.length > 1
+          ? Math.round((latestWeight - firstWeight) * 10) / 10
+          : null,
     };
   }, [data]);
 
@@ -132,6 +145,7 @@ export function WearableTrendPanel() {
         {[
           { show: stats.hrv != null, label: "Avg HRV", value: `${stats.hrv} ms`, Icon: SIGNAL_ICONS.hrv, color: "var(--color-brand-primary)", wide: false },
           { show: stats.restingHr != null, label: "Avg Resting HR", value: `${stats.restingHr} bpm`, Icon: SIGNAL_ICONS.restingHr, color: "var(--color-text-primary)", wide: false },
+          { show: stats.weight != null, label: "Weight", value: `${stats.weight} kg`, Icon: SIGNAL_ICONS.weight, color: "var(--color-text-primary)", wide: false, sub: stats.weightDelta != null ? `${stats.weightDelta > 0 ? "+" : ""}${stats.weightDelta} kg vs ${DAYS}d ago` : undefined },
           { show: stats.deep != null && stats.rem != null && stats.light != null, label: "Avg Sleep", value: `${stats.deep}m · ${stats.rem}m · ${stats.light}m`, Icon: SIGNAL_ICONS.sleep, color: "var(--color-text-primary)", wide: true, sub: "deep · REM · light" },
         ].filter((t) => t.show).map((t) => (
           <div key={t.label} className={`rounded-xl px-2 py-2 text-center ${t.wide ? "col-span-2" : ""}`} style={{ backgroundColor: "var(--color-bg-base)" }}>

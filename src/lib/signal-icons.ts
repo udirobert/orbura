@@ -38,6 +38,7 @@ export const SIGNAL_ICONS = {
   streak: Flame,
   wearable: Watch,
   auth: Lock,
+  weight: Scale,
 } satisfies Record<string, LucideIcon>;
 
 /** Measurement sources — where a reading came from. */

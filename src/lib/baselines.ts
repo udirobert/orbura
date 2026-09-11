@@ -12,6 +12,13 @@ export interface WearableSnapshot {
   restingHr?: number;
   fallbackBaselineHr?: number;
   sleepStages?: { deep: number; rem: number; light: number };
+  /** Non-sleep body metrics (weight, BP) — own timestamp, may differ from sleep. */
+  measures?: {
+    weightKg?: number;
+    bpSystolic?: number;
+    bpDiastolic?: number;
+    recordedAt?: Date;
+  };
   confidence: HRVConfidence;
 }
 
@@ -176,6 +183,26 @@ async function writeWearableSnapshot(
         unit: "min",
       })
     );
+  }
+
+  if (snapshot.measures) {
+    const measuredAt = snapshot.measures.recordedAt ?? snapshot.recordedAt;
+    const measuredDate = new Date(
+      measuredAt.getFullYear(),
+      measuredAt.getMonth(),
+      measuredAt.getDate()
+    );
+    const measureBase = { ...base, recordedAt: measuredAt, recordedDate: measuredDate };
+    const measureOps: Array<[string, number | undefined, string]> = [
+      ["weight_kg", snapshot.measures.weightKg, "kg"],
+      ["bp_systolic", snapshot.measures.bpSystolic, "mmHg"],
+      ["bp_diastolic", snapshot.measures.bpDiastolic, "mmHg"],
+    ];
+    for (const [metricType, value, unit] of measureOps) {
+      if (value != null) {
+        ops.push(upsertWearableObservation({ ...measureBase, metricType, value, unit }));
+      }
+    }
   }
 
   await Promise.all(ops);

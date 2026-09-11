@@ -107,6 +107,7 @@ export interface WearableTrendPoint {
   deep?: number;
   rem?: number;
   light?: number;
+  weight?: number;
 }
 
 /**
@@ -137,12 +138,12 @@ export async function getWearableTrend(
     )
     .orderBy(desc(wearableObservations.recordedDate));
 
-  const bucket = new Map<string, { hrv: number[]; restingHr: number[]; deep: number[]; rem: number[]; light: number[] }>();
+  const bucket = new Map<string, { hrv: number[]; restingHr: number[]; deep: number[]; rem: number[]; light: number[]; weight: number[] }>();
 
   for (const r of rows) {
     const d = r.recordedDate as Date;
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const entry = bucket.get(key) ?? { hrv: [], restingHr: [], deep: [], rem: [], light: [] };
+    const entry = bucket.get(key) ?? { hrv: [], restingHr: [], deep: [], rem: [], light: [], weight: [] };
 
     if (r.metricType === "hrv_rmssd" || r.metricType === "hrv_sdnn") {
       entry.hrv.push(r.value);
@@ -154,6 +155,8 @@ export async function getWearableTrend(
       entry.rem.push(r.value);
     } else if (r.metricType === "sleep_light_min") {
       entry.light.push(r.value);
+    } else if (r.metricType === "weight_kg") {
+      entry.weight.push(r.value);
     }
 
     bucket.set(key, entry);
@@ -162,6 +165,8 @@ export async function getWearableTrend(
   const result: WearableTrendPoint[] = [];
   for (const [date, vals] of bucket) {
     const avg = (arr: number[]) => (arr.length > 0 ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : undefined);
+    // Weight keeps one decimal — day-to-day grams matter less than the trend.
+    const avgWeight = (arr: number[]) => (arr.length > 0 ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10 : undefined);
     result.push({
       date,
       hrv: avg(vals.hrv),
@@ -169,6 +174,7 @@ export async function getWearableTrend(
       deep: avg(vals.deep),
       rem: avg(vals.rem),
       light: avg(vals.light),
+      weight: avgWeight(vals.weight),
     });
   }
 
@@ -286,6 +292,17 @@ export function formatWearableTrendForPrompt(
     if (avgRem != null) sleepParts.push(`REM ${avgRem}m`);
     if (avgLight != null) sleepParts.push(`light ${avgLight}m`);
     parts.push(`- Sleep stage averages: ${sleepParts.join(", ")}.`);
+  }
+
+  const weights = trend.map((t) => t.weight).filter((v): v is number => v != null);
+  if (latest.weight != null) {
+    const weightDelta =
+      weights.length > 1
+        ? Math.round((latest.weight - weights[0]) * 10) / 10
+        : null;
+    parts.push(
+      `- Weight: ${latest.weight} kg${weightDelta != null ? ` (${weightDelta > 0 ? "+" : ""}${weightDelta} kg over ${trend.length} days)` : ""}.`,
+    );
   }
 
   return parts.join("\n");

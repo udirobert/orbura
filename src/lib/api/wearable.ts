@@ -180,6 +180,7 @@ export interface WearableTrendPoint {
   deep?: number;
   rem?: number;
   light?: number;
+  weight?: number;
 }
 
 export interface WearableTrendResponse {

@@ -236,8 +236,9 @@ to the live Terra and Google Fit adapters.
   `src/app/api/withings/` provides auth, callback, and data routes; encrypted
   tokens live in `withings_tokens` via `src/lib/crypto/token-vault.ts`. The
   adapter normalizes sleep summary data (HRV RMSSD, resting HR, sleep stages)
-  into the shared baseline pipeline. Weight, blood pressure, and other measures
-  are available via `measure` once the adapter is extended.
+  plus `measure` body metrics (weight, systolic/diastolic BP — real
+  measurements only, each with its own timestamp) into the shared
+  baseline pipeline.
 - **Google Fit / Health Connect** — The Google Fit REST API exposes heart-rate
   and sleep sessions but not RMSSD HRV. Health Connect is an on-device Android
   store. The current Google Fit route is already near the free ceiling.
