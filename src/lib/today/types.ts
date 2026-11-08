@@ -64,8 +64,8 @@ export interface TodayContext {
   treatmentWeek: number | null;
   /** Open escalation the patient should know is being handled. */
   openEscalation: boolean;
-  /** Observation-style pattern line, never a causal claim. */
-  patternLine: string | null;
+  /** Observation-style pattern lines, never causal claims. */
+  patternLines: string[];
   streakDays: number;
   pendingFollowThroughDate: string | null;
 }

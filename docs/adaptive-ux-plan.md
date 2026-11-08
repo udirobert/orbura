@@ -120,7 +120,13 @@ Same decision, three densities — patient / clinician / auditor.
   clinician shows pending actions/outcomes/escalation, auditor shows rule
   id + every input + optional ZK credential block. Live clinician/auditor
   endpoints are the remaining production work.
-- Phases C–D: not started.
+- **Phase C — done (v1).** `context.patternLine` → `patternLines[]`;
+  `buildPatternLines` composes observation-style lines from
+  `getUserPatterns` (trend direction + avg score, highest-debt system,
+  day-of-week pattern). Rendered as bullets under "Why this?" on
+  TodayScreen. Care-domain correlations (dose-day vs symptoms,
+  vitals deviation vs check-ins) remain future work.
+- Phase D: not started.
 
 ## Build order & verification
 

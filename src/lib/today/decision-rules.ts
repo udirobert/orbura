@@ -37,7 +37,7 @@ export interface TodayInput {
 
   // Patterns / streaks (from getUserPatterns)
   streakDays: number;
-  patternLine: string | null;
+  patternLines: string[];
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -115,7 +115,7 @@ export function decideToday(input: TodayInput): TodayState {
   const context: TodayContext = {
     treatmentWeek: week,
     openEscalation: input.openEscalation,
-    patternLine: input.patternLine,
+    patternLines: input.patternLines,
     streakDays: input.streakDays,
     pendingFollowThroughDate: input.pendingFollowThrough?.date ?? null,
   };

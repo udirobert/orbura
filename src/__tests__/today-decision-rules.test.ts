@@ -20,7 +20,7 @@ function base(overrides: Partial<TodayInput> = {}): TodayInput {
     lastCheckInAt: null,
     latestDebtScore: null,
     streakDays: 0,
-    patternLine: null,
+    patternLines: [],
     ...overrides,
   };
 }
@@ -103,12 +103,12 @@ describe("decideToday", () => {
       lastVitalsAt: new Date(NOW.getTime() - 5 * 60 * 60 * 1000).toISOString(),
       vitalsDeltaPct: 2,
       streakDays: 5,
-      patternLine: "Your scores tend to be higher on Monday (avg 34).",
+      patternLines: ["Your scores tend to be higher on Monday (avg 34)."],
     }));
     expect(s.primaryAction.id).toBe("steady-check-in");
     expect(s.primaryAction.detail).toContain("5-day streak");
     expect(s.secondaryActions.length).toBeLessThanOrEqual(2);
-    expect(s.context.patternLine).toContain("Monday");
+    expect(s.context.patternLines.join(" ")).toContain("Monday");
   });
 
   it("no secondary actions exceed two", () => {

@@ -26,7 +26,7 @@ function input(overrides: Partial<TodayInput>): TodayInput {
     lastCheckInAt: null,
     latestDebtScore: null,
     streakDays: 0,
-    patternLine: null,
+    patternLines: [],
     ...overrides,
   };
 }
@@ -66,7 +66,7 @@ export const ADAPTIVE_SCENARIOS: AdaptiveScenario[] = [
       lastCheckInAt: new Date(FIXTURE_NOW.getTime() - 26 * HOUR).toISOString(),
       latestDebtScore: 18,
       streakDays: 5,
-      patternLine: "Your scores tend to be higher on Monday (avg 34).",
+      patternLines: ["Your scores tend to be higher on Monday (avg 34)."],
     })),
     clinician: {
       patientLabel: "Not a care patient",

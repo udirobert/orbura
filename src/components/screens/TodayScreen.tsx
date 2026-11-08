@@ -117,7 +117,7 @@ export function TodayScreen({ state }: { state: TodayState }) {
       ? `Week ${state.context.treatmentWeek} of treatment`
       : null,
     state.context.openEscalation ? "Your care team is reviewing your last check-in" : null,
-    state.context.patternLine,
+    ...state.context.patternLines,
     state.context.streakDays > 1 ? `${state.context.streakDays}-day streak` : null,
     fresh ? `Signal ${fresh}` : null,
   ].filter(Boolean) as string[];

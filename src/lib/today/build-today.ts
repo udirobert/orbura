@@ -18,6 +18,38 @@ import {
 import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { decideToday, type TodayInput } from "./decision-rules";
 import type { TodayState } from "./types";
+import type { UserPatterns } from "@/lib/db/queries/debt-sessions";
+import type { RecoverySystem } from "@/lib/types";
+
+const SYSTEM_LABEL_NICE: Record<RecoverySystem, string> = {
+  cardiovascular: "Cardiovascular",
+  brain: "Brain",
+  liver: "Liver",
+  muscular: "Muscular / CNS",
+  gut: "Gut",
+};
+
+/**
+ * Observation-style pattern lines — what changed, never why. Each line must
+ * stand alone as a fact about the record.
+ */
+function buildPatternLines(p: UserPatterns | null): string[] {
+  if (!p) return [];
+  const lines: string[] = [];
+  if (p.trendDirection !== "stable") {
+    lines.push(
+      `Your load is ${p.trendDirection} across recent sessions (avg score ${p.avgScore}).`,
+    );
+  }
+  if (p.worstSystem) {
+    const label = SYSTEM_LABEL_NICE[p.worstSystem as RecoverySystem] ?? p.worstSystem;
+    lines.push(`${label} carries the most debt on average.`);
+  }
+  if (p.dayOfWeekPattern) {
+    lines.push(`Your ${p.dayOfWeekPattern}.`);
+  }
+  return lines;
+}
 
 const CAMERA_SOURCE = "camera_vitals";
 
@@ -147,9 +179,7 @@ export async function buildTodayState(userId: string): Promise<TodayState> {
     lastCheckInAt: latestSession?.createdAt.toISOString() ?? null,
     latestDebtScore: latestSession?.debtScore ?? null,
     streakDays: patterns?.streakDays ?? 0,
-    patternLine: patterns?.dayOfWeekPattern
-      ? `Your ${patterns.dayOfWeekPattern}.`
-      : null,
+    patternLines: buildPatternLines(patterns),
   };
 
   return decideToday(input);
