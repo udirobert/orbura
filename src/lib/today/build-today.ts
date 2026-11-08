@@ -15,6 +15,7 @@ import {
   getOpenEscalationsForPatient,
   getPendingInterventionsForPatient,
 } from "@/lib/db/queries/care";
+import { getLatestZkCredential } from "@/lib/db/queries/zk-credentials";
 import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { decideToday, type TodayInput } from "./decision-rules";
 import type { TodayState } from "./types";
@@ -111,11 +112,12 @@ async function latestHrvDelta(userId: string, cameraOnly: boolean) {
 export async function buildTodayState(userId: string): Promise<TodayState> {
   const now = new Date();
 
-  const [patient, pendingSession, latestSession, patterns] = await Promise.all([
+  const [patient, pendingSession, latestSession, patterns, credential] = await Promise.all([
     getCarePatientByUserId(userId),
     getPendingIntervention(userId),
     getLatestDebtSession(userId),
     getUserPatterns(userId),
+    getLatestZkCredential(userId),
   ]);
 
   let careInput: Pick<
@@ -182,5 +184,18 @@ export async function buildTodayState(userId: string): Promise<TodayState> {
     patternLines: buildPatternLines(patterns),
   };
 
-  return decideToday(input);
+  const state = decideToday(input);
+  state.latestCredential = credential
+    ? {
+        modelId: credential.modelId,
+        score: credential.score,
+        healthy: credential.healthy,
+        prover: credential.prover,
+        chain: credential.chain,
+        txHash: credential.txHash,
+        verifiedAt: credential.verifiedAt?.toISOString() ?? null,
+        inputDigest: credential.inputDigest,
+      }
+    : null;
+  return state;
 }

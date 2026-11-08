@@ -138,6 +138,7 @@ export function decideToday(input: TodayInput): TodayState {
       },
       secondaryActions: secondary.slice(0, 2),
       context,
+      latestCredential: null,
     };
   }
 
@@ -173,6 +174,7 @@ export function decideToday(input: TodayInput): TodayState {
       },
       secondaryActions: secondary.slice(0, 2),
       context,
+      latestCredential: null,
     };
   }
 
@@ -200,6 +202,7 @@ export function decideToday(input: TodayInput): TodayState {
         },
       ],
       context,
+      latestCredential: null,
     };
   }
 
@@ -227,6 +230,7 @@ export function decideToday(input: TodayInput): TodayState {
         },
       ],
       context,
+      latestCredential: null,
     };
   }
 
@@ -269,6 +273,7 @@ export function decideToday(input: TodayInput): TodayState {
         },
       ],
       context,
+      latestCredential: null,
     };
   }
 
@@ -287,5 +292,6 @@ export function decideToday(input: TodayInput): TodayState {
     },
     secondaryActions: secondary.slice(0, 2),
     context,
+    latestCredential: null,
   };
 }

@@ -15,6 +15,7 @@ import {
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useConnect, useSwitchChain } from "wagmi";
 import { injected } from "wagmi";
 import type { ZKProofResult, ZKVerifyMode, OnChainVerificationStatus } from "@/lib/types";
+import { digestStressFeatures } from "@/lib/zk/feature-digest";
 import type { Hex } from "viem";
 
 export type ScanPhase =
@@ -414,7 +415,31 @@ export function useFaceScanPipeline() {
       debtContribution: Math.round((parsed.stress_score ?? 0.5) * 20),
       summary: "ZK-verified facial stress analysis completed.",
     });
-  }, [isConfirmed, phase, lastProof, txHash, setZkProof, setFaceAnalysis]);
+
+    // Persist the confirmed credential — fire-and-forget; guests get a 401
+    // and nothing is stored, which is correct.
+    void (async () => {
+      try {
+        const inputDigest = extractedFeatures ? await digestStressFeatures(extractedFeatures) : null;
+        await fetch("/api/credentials", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source: "face_scan",
+            modelId: "orbura-stress-v1",
+            score: typeof parsed.stress_score === "number" ? parsed.stress_score : null,
+            healthy: typeof parsed.is_healthy === "boolean" ? parsed.is_healthy : null,
+            inputDigest,
+            prover: "ezkl",
+            chain: "skale",
+            txHash,
+          }),
+        });
+      } catch {
+        // Credential persistence must never block the scan flow.
+      }
+    })();
+  }, [isConfirmed, phase, lastProof, txHash, extractedFeatures, setZkProof, setFaceAnalysis]);
 
   const startCamera = useCallback(async () => {
     setCameraError(null);

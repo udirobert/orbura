@@ -22,6 +22,18 @@ function Row({ k, v }: { k: string; v: string | number | boolean | null }) {
 export function AuditorDensity({ scenario }: { scenario: AdaptiveScenario }) {
   const s = scenario.state;
   const p: TodayProvenance = s.provenance;
+  // Live credential wins; fixture proof is the demo fallback.
+  const cred = s.latestCredential;
+  const proof = cred
+    ? {
+        modelId: cred.modelId,
+        score: cred.score ?? 0,
+        healthy: cred.healthy ?? false,
+        inputDigest: cred.inputDigest ?? "—",
+        chain: cred.chain as "skale" | "starknet",
+        txRef: cred.txHash ?? "local verification",
+      }
+    : scenario.proof;
 
   return (
     <div className="flex flex-col gap-4">
@@ -74,7 +86,7 @@ export function AuditorDensity({ scenario }: { scenario: AdaptiveScenario }) {
         <Row k="streak days" v={p.streakDays} />
       </div>
 
-      {scenario.proof ? (
+      {proof ? (
         <div
           className="rounded-2xl p-4 flex flex-col gap-2"
           style={{ backgroundColor: "rgba(96,165,250,0.06)", border: "1px solid rgba(96,165,250,0.25)" }}
@@ -82,13 +94,13 @@ export function AuditorDensity({ scenario }: { scenario: AdaptiveScenario }) {
           <p className="text-[10px] font-mono uppercase tracking-widest flex items-center gap-1.5" style={{ color: "#60A5FA" }}>
             <Link2 size={12} /> ZK credential
           </p>
-          <Row k="model" v={scenario.proof.modelId} />
-          <Row k="score" v={scenario.proof.score} />
-          <Row k="healthy" v={scenario.proof.healthy} />
-          <Row k="input digest" v={scenario.proof.inputDigest} />
-          <Row k="verified on" v={scenario.proof.chain} />
+          <Row k="model" v={proof.modelId} />
+          <Row k="score" v={proof.score} />
+          <Row k="healthy" v={proof.healthy} />
+          <Row k="input digest" v={proof.inputDigest} />
+          <Row k="verified on" v={proof.chain} />
           <p className="text-[10px] font-mono break-all mt-1" style={{ color: "var(--color-text-muted)" }}>
-            tx {scenario.proof.txRef}
+            tx {proof.txRef}
           </p>
         </div>
       ) : (

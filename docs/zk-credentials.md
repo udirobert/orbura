@@ -1,4 +1,13 @@
-# ZK Credential Records — spec
+# ZK Credential Records
+
+**Status: implemented.** `zk_credentials` table (migration 0014, applied),
+`POST /api/credentials` (auth-gated, txHash required for non-local chains),
+`GET /api/credentials/latest` (session or Companion link token),
+`latestCredential` joined into `GET /api/today`, SKALE face-scan pipeline
+POSTs after `verifyAndLogCredential` confirms (fire-and-forget), and the
+feature digest lives in `src/lib/zk/feature-digest.ts`. Auditor density
+prefers the live credential over fixtures. RISC Zero/Starknet write path
+not yet wired (host-side artifact flow).
 
 Goal: make verified wellness credentials durable, queryable records so the
 adaptive UI's auditor density (and clinician trust signals) can show *real*

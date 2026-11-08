@@ -138,9 +138,11 @@ Same decision, three densities — patient / clinician / auditor.
   with the live `TodayState` headline + action. Token TTL is 30 min —
   a longer-lived read token or refresh flow is the follow-up. Push/widget
   channels remain blocked on the notifications stub.
-- **Credential persistence** specced in `docs/zk-credentials.md`
-  (`zk_credentials` table + write/read paths) — unblocks the live auditor
-  density.
+- **Credential persistence — implemented.** `zk_credentials` table +
+  `/api/credentials` (POST confirmed-only, GET latest) live; SKALE face
+  scans persist after on-chain confirm; `/api/today` carries
+  `latestCredential`; auditor density prefers it over fixtures. See
+  `docs/zk-credentials.md`. Starknet write path still pending.
 
 ## Build order & verification
 

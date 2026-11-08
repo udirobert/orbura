@@ -44,13 +44,13 @@ or does it require Electron/native camera access? Determines app shell.
 
 ## Deliverables checklist
 
-- [ ] API key from Presage Developer Portal (or via MCP)
-- [ ] Working app using ≥1 live signal
-- [ ] Public repo (this repo or standalone — decide; standalone may be cleaner for judges)
-- [ ] Setup instructions (README)
-- [ ] Demo video (public hosting)
-- [ ] DEV post with #presagechallenge + submission template + consent/data-handling disclosure
-- [ ] Camera consent flow + data-handling explanation in the post
+- [x] API key from Presage Developer Portal (or via MCP)
+- [x] Working app using ≥1 live signal
+- [x] Public repo (https://github.com/udirobert/orbura)
+- [x] Setup instructions (showcases/presage-smartspectra/README.md)
+- [x] Demo video: https://youtu.be/qh4MoSaLfSI (85s cinematic showcase with wide↔macro choreography, rPPG science, and narration)
+- [x] DEV post published: https://dev.to/papajams/orbura-a-camera-check-in-that-becomes-a-baseline-presage-smartspectra-sdk-challenge-3ljm
+- [x] Camera consent flow + data-handling disclosure in app and post
 
 ## API key & credit budget
 
@@ -79,4 +79,7 @@ or does it require Electron/native camera access? Determines app shell.
 - [x] Vitals → Orbura bridge: `POST /api/vitals/check-in` stores
       breathing/pulse/HRV as `camera_vitals` wearable observations with
       baseline deltas; result card has opt-in "Save to Orbura".
-- [ ] Demo video + DEV post
+- [x] Demo video + DEV post:
+      - 85-second film on YouTube: https://youtu.be/qh4MoSaLfSI
+      - Published DEV.to article: https://dev.to/papajams/orbura-a-camera-check-in-that-becomes-a-baseline-presage-smartspectra-sdk-challenge-3ljm
+      - Complete hackathon milestone achieved. Next: Phase 2 Core Product Integration.

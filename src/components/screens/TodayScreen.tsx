@@ -119,6 +119,7 @@ export function TodayScreen({ state }: { state: TodayState }) {
     state.context.openEscalation ? "Your care team is reviewing your last check-in" : null,
     ...state.context.patternLines,
     state.context.streakDays > 1 ? `${state.context.streakDays}-day streak` : null,
+    state.latestCredential ? "Latest check-in verified on-chain" : null,
     fresh ? `Signal ${fresh}` : null,
   ].filter(Boolean) as string[];
 

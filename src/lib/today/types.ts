@@ -70,6 +70,18 @@ export interface TodayContext {
   pendingFollowThroughDate: string | null;
 }
 
+/** Trimmed credential record for trust/provenance surfaces. */
+export interface ZkCredentialSummary {
+  modelId: string;
+  score: number | null;
+  healthy: boolean | null;
+  prover: string;
+  chain: string;
+  txHash: string | null;
+  verifiedAt: string | null;
+  inputDigest: string | null;
+}
+
 export interface TodayState {
   /** "care" when the user is an enrolled care patient, else their recovery mode. */
   surface: "care" | "personal" | "football" | "fan";
@@ -82,4 +94,6 @@ export interface TodayState {
   /** At most two — the action budget stays small by design. */
   secondaryActions: TodayAction[];
   context: TodayContext;
+  /** Most recent on-chain-verified credential, when one exists. */
+  latestCredential: ZkCredentialSummary | null;
 }

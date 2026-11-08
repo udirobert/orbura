@@ -60,14 +60,27 @@ export const ADAPTIVE_SCENARIOS: AdaptiveScenario[] = [
     id: "steady",
     label: "Steady week",
     blurb: "Personal user, fresh camera vitals, 5-day streak.",
-    state: decideToday(input({
-      lastVitalsAt: new Date(FIXTURE_NOW.getTime() - 3 * HOUR).toISOString(),
-      vitalsDeltaPct: 4,
-      lastCheckInAt: new Date(FIXTURE_NOW.getTime() - 26 * HOUR).toISOString(),
-      latestDebtScore: 18,
-      streakDays: 5,
-      patternLines: ["Your scores tend to be higher on Monday (avg 34)."],
-    })),
+    state: (() => {
+      const s = decideToday(input({
+        lastVitalsAt: new Date(FIXTURE_NOW.getTime() - 3 * HOUR).toISOString(),
+        vitalsDeltaPct: 4,
+        lastCheckInAt: new Date(FIXTURE_NOW.getTime() - 26 * HOUR).toISOString(),
+        latestDebtScore: 18,
+        streakDays: 5,
+        patternLines: ["Your scores tend to be higher on Monday (avg 34)."],
+      }));
+      s.latestCredential = {
+        modelId: "ORBU-stress-mlp-v1",
+        score: 0.18,
+        healthy: true,
+        prover: "risc0",
+        chain: "starknet",
+        txHash: "0x04267e499ef5ad8d640101afa15b2f525358f854fcc8e7ab2aefe07c1abf4afe",
+        verifiedAt: "2026-06-10T06:12:00Z",
+        inputDigest: "sha256:9f2c…a41d",
+      };
+      return s;
+    })(),
     clinician: {
       patientLabel: "Not a care patient",
       medication: null,
