@@ -41,6 +41,6 @@ export const DEVICE_OPTIONS: DeviceOption[] = [
   { id: "android",  name: "Android / Google Fit", sub: "Samsung, OnePlus, Pixel phones",      Icon: Smartphone, layer: "google_fit"   as const, note: null },
   { id: "whoop",    name: "WHOOP / Oura",         sub: "WHOOP 4.0, Oura Gen 3+",              Icon: Radio,      layer: "terra"        as const, note: "Requires Terra credentials" },
   { id: "withings", name: "Withings",             sub: "Scale, Sleep, BPM Connect, ScanWatch", Icon: Scale,      layer: "withings"    as const, note: null },
-  { id: "camera",   name: "Camera check-in",       sub: "Orbura Companion · 45s · no wearable", Icon: Video,      layer: "camera"       as const, note: null },
+  { id: "camera",   name: "Camera check-in",       sub: "Orbura Companion · 45s · no wearable", Icon: Video,      layer: "camera"       as const, note: "Requires the Orbura Companion desktop app" },
   { id: "none",     name: "No device",            sub: "Answer a quick check-in instead",     Icon: Hand,       layer: "manual"       as const, note: null },
 ];

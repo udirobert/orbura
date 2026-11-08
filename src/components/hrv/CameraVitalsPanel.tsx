@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { Check, Copy, Video, Wind, HeartPulse, Clock } from "lucide-react";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SOURCE_ICONS } from "@/lib/signal-icons";
+import { useProtocolReveal, useSquishProps } from "@/lib/motion/protocol";
+import { haptic } from "@/lib/haptics";
+import { memory } from "@/lib/sdk/eazo-client";
 import type { HRVData } from "@/lib/types";
 
 type Status = "loading" | "ready" | "empty" | "unauthorized" | "error";
@@ -37,6 +40,8 @@ export function CameraVitalsPanel({
   const [linkExpiry, setLinkExpiry] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const { container, item } = useProtocolReveal();
+  const squish = useSquishProps();
 
   const load = useCallback(() => {
     fetch("/api/vitals/latest", { cache: "no-store" })
@@ -80,6 +85,12 @@ export function CameraVitalsPanel({
       const data = (await res.json()) as { token: string; expiresAt: string };
       setLinkCode(data.token);
       setLinkExpiry(data.expiresAt);
+      memory.reportAction({
+        content: "User generated a camera check-in link code to connect the Orbura Companion.",
+        event_type: "create",
+        page: "hrv-pull",
+        metadata: { type: "camera_vitals_link" },
+      }).catch(() => {});
     } finally {
       setGenerating(false);
     }
@@ -97,12 +108,13 @@ export function CameraVitalsPanel({
   const SourceIcon = SOURCE_ICONS.camera_vitals;
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
+      variants={container}
+      initial="hidden"
+      animate="show"
       exit={{ opacity: 0 }}
       className="flex-1 flex flex-col pb-10"
     >
-      <div className="text-center px-4 mb-5">
+      <motion.div variants={item} className="text-center px-4 mb-5">
         <div
           className="mx-auto w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
           style={{ backgroundColor: "var(--color-system-brain-soft, rgba(34,211,238,0.12))" }}
@@ -118,16 +130,16 @@ export function CameraVitalsPanel({
         <p className="text-xs mt-1.5" style={{ color: "var(--color-text-faint)" }}>
           A 45-second vitals read from the Orbura Companion desktop app — breathing, pulse and HRV, measured on-device.
         </p>
-      </div>
+      </motion.div>
 
       {status === "loading" && (
-        <div className="flex-1 flex items-center justify-center">
+        <motion.div variants={item} className="flex-1 flex items-center justify-center">
           <p className="text-xs font-mono" style={{ color: "var(--color-text-faint)" }}>Looking for camera check-ins…</p>
-        </div>
+        </motion.div>
       )}
 
       {status === "unauthorized" && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <motion.div variants={item} className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
             Camera check-ins are tied to your account so they can build a baseline over time.
           </p>
@@ -137,19 +149,19 @@ export function CameraVitalsPanel({
           <button onClick={onSkip} className="text-[13px] py-2" style={{ color: "var(--color-text-secondary)" }}>
             Skip — use another source
           </button>
-        </div>
+        </motion.div>
       )}
 
       {status === "error" && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <motion.div variants={item} className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>Couldn&apos;t reach the check-in service.</p>
-          <button onClick={reload} className="text-sm font-semibold" style={{ color: "var(--color-brand-primary)" }}>Try again</button>
+          <motion.button {...squish} onPointerDown={() => haptic("light")} onClick={reload} className="text-sm font-semibold" style={{ color: "var(--color-brand-primary)" }}>Try again</motion.button>
           <button onClick={onSkip} className="text-[13px] py-2" style={{ color: "var(--color-text-secondary)" }}>Skip — use another source</button>
-        </div>
+        </motion.div>
       )}
 
       {status === "empty" && (
-        <div className="flex-1 flex flex-col gap-4">
+        <motion.div variants={item} className="flex-1 flex flex-col gap-4">
           <div
             className="rounded-2xl p-4 flex items-start gap-3"
             style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.12)" }}
@@ -173,14 +185,16 @@ export function CameraVitalsPanel({
               Link the companion app
             </p>
             {!linkCode ? (
-              <button
+              <motion.button
+                {...squish}
+                onPointerDown={() => haptic("light")}
                 onClick={generateLink}
                 disabled={generating}
                 className="text-xs font-semibold"
                 style={{ color: "var(--color-brand-primary)" }}
               >
                 {generating ? "Generating…" : "Generate a link code"}
-              </button>
+              </motion.button>
             ) : (
               <div>
                 <div className="flex items-center gap-2">
@@ -190,14 +204,16 @@ export function CameraVitalsPanel({
                   >
                     {linkCode}
                   </code>
-                  <button
+                  <motion.button
+                    {...squish}
+                    onPointerDown={() => haptic("light")}
                     onClick={copyLink}
                     className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
                     style={{ backgroundColor: "var(--color-bg-base)", border: "1px solid rgba(168,162,158,0.15)", color: "var(--color-text-secondary)" }}
                     aria-label="Copy link code"
                   >
                     {copied ? <Check className="w-4 h-4" style={{ color: "var(--color-states-success)" }} /> : <Copy className="w-4 h-4" />}
-                  </button>
+                  </motion.button>
                 </div>
                 <p className="text-[10px] mt-2" style={{ color: "var(--color-text-faint)" }}>
                   Paste this into Orbura Companion → it expires {linkExpiry ? new Date(linkExpiry).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "in 30 minutes"}.
@@ -211,11 +227,11 @@ export function CameraVitalsPanel({
               Skip — use another source
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {status === "ready" && vitals?.hrvData && (
-        <div className="flex-1 flex flex-col gap-4">
+        <motion.div variants={item} className="flex-1 flex flex-col gap-4">
           {/* Latest vitals summary */}
           <div
             className="rounded-2xl p-4 grid grid-cols-3 gap-2"
@@ -243,11 +259,11 @@ export function CameraVitalsPanel({
             <PrimaryButton size="lg" onClick={() => onData(vitals.hrvData!)}>
               Use this check-in
             </PrimaryButton>
-            <button onClick={reload} className="w-full text-center text-[12px] py-2 mt-1" style={{ color: "var(--color-text-faint)" }}>
+            <motion.button {...squish} onPointerDown={() => haptic("light")} onClick={reload} className="w-full text-center text-[12px] py-2 mt-1" style={{ color: "var(--color-text-faint)" }}>
               Refresh
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
       )}
     </motion.div>
   );
