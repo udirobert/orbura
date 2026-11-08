@@ -109,7 +109,7 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
           className="text-[10px] font-mono uppercase tracking-widest"
           style={{ color: "var(--color-text-secondary)" }}
         >
-          Last night
+          {data.source === "camera_vitals" ? "Latest check-in" : "Last night"}
         </span>
         <div
           className="py-2 font-normal leading-none"
@@ -183,6 +183,26 @@ export function ConnectedPanel({ data, onContinue }: { data: HRVData; onContinue
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {data.breathingRate != null && (
+          <div
+            className="rounded-xl px-2 py-2 text-center mt-2"
+            style={{ backgroundColor: "var(--color-bg-base)" }}
+          >
+            <div
+              className="text-[9px] uppercase tracking-widest"
+              style={{ color: "var(--color-text-disabled)" }}
+            >
+              Breathing
+            </div>
+            <div
+              className="text-xs font-mono font-bold mt-0.5"
+              style={{ color: "var(--color-system-brain)" }}
+            >
+              {Math.round(data.breathingRate)} br/min
+            </div>
           </div>
         )}
 

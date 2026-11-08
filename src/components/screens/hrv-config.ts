@@ -5,6 +5,7 @@ import {
   Radio,
   Scale,
   Smartphone,
+  Video,
   Watch,
   type LucideIcon,
 } from "lucide-react";
@@ -18,6 +19,7 @@ export const SOURCE_META: Record<string, { label: string; opacity: number; color
   apple_health:  { label: "From your Apple Health export", opacity: 0.95, color: "var(--color-states-success)" },
   withings:      { label: "From your Withings device",     opacity: 0.95, color: "var(--color-states-success)" },
   manual_proxy:  { label: "Based on how you reported feeling", opacity: 0.80, color: "var(--color-text-secondary)" },
+  camera_vitals: { label: "From your camera check-in",        opacity: 0.95, color: "var(--color-system-brain)" },
   demo:          { label: "Simulated Garmin data",         opacity: 1.0, color: "var(--color-states-success)" },
 };
 
@@ -26,7 +28,7 @@ export interface DeviceOption {
   name: string;
   sub: string;
   Icon: LucideIcon;
-  layer: "picker" | "terra" | "google_fit" | "withings" | "garmin" | "apple_health" | "manual" | "connected" | "analyzing";
+  layer: "picker" | "terra" | "google_fit" | "withings" | "garmin" | "apple_health" | "manual" | "camera" | "connected" | "analyzing";
   note: string | null;
 }
 
@@ -39,5 +41,6 @@ export const DEVICE_OPTIONS: DeviceOption[] = [
   { id: "android",  name: "Android / Google Fit", sub: "Samsung, OnePlus, Pixel phones",      Icon: Smartphone, layer: "google_fit"   as const, note: null },
   { id: "whoop",    name: "WHOOP / Oura",         sub: "WHOOP 4.0, Oura Gen 3+",              Icon: Radio,      layer: "terra"        as const, note: "Requires Terra credentials" },
   { id: "withings", name: "Withings",             sub: "Scale, Sleep, BPM Connect, ScanWatch", Icon: Scale,      layer: "withings"    as const, note: null },
+  { id: "camera",   name: "Camera check-in",       sub: "Orbura Companion · 45s · no wearable", Icon: Video,      layer: "camera"       as const, note: null },
   { id: "none",     name: "No device",            sub: "Answer a quick check-in instead",     Icon: Hand,       layer: "manual"       as const, note: null },
 ];

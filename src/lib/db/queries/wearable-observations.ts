@@ -104,6 +104,8 @@ export interface WearableTrendPoint {
   date: string;
   hrv?: number;
   restingHr?: number;
+  breathingRate?: number;
+  pulseBpm?: number;
   deep?: number;
   rem?: number;
   light?: number;
@@ -138,17 +140,21 @@ export async function getWearableTrend(
     )
     .orderBy(desc(wearableObservations.recordedDate));
 
-  const bucket = new Map<string, { hrv: number[]; restingHr: number[]; deep: number[]; rem: number[]; light: number[]; weight: number[] }>();
+  const bucket = new Map<string, { hrv: number[]; restingHr: number[]; breathingRate: number[]; pulseBpm: number[]; deep: number[]; rem: number[]; light: number[]; weight: number[] }>();
 
   for (const r of rows) {
     const d = r.recordedDate as Date;
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const entry = bucket.get(key) ?? { hrv: [], restingHr: [], deep: [], rem: [], light: [], weight: [] };
+    const entry = bucket.get(key) ?? { hrv: [], restingHr: [], breathingRate: [], pulseBpm: [], deep: [], rem: [], light: [], weight: [] };
 
     if (r.metricType === "hrv_rmssd" || r.metricType === "hrv_sdnn") {
       entry.hrv.push(r.value);
     } else if (r.metricType === "resting_hr") {
       entry.restingHr.push(r.value);
+    } else if (r.metricType === "breathing_rate") {
+      entry.breathingRate.push(r.value);
+    } else if (r.metricType === "pulse_bpm") {
+      entry.pulseBpm.push(r.value);
     } else if (r.metricType === "sleep_deep_min") {
       entry.deep.push(r.value);
     } else if (r.metricType === "sleep_rem_min") {
@@ -171,6 +177,8 @@ export async function getWearableTrend(
       date,
       hrv: avg(vals.hrv),
       restingHr: avg(vals.restingHr),
+      breathingRate: avg(vals.breathingRate),
+      pulseBpm: avg(vals.pulseBpm),
       deep: avg(vals.deep),
       rem: avg(vals.rem),
       light: avg(vals.light),

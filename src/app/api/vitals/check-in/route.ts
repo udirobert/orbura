@@ -4,6 +4,7 @@ import {
   upsertWearableObservation,
   getBaselineStats,
 } from "@/lib/db/queries/wearable-observations";
+import { verifyLinkToken } from "@/lib/vitals/link-token";
 
 export const maxDuration = 15;
 
@@ -41,6 +42,7 @@ export async function OPTIONS() {
 
 interface VitalsBody {
   deviceId?: unknown;
+  linkToken?: unknown;
   breathingRate?: unknown;
   pulseBpm?: unknown;
   hrvRmssdMs?: unknown;
@@ -83,17 +85,24 @@ export async function POST(request: NextRequest) {
   }
 
   const auth = await requireAuth(request);
-  let userId: string;
+  let userId: string | null = null;
   if (auth.ok) {
     userId = auth.user.id;
   } else {
-    const deviceId = body.deviceId;
-    if (typeof deviceId !== "string" || !/^[A-Za-z0-9-]{8,64}$/.test(deviceId)) {
-      return withCors(
-        NextResponse.json({ error: "deviceId required for unauthenticated check-ins" }, { status: 400 })
-      );
+    // Companion path: a valid link token attributes the check-in to the
+    // account that generated it; otherwise fall back to the device id.
+    const linkedUserId = verifyLinkToken(body.linkToken);
+    if (linkedUserId) {
+      userId = linkedUserId;
+    } else {
+      const deviceId = body.deviceId;
+      if (typeof deviceId !== "string" || !/^[A-Za-z0-9-]{8,64}$/.test(deviceId)) {
+        return withCors(
+          NextResponse.json({ error: "deviceId or linkToken required for unauthenticated check-ins" }, { status: 400 })
+        );
+      }
+      userId = `device:${deviceId}`;
     }
-    userId = `device:${deviceId}`;
   }
 
   const capturedAt =

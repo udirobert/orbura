@@ -177,6 +177,8 @@ export interface WearableTrendPoint {
   date: string;
   hrv?: number;
   restingHr?: number;
+  breathingRate?: number;
+  pulseBpm?: number;
   deep?: number;
   rem?: number;
   light?: number;

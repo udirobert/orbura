@@ -18,11 +18,12 @@ import type { HRVData } from "@/lib/types";
 import { DEVICE_OPTIONS } from "./hrv-config";
 import { GarminUpload } from "./garmin-upload";
 import { AppleHealthUpload } from "./apple-health-upload";
+import { CameraVitalsPanel } from "@/components/hrv/CameraVitalsPanel";
 import { ConnectedPanel } from "./connected-panel";
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
-type Layer = "picker" | "terra" | "google_fit" | "withings" | "garmin" | "apple_health" | "manual" | "connected" | "handoff" | "analyzing";
+type Layer = "picker" | "terra" | "google_fit" | "withings" | "garmin" | "apple_health" | "manual" | "camera" | "connected" | "handoff" | "analyzing";
 
 export function HRVPullScreen() {
   const searchParams = useSearchParams();
@@ -159,6 +160,17 @@ export function HRVPullScreen() {
     }).catch(() => {});
   };
 
+  const handleCameraData = (data: HRVData) => {
+    setResolvedHrv(data);
+    setLayer("connected");
+    memory.reportAction({
+      content: "User used a camera check-in as their HRV source.",
+      event_type: "create",
+      page: "hrv-pull",
+      metadata: { type: "camera_vitals", source: "camera_vitals" },
+    }).catch(() => {});
+  };
+
   const handleAppleHealthData = (data: HRVData) => {
     setResolvedHrv(data);
     setLayer("connected");
@@ -278,6 +290,11 @@ export function HRVPullScreen() {
             className="relative z-10 flex-1 flex flex-col pb-10">
             <AppleHealthUpload onData={handleAppleHealthData} onSkip={() => setLayer("manual")} />
           </motion.div>
+        )}
+
+        {/* ── Camera check-in (Orbura Companion) ────────────────── */}
+        {layer === "camera" && (
+          <CameraVitalsPanel onData={handleCameraData} onSkip={() => setLayer("manual")} />
         )}
 
         {/* ── Manual proxy ───────────────────────────────────────── */}

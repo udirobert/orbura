@@ -45,6 +45,16 @@ function TrendTooltip({ active, payload, label }: any) {
           Resting HR {point.restingHr} bpm
         </p>
       )}
+      {point.pulseBpm != null && (
+        <p style={{ color: "var(--color-system-cardiovascular)" }}>
+          Pulse {point.pulseBpm} bpm
+        </p>
+      )}
+      {point.breathingRate != null && (
+        <p style={{ color: "var(--color-system-brain)" }}>
+          Breathing {point.breathingRate} br/min
+        </p>
+      )}
       {point.weight != null && (
         <p style={{ color: "var(--color-text-secondary)" }}>
           Weight {point.weight} kg

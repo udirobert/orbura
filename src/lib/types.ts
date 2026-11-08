@@ -139,6 +139,8 @@ export interface HRVData {
   baselineMaturity?: BaselineMaturity;
   /** ISO timestamp of the underlying wearable reading, when known. */
   recordedAt?: string;
+  /** Camera-vitals only: breaths per minute from the latest check-in. */
+  breathingRate?: number;
 }
 
 // ─── Debt analysis ────────────────────────────────────────────────────────────

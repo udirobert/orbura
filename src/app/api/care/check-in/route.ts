@@ -9,6 +9,7 @@ import { careObservations, careInterventions, careEscalations, carePatients } fr
 import { users } from "@/lib/db/schema/users";
 import { db } from "@/lib/db/client";
 import { getActiveCareAcknowledgement, getCarePatientByUserId } from "@/lib/db/queries/care";
+import { upsertWearableObservation } from "@/lib/db/queries/wearable-observations";
 import { eq, desc } from "drizzle-orm";
 import { hasActiveAcknowledgement } from "@/lib/care/invitations";
 import type { CareObservation, CareIntervention, CareEscalation, CareObservationInput } from "@/domain/care/types";
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
     notes?: string | null;
     medication?: string | null;
     currentDose?: string | null;
+    vitals?: { breathingRate?: number | null; pulseBpm?: number | null } | null;
   };
 
   if (!Array.isArray(body.symptoms) || body.symptoms.length === 0) {
@@ -64,6 +66,32 @@ export async function POST(request: NextRequest) {
   }
   if (!hasActiveAcknowledgement(await getActiveCareAcknowledgement(patient.id))) {
     return NextResponse.json({ error: "Complete your clinic invitation to start care", code: "acknowledgement_required" }, { status: 403 });
+  }
+
+  // Optional self-reported vitals ride along into the wearable observation
+  // store so they join the same baselines camera check-ins feed.
+  const vitals = body.vitals;
+  if (vitals && typeof vitals === "object") {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const entries: [string, string, number | null | undefined][] = [
+      ["breathing_rate", "br/min", vitals.breathingRate],
+      ["pulse_bpm", "bpm", vitals.pulseBpm],
+    ];
+    for (const [metricType, unit, value] of entries) {
+      if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+        await upsertWearableObservation({
+          userId: auth.user.id,
+          source: "self_report",
+          metricType,
+          recordedAt: now,
+          recordedDate: today,
+          value,
+          unit,
+          confidence: "low",
+        });
+      }
+    }
   }
 
   const input: CareObservationInput = {

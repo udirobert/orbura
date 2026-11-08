@@ -535,6 +535,8 @@ $('btn-sync').addEventListener('click', async () => {
     const btn = $('btn-sync');
     const status = $('sync-status');
     const payload = { deviceId: orburaDeviceId(), capturedAt: new Date().toISOString() };
+    const linkCode = ($('link-code')?.value || '').trim();
+    if (linkCode) payload.linkToken = linkCode;
     if (lastBreathing != null) payload.breathingRate = Math.round(lastBreathing);
     if (lastPulse != null) payload.pulseBpm = Math.round(lastPulse);
     if (lastHrvRmssd != null) payload.hrvRmssdMs = Math.round(lastHrvRmssd);
