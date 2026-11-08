@@ -82,6 +82,29 @@ function createWindow() {
     win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     win.webContents.on('will-navigate', (event) => event.preventDefault());
 
+    // Graceful close: let the renderer stop + destroy the SDK (and let the
+    // main-process ack land) before the window tears down. A synchronous
+    // destroy during unload can fatal inside the native FFI layer.
+    let closing = false;
+    win.on('close', (event) => {
+        if (closing) return;
+        closing = true;
+        event.preventDefault();
+        Promise.resolve(
+            win.webContents.executeJavaScript(
+                'window.__orburaShutdown ? window.__orburaShutdown() : Promise.resolve()'
+            )
+        ).catch(() => {}).finally(() => {
+            setTimeout(() => {
+                win.destroy();
+                // On macOS window-all-closed deliberately keeps the app
+                // resident; this is a single-window utility, so quit
+                // explicitly once the graceful shutdown has completed.
+                app.quit();
+            }, 400);
+        });
+    });
+
     win.loadFile(path.join(__dirname, 'index.html'));
     if (DIAGNOSTICS) {
         // Opt-in via SMARTSPECTRA_DIAGNOSTICS=1 so the renderer-side

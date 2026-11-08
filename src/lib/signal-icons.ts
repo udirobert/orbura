@@ -24,6 +24,7 @@ import {
   Radio,
   Scale,
   Smartphone,
+  Video,
   Watch,
   type LucideIcon,
 } from "lucide-react";
@@ -51,5 +52,6 @@ export const SOURCE_ICONS: Record<HRVSource, LucideIcon> = {
   apple_health: Heart,
   withings: Scale,
   manual_proxy: Hand,
+  camera_vitals: Video,
   demo: FlaskConical,
 };

@@ -113,6 +113,7 @@ export type HRVSource =
   | "apple_health"
   | "withings"
   | "manual_proxy"
+  | "camera_vitals"
   | "demo";
 
 export type HRVConfidence = "high" | "medium" | "low";

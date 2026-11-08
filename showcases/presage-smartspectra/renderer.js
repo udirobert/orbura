@@ -154,6 +154,9 @@ function clearCharts() {
     }
     els.readoutPulse.textContent     = '—';
     els.readoutBreathing.textContent = '—';
+    lastBreathing = null;
+    lastPulse = null;
+    lastHrvRmssd = null;
 }
 
 // Hide / show the two cardio panels based on the toggle. The placeholder
@@ -167,6 +170,10 @@ function applyCardioVisibility() {
 
 // State counters -------------------------------------------------------------
 let metricsCount = 0;
+// Latest vitals for the optional Orbura sync payload.
+let lastBreathing = null;
+let lastPulse = null;
+let lastHrvRmssd = null;
 // Timestamp of the first Measurement we receive — used as the chart x-axis
 // origin so seconds count from session start, not from the Unix epoch.
 let timeOriginUs = null;
@@ -259,9 +266,20 @@ function handleMetrics(metrics) {
     // the accumulator) so the readouts track the most-recent estimate
     // without lagging behind as buffers grow.
     const br = lastValue(metrics.breathing?.rate);
-    if (br != null) els.readoutBreathing.textContent = br.toFixed(0);
+    if (br != null) {
+        els.readoutBreathing.textContent = br.toFixed(0);
+        lastBreathing = br;
+    }
     const pr = lastValue(metrics.cardio?.pulseRate);
-    if (pr != null) els.readoutPulse.textContent = pr.toFixed(0);
+    if (pr != null) {
+        els.readoutPulse.textContent = pr.toFixed(0);
+        lastPulse = pr;
+    }
+    // HRV rides along in the payload even though it has no readout — the
+    // check-in sync sends it when the cardio bundle produced a stable value.
+    const hrvSamples = metrics.cardio?.hrv;
+    const hrv = hrvSamples && hrvSamples.length ? hrvSamples[hrvSamples.length - 1] : null;
+    if (hrv && hrv.rmssd != null && hrv.stable !== false) lastHrvRmssd = hrv.rmssd;
 }
 
 function buildSdk() {
@@ -410,10 +428,13 @@ async function stopMeasurement() {
     activeStream = null;
     els.preview.srcObject = null;
     // Destroy the SDK so the next Start picks up any toggle changes —
-    // requestedMetrics is fixed at construction time.
+    // requestedMetrics is fixed at construction time. Defer the destroy so
+    // the main-process stop ack can land first; calling it synchronously
+    // races the native teardown and can throw inside the FFI layer.
     if (sdk) {
-        try { sdk.destroy(); } catch { /* already destroyed */ }
+        const dead = sdk;
         sdk = null;
+        setTimeout(() => { try { dead.destroy(); } catch { /* already destroyed */ } }, 350);
     }
     els.btnStart.disabled = false;
     setTogglesEnabled(true);
@@ -448,6 +469,15 @@ applyCardioVisibility();
 
 // Clean shutdown when the window closes so the main-process SDK joins its
 // worker threads before the Electron process tears the renderer down.
+// main.js intercepts 'close', awaits __orburaShutdown() (stop ack + deferred
+// destroy), then destroys the window — this avoids the napi_throw fatal that
+// a synchronous destroy during unload triggers.
+window.__orburaShutdown = async () => {
+    try { if (sdk) await sdk.stop(); } catch { /* not running */ }
+    await new Promise((r) => setTimeout(r, 350));
+    try { if (sdk) sdk.destroy(); } catch { /* already destroyed */ }
+    sdk = null;
+};
 window.addEventListener('beforeunload', () => {
     if (sdk) { try { sdk.destroy(); } catch { /* already destroyed */ } }
 });
@@ -477,6 +507,60 @@ els.btnStop.addEventListener('click', () => {
         rb.textContent = els.readoutBreathing.textContent;
         rp.textContent = els.readoutPulse.textContent;
         if (rp.textContent === '—') $('result-pulse-stat').classList.add('unmeasured');
+        const syncBtn = $('btn-sync');
+        const syncStatus = $('sync-status');
+        if (syncBtn) { syncBtn.disabled = false; syncBtn.classList.remove('synced'); }
+        if (syncStatus) { syncStatus.textContent = ''; syncStatus.className = 'sync-status'; }
         showScreen('result');
     }, 900);
+});
+
+// === Optional sync: send vitals summary to the Orbura web app ===
+// Numbers only — never frames, video, or landmarks. Guests post under a
+// locally-generated device id; signed-in users are attributed server-side.
+const ORBURA_API_URL = typeof __ORBURA_API_URL__ === 'string'
+    ? __ORBURA_API_URL__
+    : 'https://orbura.famile.xyz';
+
+function orburaDeviceId() {
+    let id = localStorage.getItem('orbura.deviceId');
+    if (!id) {
+        id = (crypto.randomUUID ? crypto.randomUUID() : `dev-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+        localStorage.setItem('orbura.deviceId', id);
+    }
+    return id;
+}
+
+$('btn-sync').addEventListener('click', async () => {
+    const btn = $('btn-sync');
+    const status = $('sync-status');
+    const payload = { deviceId: orburaDeviceId(), capturedAt: new Date().toISOString() };
+    if (lastBreathing != null) payload.breathingRate = Math.round(lastBreathing);
+    if (lastPulse != null) payload.pulseBpm = Math.round(lastPulse);
+    if (lastHrvRmssd != null) payload.hrvRmssdMs = Math.round(lastHrvRmssd);
+    if (payload.breathingRate == null && payload.pulseBpm == null && payload.hrvRmssdMs == null) {
+        status.textContent = 'No measurements in this session to save.';
+        status.className = 'sync-status err';
+        return;
+    }
+    btn.disabled = true;
+    status.textContent = 'Saving…';
+    status.className = 'sync-status';
+    try {
+        const res = await fetch(`${ORBURA_API_URL}/api/vitals/check-in`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        btn.disabled = true;
+        btn.classList.add('synced');
+        status.textContent = data.insight || 'Saved to Orbura.';
+        status.className = 'sync-status ok';
+    } catch (err) {
+        btn.disabled = false;
+        status.textContent = `Couldn't reach Orbura (${err.message}). Try again later.`;
+        status.className = 'sync-status err';
+    }
 });

@@ -21,7 +21,14 @@ if (!apiKey) {
   console.warn('[build] No API key found (.smartspectra-key or SMARTSPECTRA_API_KEY) — bundle will use the placeholder.');
 }
 
-const defineArgs = apiKey ? [`--define:__SS_API_KEY__=${JSON.stringify(apiKey)}`] : [];
+// Orbura web app endpoint for optional check-in sync. ORBURA_API_URL env
+// overrides (e.g. http://localhost:3050 for local dev against a local Next).
+const orburaApiUrl = (process.env.ORBURA_API_URL || 'https://orbura.famile.xyz').replace(/\/+$/, '');
+
+const defineArgs = [
+  ...(apiKey ? [`--define:__SS_API_KEY__=${JSON.stringify(apiKey)}`] : []),
+  `--define:__ORBURA_API_URL__=${JSON.stringify(orburaApiUrl)}`,
+];
 
 execFileSync('esbuild', [
   'renderer.js',

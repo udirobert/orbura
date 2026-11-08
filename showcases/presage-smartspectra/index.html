@@ -207,7 +207,16 @@
                 <p id="result-action-body">Take ten slow breaths before your next meal — in through the nose, out through the mouth. Your breathing rate tends to follow your pace.</p>
             </div>
 
-            <p class="fineprint reveal">Nothing was recorded or uploaded. Camera off, data discarded.</p>
+            <p class="fineprint reveal">Nothing was recorded or uploaded unless you choose to save it.</p>
+
+            <div class="sync-row reveal">
+                <button id="btn-sync" type="button" class="btn-sync">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
+                    Save to Orbura
+                </button>
+                <p id="sync-status" class="sync-status" role="status"></p>
+            </div>
+
             <button id="btn-again" type="button" class="btn-primary btn-shimmer">
                 <span class="btn-label">Check in again</span>
             </button>
