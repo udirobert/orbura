@@ -132,7 +132,10 @@ not Halo2/BN254 proofs. Consequences:
   Account used: existing OZ account `sonicguardian`
   (`0x23e62ffc…55df`) on Starknet Sepolia via sncast accounts file
   `~/.starknet_accounts/orbura_sepolia.json` (not committed).
-- [ ] Apply to Starknet Seed Grants once PoC verifies on Starknet testnet
+- [x] Apply to Starknet Seed Grants once PoC verifies on Starknet testnet
+      — **draft ready**: `docs/starknet-grant-application.md` (Nov 8, 2026);
+      PoC exceeded the gate — live credential record flows through
+      `/api/today` auditor density
 - [ ] Monitor esp.ethereum.foundation for ESP wishlist items (none open as of Nov 2026)
 
 ## References
