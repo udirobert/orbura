@@ -103,6 +103,18 @@ Same decision, three densities — patient / clinician / auditor.
   `RecoveryContextConfig` boundaries (Care Companion stays separate).
 - No diagnostic claims in pattern copy.
 
+## Status
+
+- **Phase A — in progress.** Landed: `src/lib/today/types.ts` (canonical
+  `TodayState`), `src/lib/today/decision-rules.ts` (pure `decideToday` +
+  `TodayInput`), `src/lib/today/build-today.ts` (server aggregator),
+  `GET /api/today`, `src/lib/api/today.ts`, `TodayScreen`/`TodayCard`
+  mounted on `/dashboard` for signed-in users, and
+  `src/__tests__/today-decision-rules.test.ts` (9 rule-matrix tests).
+  Follow-through actions POST to the existing `/api/interventions/respond`.
+  Remaining: care-surface mounting (`/care`), football/fan mode plumbing.
+- Phases B–D: not started.
+
 ## Build order & verification
 
 1. `decision-rules.ts` + unit tests (pure, no I/O) — verify rule matrix.

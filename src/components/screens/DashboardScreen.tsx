@@ -43,6 +43,7 @@ import { SystemIconRow } from "./dashboard/SystemIconRow";
 import { PatternLayer } from "./dashboard/PatternLayer";
 import { AgentSchedule } from "./dashboard/AgentSchedule";
 import { MemoryCard } from "./dashboard/MemoryCard";
+import { TodayCard } from "./TodayCard";
 import { WearableTrendPanel } from "./dashboard/WearableTrendPanel";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
 import { useMemoryContainerTag } from "@/hooks/useMemoryContainerTag";
@@ -469,6 +470,9 @@ export function DashboardScreen() {
         </div>
         <div className="h-px w-full mt-3" style={{ backgroundColor: "rgba(168,162,158,0.1)" }} />
       </header>
+
+      {/* ── Adaptive Today — one state, one action (signed-in only) ── */}
+      {user && <TodayCard />}
 
       {/* ── Layer 1: Orb + Score (hero) ─────────────────────────────── */}
       <div className="relative z-10 flex flex-col items-center pt-2 pb-6">
