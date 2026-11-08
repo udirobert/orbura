@@ -1,0 +1,60 @@
+# Presage SmartSpectra SDK Challenge
+
+DEV challenge entry. Source: https://dev.to/events/143 (`#presagechallenge`)
+
+## Facts
+
+- **Runs:** Nov 4 – Nov 22, 2026. Submissions due **Nov 22, 11:59 PM PST** (Nov 23, 07:59 UTC). Winners announced Dec 10.
+- **Prompt:** "Best Overall Human-Sensing Experience" — build a working experience with the Presage SmartSpectra SDK that responds meaningfully to real-time human signals captured through a camera.
+- **Prize categories (can win overall + both):**
+  - Most Creative or Delightful Use
+  - Best Thoughtful Real-World Use (usability, consent, responsible data handling)
+- **Prizes:** $300 × 10 winners (4 overall + 3 + 3), DEV++ membership, badges.
+- **Rules:** solo, 18+, one entry. Must integrate SmartSpectra SDK and use ≥1 live signal (pulse, breathing rate, HRV, expressions). Public repo + DEV post + setup instructions + demo video required. Judges verify SDK use via repo + video.
+- **Not allowed:** diagnosis/treatment claims, medical decision-making, covert/non-consensual monitoring.
+- **Judging:** use of underlying technology, usability/UX, originality/creativity.
+- **API:** Presage free trial, no extra credits; limits → Presage Discord.
+
+## SmartSpectra SDK
+
+Docs: https://smartspectra.presagetech.com/docs — repo: github.com/Presage-Security/SmartSpectra
+Agent skill: `npx skills add Presage-Security/SmartSpectra --skill using-smartspectra`
+MCP server: https://mcp.presagetech.com/mcp (can fetch API key, register app, search docs)
+Dev portal (API keys): Presage Developer Admin Portal
+
+Signals: pulse/pleth waveform, pulse rate, HRV, breathing rate + waveforms,
+myofacial analysis (iris tracking, blink, talk detection, expression
+classification), relative BP waveform, built-in quality/confidence metrics.
+
+Platforms: Android (Kotlin, minSdk 28), iOS (Swift, 17+), C++ (Win/macOS/Linux),
+Node.js/Electron (Node 20+, Electron 28+). Auth: API key (all) or OAuth (mobile).
+
+**Wellness disclaimer on all SDK metrics** — not FDA-cleared, no diagnosis/treatment.
+Aligns with our existing wellness (not clinical) framing.
+
+## Entry concept
+
+Guided daily "check-in" experience: explicit camera consent → live vitals
+(pulse, HRV, breathing) → signal-quality feedback → a personal baseline/nudge card.
+Reuses our privacy UX (`PrivacyBadge` consent states, on-device processing,
+nothing uploaded) — the differentiator for "Best Thoughtful Real-World Use".
+
+Open question for spike: does the Node.js SDK run in a plain browser/Next.js page,
+or does it require Electron/native camera access? Determines app shell.
+
+## Deliverables checklist
+
+- [ ] API key from Presage Developer Portal (or via MCP)
+- [ ] Working app using ≥1 live signal
+- [ ] Public repo (this repo or standalone — decide; standalone may be cleaner for judges)
+- [ ] Setup instructions (README)
+- [ ] Demo video (public hosting)
+- [ ] DEV post with #presagechallenge + submission template + consent/data-handling disclosure
+- [ ] Camera consent flow + data-handling explanation in the post
+
+## Status
+
+- [x] Challenge spec captured (this doc)
+- [ ] SDK spike: platform feasibility (Node.js vs Electron vs C++)
+- [ ] App build
+- [ ] Demo video + DEV post

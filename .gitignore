@@ -294,3 +294,6 @@ apple_health_export/
 
 # Drizzle migration SQL (generated, tracked via meta journal)
 !src/lib/db/migrations/*.sql
+
+# agent skill installs (local tooling)
+data/skills/

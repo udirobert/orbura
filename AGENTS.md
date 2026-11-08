@@ -267,5 +267,7 @@ GITHUB_CLIENT_SECRET=
 - Face scan reliability: `docs/face-scan.md`
 - Face scan signal validity (claims + roadmap): `docs/face-scan-science.md`
 - Recent progress: `docs/progress.md`
+- Presage SmartSpectra challenge entry: `docs/presage-challenge.md` (app: `showcases/presage-smartspectra/`)
+- Starknet grant direction: `docs/starknet-direction.md`
 - Archived legacy notes: `docs/legacy/`
 - Historical HF Space: https://huggingface.co/spaces/Papajams/orbura (no longer tracked in this repo)
