@@ -24,7 +24,7 @@ jobs:
         run: |
           curl -L https://risczero.com/install | bash
           export PATH="$HOME/.risc0/bin:$HOME/.cargo/bin:$PATH"
-          rzup
+          rzup install
 
       - name: Build guest + host and generate Groth16 proof
         working-directory: zkvm
