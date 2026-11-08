@@ -94,7 +94,11 @@ not Halo2/BN254 proofs. Consequences:
 - [ ] Apply to chosen L2 grant (rolling — do early, budgets thin at round end)
 - [x] Research zkVM→Starknet verification paths — **done**: Garaga maintains
       Cairo verifier contracts for RISC Zero (Groth16/BN254) on Starknet
-- [ ] Spike RISC Zero guest proving the 7-dim MLP statement (Phase 1)
+- [x] Spike RISC Zero guest proving the 7-dim MLP statement (Phase 1) —
+      done: `zkvm/` workspace, guest commits
+      `{model_id, score_bits, healthy, sha256(features)}`, features private;
+      local receipt verifies, score matches ONNX output, ~43s CPU prove
+      (dev profile)
 - [ ] Verify seal on Starknet Sepolia via Garaga (Phase 2)
 - [ ] Apply to Starknet Seed Grants once PoC verifies on Starknet testnet
 - [ ] Monitor esp.ethereum.foundation for ESP wishlist items (none open as of Nov 2026)
