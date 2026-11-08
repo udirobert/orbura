@@ -6,8 +6,16 @@
 `latestCredential` joined into `GET /api/today`, SKALE face-scan pipeline
 POSTs after `verifyAndLogCredential` confirms (fire-and-forget), and the
 feature digest lives in `src/lib/zk/feature-digest.ts`. Auditor density
-prefers the live credential over fixtures. RISC Zero/Starknet write path
-not yet wired (host-side artifact flow).
+prefers the live credential over fixtures.
+
+**First live record:** the Starknet Sepolia verification
+(`0x04267e49…`) is recorded as credential id 1 — model ORBU, score 1.0,
+healthy=false, prover risc0 — and flows through `/api/today`.
+
+**Starknet path:** `zkvm/host` emits `journal_decoded` in `proof.json`;
+`zkvm/scripts/record-credential.mjs --tx <hash> --token <orb1.…>` POSTs a
+confirmed verification (`prover: "risc0"`, `chain: "starknet"`). The
+credentials POST accepts the companion link token for operator use.
 
 Goal: make verified wellness credentials durable, queryable records so the
 adaptive UI's auditor density (and clinician trust signals) can show *real*
