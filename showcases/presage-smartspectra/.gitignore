@@ -5,3 +5,4 @@ out/
 
 # Presage API key (local secret — never commit)
 .smartspectra-key
+demo-assets/
