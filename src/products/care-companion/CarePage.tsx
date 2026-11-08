@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { AuthLockedTeaser } from "@/components/AuthLockedTeaser";
 import { CareCheckInForm } from "./CareCheckInForm";
+import { TodayCard } from "@/components/screens/TodayCard";
 
 export function CarePage() {
   const user = useEazo((state) => state.auth.user);
@@ -78,7 +79,10 @@ export function CarePage() {
           </div>
 
           {user && access === "ready" ? (
-            <CareCheckInForm />
+            <div className="flex flex-col gap-5">
+              <TodayCard />
+              <CareCheckInForm />
+            </div>
           ) : user && access === "loading" ? (
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>Checking your care access…</p>
           ) : user && access === "acknowledgement-required" ? (

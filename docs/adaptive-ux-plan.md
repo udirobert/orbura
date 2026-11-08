@@ -120,6 +120,11 @@ Same decision, three densities — patient / clinician / auditor.
   clinician shows pending actions/outcomes/escalation, auditor shows rule
   id + every input + optional ZK credential block. Live clinician/auditor
   endpoints are the remaining production work.
+- **Live surfaces.** `TodayCard` mounted on `/care` for enrolled patients;
+  `GET /api/care/clinics/[id]/patients/[patientId]/today` (clinician-gated)
+  feeds a "Today's decision" card on `ClinicianPatientPage` showing the
+  patient's real rule + headline + pattern lines. Auditor density remains
+  fixture-only until credential records join the decision.
 - **Phase C — done (v1).** `context.patternLine` → `patternLines[]`;
   `buildPatternLines` composes observation-style lines from
   `getUserPatterns` (trend direction + avg score, highest-debt system,
