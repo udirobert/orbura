@@ -32,10 +32,13 @@ jobs:
           export PATH="$HOME/.risc0/bin:$HOME/.cargo/bin:$PATH"
           cargo run --release -p host 2>&1 | tee prove.log
           grep '^{' prove.log | tail -1 > proof.json
-          test -s proof.json
+          grep '^CALLDATA:' prove.log | sed 's/^CALLDATA://' > calldata.json
+          test -s proof.json && test -s calldata.json
 
       - uses: actions/upload-artifact@v4
         with:
           name: zkvm-groth16-proof
-          path: zkvm/proof.json
+          path: |
+            zkvm/proof.json
+            zkvm/calldata.json
           if-no-files-found: error

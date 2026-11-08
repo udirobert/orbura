@@ -1,6 +1,8 @@
+use garaga_rs::calldata::full_proof_with_hints::groth16::risc0_utils::get_risc0_vk;
+use garaga_rs::calldata::full_proof_with_hints::groth16::{get_groth16_calldata, Groth16Proof};
+use garaga_rs::definitions::CurveID;
 use methods::{STRESS_GUEST_ELF, STRESS_GUEST_ID};
-use risc0_ethereum_contracts::encode_seal;
-use risc0_zkvm::{compute_image_id, default_prover, ExecutorEnv, ProverOpts, VerifierContext};
+use risc0_zkvm::{compute_image_id, default_prover, ExecutorEnv, ProverOpts, Receipt, VerifierContext};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -34,7 +36,7 @@ fn main() {
             &ProverOpts::groth16(),
         )
         .unwrap();
-    let receipt = prove_info.receipt;
+    let receipt: Receipt = prove_info.receipt;
 
     let journal: Journal = receipt.journal.decode().unwrap();
     let score = f32::from_bits(journal.score_bits);
@@ -45,13 +47,35 @@ fn main() {
     println!("receipt verified locally");
 
     // Garaga / Starknet artifact: seal + image_id + journal as hex JSON.
-    let seal = to_bytes(encode_seal(&receipt).unwrap());
+    // Seal layout expected by garaga_rs: verifier_parameters digest prefix (4
+    // bytes) + raw Groth16 seal — same construction as Garaga's sample host.
+    let groth16 = receipt.inner.groth16().unwrap();
+    let seal = [
+        &groth16.verifier_parameters.as_bytes()[..4],
+        groth16.seal.as_slice(),
+    ]
+    .concat();
     let image_id = to_bytes(compute_image_id(&STRESS_GUEST_ELF).unwrap());
     let journal_bytes = to_bytes(receipt.journal);
-    println!(
-        "{{\"seal\": \"0x{}\", \"image_id\": \"0x{}\", \"journal\": \"0x{}\"}}",
-        hex::encode(&seal),
-        hex::encode(&image_id),
-        hex::encode(&journal_bytes)
-    );
+
+    // Machine-readable artifacts for the Starknet verification step.
+    let proof_json = serde_json::json!({
+        "seal": format!("0x{}", hex::encode(&seal)),
+        "image_id": format!("0x{}", hex::encode(&image_id)),
+        "journal": format!("0x{}", hex::encode(&journal_bytes)),
+    });
+    println!("{proof_json}");
+
+    let proof = Groth16Proof::from_risc0(seal, image_id, journal_bytes);
+    let calldata =
+        get_groth16_calldata(&proof, &get_risc0_vk(), CurveID::BN254).unwrap();
+    let calldata_json = serde_json::to_string(
+        &calldata
+            .iter()
+            .map(|v| format!("0x{v:x}"))
+            .collect::<Vec<_>>(),
+    )
+    .unwrap();
+    println!("CALLDATA:{calldata_json}");
+    println!("calldata felts: {}", calldata.len());
 }
