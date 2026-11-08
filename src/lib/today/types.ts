@@ -36,6 +36,29 @@ export interface TodayHeadline {
   freshness: "fresh" | "stale" | "none";
 }
 
+export type TodayRuleId =
+  | "escalation"
+  | "care-action"
+  | "follow-through"
+  | "empty-state"
+  | "stale-signals"
+  | "steady";
+
+export interface TodayProvenance {
+  surface: TodayState["surface"];
+  careStartedAt: string | null;
+  openEscalation: boolean;
+  pendingCareActionId: string | null;
+  pendingFollowThroughSessionId: number | null;
+  lastVitalsAt: string | null;
+  lastWearableAt: string | null;
+  lastCheckInAt: string | null;
+  latestDebtScore: number | null;
+  vitalsDeltaPct: number | null;
+  wearableDeltaPct: number | null;
+  streakDays: number;
+}
+
 export interface TodayContext {
   /** GLP-1 patients: weeks since medication start, when known. */
   treatmentWeek: number | null;
@@ -50,6 +73,10 @@ export interface TodayContext {
 export interface TodayState {
   /** "care" when the user is an enrolled care patient, else their recovery mode. */
   surface: "care" | "personal" | "football" | "fan";
+  /** Which deterministic rule produced this decision — audit/provenance. */
+  rule: TodayRuleId;
+  /** Sanitized copy of the rule inputs — what the decision actually saw. */
+  provenance: TodayProvenance;
   headline: TodayHeadline;
   primaryAction: TodayAction;
   /** At most two — the action budget stays small by design. */

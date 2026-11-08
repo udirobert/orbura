@@ -98,6 +98,20 @@ export function decideToday(input: TodayInput): TodayState {
   const isTitration = week != null && week <= TITRATION_WEEKS;
 
   const headline = buildHeadline(input);
+  const provenance = {
+    surface: input.surface,
+    careStartedAt: input.careStartedAt,
+    openEscalation: input.openEscalation,
+    pendingCareActionId: input.pendingCareAction?.id ?? null,
+    pendingFollowThroughSessionId: input.pendingFollowThrough?.sessionId ?? null,
+    lastVitalsAt: input.lastVitalsAt,
+    lastWearableAt: input.lastWearableAt,
+    lastCheckInAt: input.lastCheckInAt,
+    latestDebtScore: input.latestDebtScore,
+    vitalsDeltaPct: input.vitalsDeltaPct,
+    wearableDeltaPct: input.wearableDeltaPct,
+    streakDays: input.streakDays,
+  };
   const context: TodayContext = {
     treatmentWeek: week,
     openEscalation: input.openEscalation,
@@ -112,6 +126,8 @@ export function decideToday(input: TodayInput): TodayState {
   if (input.openEscalation) {
     return {
       surface: input.surface,
+      rule: "escalation",
+      provenance,
       headline: { ...headline, stateWord: "Care team reviewing" },
       primaryAction: {
         id: "escalation-check-in",
@@ -146,6 +162,8 @@ export function decideToday(input: TodayInput): TodayState {
     if (input.pendingCareAction) secondary.push(checkIn);
     return {
       surface: "care",
+      rule: "care-action",
+      provenance,
       headline,
       primaryAction: {
         ...primary,
@@ -162,6 +180,8 @@ export function decideToday(input: TodayInput): TodayState {
   if (input.pendingFollowThrough) {
     return {
       surface: input.surface,
+      rule: "follow-through",
+      provenance,
       headline,
       primaryAction: {
         id: `follow-${input.pendingFollowThrough.sessionId}`,
@@ -187,6 +207,8 @@ export function decideToday(input: TodayInput): TodayState {
   if (headline.freshness === "none" && input.latestDebtScore == null) {
     return {
       surface: input.surface,
+      rule: "empty-state",
+      provenance,
       headline,
       primaryAction: {
         id: "first-check-in",
@@ -228,6 +250,8 @@ export function decideToday(input: TodayInput): TodayState {
   if (!anythingFresh) {
     return {
       surface: input.surface,
+      rule: "stale-signals",
+      provenance,
       headline: { ...headline, freshness: "stale" },
       primaryAction: {
         id: "stale-check-in",
@@ -251,6 +275,8 @@ export function decideToday(input: TodayInput): TodayState {
   // 7. Healthy steady state — small sustaining action + optional scan.
   return {
     surface: input.surface,
+    rule: "steady",
+      provenance,
     headline,
     primaryAction: {
       id: "steady-check-in",

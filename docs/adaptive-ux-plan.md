@@ -113,7 +113,14 @@ Same decision, three densities — patient / clinician / auditor.
   `src/__tests__/today-decision-rules.test.ts` (9 rule-matrix tests).
   Follow-through actions POST to the existing `/api/interventions/respond`.
   Remaining: care-surface mounting (`/care`), football/fan mode plumbing.
-- Phases B–D: not started.
+- **Phase B — done (preview).** `TodayState` now carries `rule` +
+  `provenance` (sanitized rule inputs). `/preview/adaptive` renders five
+  fixture scenarios (steady, GLP-1 titration, escalation, follow-through,
+  empty) at three densities — patient reuses the real `TodayScreen`,
+  clinician shows pending actions/outcomes/escalation, auditor shows rule
+  id + every input + optional ZK credential block. Live clinician/auditor
+  endpoints are the remaining production work.
+- Phases C–D: not started.
 
 ## Build order & verification
 
