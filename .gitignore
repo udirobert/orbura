@@ -297,3 +297,7 @@ apple_health_export/
 
 # agent skill installs (local tooling)
 data/skills/
+
+# RISC Zero zkVM build artifacts (regeneratable)
+zkvm/target/
+zkvm/methods/guest/target/
