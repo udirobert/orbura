@@ -4,111 +4,157 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; media-src blob:;">
-    <title>SmartSpectra Quickstart</title>
+    <title>Orbura — Daily Check-in</title>
     <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-    <header>
-        <h1>SmartSpectra Quickstart</h1>
-        <span id="status-badge" class="status status-uninitialized">Uninitialized</span>
-    </header>
+    <!-- ============ Phase 1: consent ============ -->
+    <section id="screen-consent" class="screen">
+        <div class="consent-card">
+            <div class="brand-mark">Orbura</div>
+            <h1>Daily check-in</h1>
+            <p class="lede">A 45-second camera check-in that listens to your breathing
+            and pulse — measured entirely on this device.</p>
 
-    <div id="error-banner" class="error-banner" hidden>
-        <span class="error-banner-code" id="error-code">—</span>
-        <span class="error-banner-message" id="error-message"></span>
-    </div>
+            <ul class="privacy-list">
+                <li><strong>On-device only.</strong> Frames never leave this Mac. The SDK processes video locally; the only network call is key validation.</li>
+                <li><strong>Nothing is stored.</strong> No images, no video, no landmark data is saved or uploaded.</li>
+                <li><strong>You control it.</strong> Stop anytime. The camera light is your indicator it's live.</li>
+                <li><strong>Wellness, not medicine.</strong> These are informational signals, not a diagnosis.</li>
+            </ul>
 
-    <main>
-        <!-- Left column: preview + controls + numeric readouts ------------- -->
-        <section class="left-col">
-            <div class="preview">
-                <video id="preview" autoplay playsinline muted></video>
-                <div id="validation" class="hint">Click <strong>Start</strong> when ready.</div>
+            <button id="btn-consent" type="button" class="btn btn-primary btn-lg">Begin check-in</button>
+            <p class="fineprint">Powered by the Presage SmartSpectra SDK.</p>
+        </div>
+    </section>
+
+    <!-- ============ Phase 2: scan ============ -->
+    <section id="screen-scan" class="screen" hidden>
+        <header>
+            <div class="brand-mark brand-mark-sm">Orbura</div>
+            <span class="screen-title">Check-in</span>
+            <span id="status-badge" class="status status-uninitialized">Uninitialized</span>
+        </header>
+
+        <div id="error-banner" class="error-banner" hidden>
+            <span class="error-banner-code" id="error-code">—</span>
+            <span class="error-banner-message" id="error-message"></span>
+        </div>
+
+        <main>
+            <section class="left-col">
+                <div class="preview">
+                    <video id="preview" autoplay playsinline muted></video>
+                    <div id="validation" class="hint">Press <strong>Start</strong>, then sit still and breathe normally.</div>
+                </div>
+
+                <div class="readouts">
+                    <div class="readout readout-primary">
+                        <div class="readout-label">Breathing</div>
+                        <div class="readout-value"><span id="readout-breathing">—</span> <span class="readout-unit">BR/min</span></div>
+                    </div>
+                    <div class="readout">
+                        <div class="readout-label">Pulse</div>
+                        <div class="readout-value"><span id="readout-pulse">—</span> <span class="readout-unit">BPM</span></div>
+                    </div>
+                </div>
+
+                <details class="advanced">
+                    <summary>Measurement options</summary>
+                    <div class="metrics-toggles">
+                        <div class="toggle toggle-static">
+                            <span class="check check-on"></span>
+                            <span>Breathing <em>(always on)</em></span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="m-cardio">
+                            <span>Pulse &amp; HRV <em>(cardio bundle)</em></span>
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="m-face">
+                            <span>Face metrics <em>(landmarks, expressions)</em></span>
+                        </label>
+                    </div>
+                </details>
+
+                <div class="controls">
+                    <button id="btn-start" type="button" class="btn btn-primary">Start</button>
+                    <button id="btn-stop"  type="button" class="btn btn-ghost" disabled>Stop</button>
+                    <button id="btn-reset" type="button" class="btn btn-ghost" disabled>Reset</button>
+                </div>
+                <p class="scan-hint">Best results: face centered, soft even light, minimal motion.</p>
+            </section>
+
+            <section class="right-col">
+                <div class="chart-panel chart-panel-primary">
+                    <div class="chart-header">
+                        <div class="chart-title">Breathing rate</div>
+                        <div class="chart-unit">BR/min</div>
+                    </div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="chart-breathing-rate"></canvas>
+                    </div>
+                </div>
+                <div class="chart-panel">
+                    <div class="chart-header">
+                        <div class="chart-title">Breathing waveform</div>
+                        <div class="chart-unit">raw</div>
+                    </div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="chart-breathing-trace"></canvas>
+                    </div>
+                </div>
+                <div class="chart-panel" id="panel-pulse-rate">
+                    <div class="chart-header">
+                        <div class="chart-title">Pulse rate</div>
+                        <div class="chart-unit">BPM</div>
+                    </div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="chart-pulse-rate"></canvas>
+                        <div class="chart-placeholder">Enable Pulse &amp; HRV to see pulse rate</div>
+                    </div>
+                </div>
+                <div class="chart-panel" id="panel-arterial-pressure">
+                    <div class="chart-header">
+                        <div class="chart-title">Arterial pressure trace</div>
+                        <div class="chart-unit">raw</div>
+                    </div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="chart-arterial-pressure"></canvas>
+                        <div class="chart-placeholder">Enable Pulse &amp; HRV to see the pressure trace</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </section>
+
+    <!-- ============ Phase 3: result ============ -->
+    <section id="screen-result" class="screen" hidden>
+        <div class="result-card">
+            <div class="brand-mark brand-mark-sm">Orbura</div>
+            <h2>Check-in complete</h2>
+            <p class="lede">Your signals for this session:</p>
+
+            <div class="result-grid">
+                <div class="result-stat">
+                    <div class="result-value" id="result-breathing">—</div>
+                    <div class="result-label">breaths / min</div>
+                </div>
+                <div class="result-stat">
+                    <div class="result-value" id="result-pulse">—</div>
+                    <div class="result-label">beats / min</div>
+                </div>
             </div>
 
-            <div class="readouts">
-                <div class="readout">
-                    <div class="readout-label">Heart Rate</div>
-                    <div class="readout-value"><span id="readout-pulse">—</span> <span class="readout-unit">BPM</span></div>
-                </div>
-                <div class="readout">
-                    <div class="readout-label">Breathing</div>
-                    <div class="readout-value"><span id="readout-breathing">—</span> <span class="readout-unit">BR/min</span></div>
-                </div>
+            <div class="result-note">
+                <div class="result-note-title">One thing to notice</div>
+                <p id="result-note-body">Breathing rate is one of the fastest-recovering signals your body offers. A calm, steady rhythm after a rough day is often the first sign things are settling.</p>
             </div>
 
-            <div class="metrics-toggles">
-                <div class="panel-label">Measurement bundle</div>
-                <div class="toggle toggle-static">
-                    <span class="check check-on"></span>
-                    <span>Breathing <em>(always on)</em></span>
-                </div>
-                <label class="toggle">
-                    <input type="checkbox" id="m-cardio">
-                    <span>Cardio Measurements <em>(pulse rate, arterial pressure, HRV)</em></span>
-                </label>
-                <label class="toggle">
-                    <input type="checkbox" id="m-face">
-                    <span>Face Metrics <em>(landmarks, blinking, talking, expressions)</em></span>
-                </label>
-            </div>
-
-            <div class="controls">
-                <button id="btn-start" type="button">Start</button>
-                <button id="btn-stop"  type="button" disabled>Stop</button>
-                <button id="btn-reset" type="button" disabled>Reset</button>
-            </div>
-        </section>
-
-        <!-- Right column: stacked live charts ----------------------------- -->
-        <section class="right-col">
-            <div class="chart-panel">
-                <div class="chart-header">
-                    <div class="chart-title">Breathing Rate</div>
-                    <div class="chart-unit">BR/min</div>
-                </div>
-                <div class="chart-canvas-wrap">
-                    <canvas id="chart-breathing-rate"></canvas>
-                </div>
-            </div>
-
-            <div class="chart-panel">
-                <div class="chart-header">
-                    <div class="chart-title">Breathing Pleth Waveform</div>
-                    <div class="chart-unit">raw</div>
-                </div>
-                <div class="chart-canvas-wrap">
-                    <canvas id="chart-breathing-trace"></canvas>
-                </div>
-            </div>
-
-            <div class="chart-panel" id="panel-pulse-rate">
-                <div class="chart-header">
-                    <div class="chart-title">Pulse Rate</div>
-                    <div class="chart-unit">BPM</div>
-                </div>
-                <div class="chart-canvas-wrap">
-                    <canvas id="chart-pulse-rate"></canvas>
-                    <div class="chart-placeholder">Enable Cardio Measurements to see pulse rate + arterial pressure</div>
-                </div>
-            </div>
-
-            <div class="chart-panel" id="panel-arterial-pressure">
-                <div class="chart-header">
-                    <div class="chart-title">Arterial Pressure Trace</div>
-                    <div class="chart-unit">raw</div>
-                </div>
-                <div class="chart-canvas-wrap">
-                    <canvas id="chart-arterial-pressure"></canvas>
-                    <div class="chart-placeholder">Enable Cardio Measurements to see pulse rate + arterial pressure</div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer>
-        Set your API key in <code>renderer.js</code> before running.
-    </footer>
+            <p class="fineprint">Nothing was recorded or uploaded. Camera off, data discarded.</p>
+            <button id="btn-again" type="button" class="btn btn-primary btn-lg">Check in again</button>
+        </div>
+    </section>
 
     <script src="./dist/renderer.bundle.js"></script>
 </body>

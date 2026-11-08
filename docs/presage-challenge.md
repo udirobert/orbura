@@ -52,9 +52,26 @@ or does it require Electron/native camera access? Determines app shell.
 - [ ] DEV post with #presagechallenge + submission template + consent/data-handling disclosure
 - [ ] Camera consent flow + data-handling explanation in the post
 
+## API key & credit budget
+
+- Key lives in `showcases/presage-smartspectra/.smartspectra-key`
+  (chmod 600, gitignored) or `SMARTSPECTRA_API_KEY` env.
+- `scripts/build-renderer.mjs` injects it as an esbuild `define` at bundle
+  time — the key is never in committed source. `dist/` is gitignored.
+- **Metering: 100 credits ≈ 50 min of live measurement (1 credit = 30s).**
+  Be sparing: build/test UI with the SDK stopped; keep verification
+  sessions short; prefer the SDK's video-file input for repeatable tests.
+  Do not leave `npm start` running unattended.
+
 ## Status
 
 - [x] Challenge spec captured (this doc)
-- [ ] SDK spike: platform feasibility (Node.js vs Electron vs C++)
-- [ ] App build
+- [x] SDK spike: Electron + `@smartspectra/node-sdk` confirmed; sample vendored
+      at `showcases/presage-smartspectra/`, key injection wired
+- [x] Live measurement verified: SDK reached `Running`, breathing readout
+      produced (~7–9 BR/min); pulse needs the cardio toggle (key may not be
+      provisioned for it). ~3 credits spent total across smoke tests.
+- [x] App build (Orbura check-in): consent → guided scan → result card,
+      Orbura palette, on-device privacy copy. Verified via Playwright smoke.
+- [ ] Fix Electron teardown crash (`napi_throw` on `sdk.destroy()` after stop)
 - [ ] Demo video + DEV post

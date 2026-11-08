@@ -5,7 +5,7 @@
   "description": "Cross-platform Electron quickstart for @smartspectra/node-sdk.",
   "main": "main.js",
   "scripts": {
-    "build": "esbuild renderer.js --bundle --outfile=dist/renderer.bundle.js --platform=browser --format=iife --log-level=warning",
+    "build": "node scripts/build-renderer.mjs",
     "start": "npm run build && electron .",
     "dist:mac": "npm run build && electron-builder --mac --arm64",
     "dist:win": "npm run build && electron-builder --win --x64",
@@ -19,7 +19,8 @@
   "devDependencies": {
     "electron": "43.2.0",
     "electron-builder": "^26.6.0",
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "playwright": "^1.65.0"
   },
   "overrides": {
     "js-yaml": "4.3.2",
@@ -50,19 +51,28 @@
         "NSCameraUsageDescription": "SmartSpectra needs camera access for video-based vitals measurement."
       },
       "extraResources": [
-        { "from": "node_modules/@smartspectra/node-sdk-darwin-${arch}/", "to": "smartspectra" }
+        {
+          "from": "node_modules/@smartspectra/node-sdk-darwin-${arch}/",
+          "to": "smartspectra"
+        }
       ]
     },
     "win": {
       "target": "nsis",
       "extraResources": [
-        { "from": "node_modules/@smartspectra/node-sdk-win32-${arch}/", "to": "smartspectra" }
+        {
+          "from": "node_modules/@smartspectra/node-sdk-win32-${arch}/",
+          "to": "smartspectra"
+        }
       ]
     },
     "linux": {
       "target": "AppImage",
       "extraResources": [
-        { "from": "node_modules/@smartspectra/node-sdk-linux-${arch}/", "to": "smartspectra" }
+        {
+          "from": "node_modules/@smartspectra/node-sdk-linux-${arch}/",
+          "to": "smartspectra"
+        }
       ]
     },
     "asar": true

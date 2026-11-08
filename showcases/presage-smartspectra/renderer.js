@@ -34,16 +34,16 @@ const { decodeMetrics } = require('@smartspectra/node-sdk/messages');
 // out-of-the-box with no extra Chart.register() calls.
 const { Chart } = require('chart.js/auto');
 
-// === Replace with your real API key from https://physiology.presagetech.com/ ===
-// For a production app, fetch the key from OS secure storage (Keychain on
-// macOS, DPAPI on Windows, libsecret on Linux) or from a signed config
-// blob your backend serves — don't bake it into the renderer bundle.
-const API_KEY = 'YOUR_API_KEY_HERE';
+// === API key injection ===
+// scripts/build-renderer.mjs reads .smartspectra-key (gitignored, chmod 600)
+// or SMARTSPECTRA_API_KEY and defines __SS_API_KEY__ at bundle time. The key
+// is never committed — for judge testing, share credentials out-of-band.
+const API_KEY = typeof __SS_API_KEY__ === 'string' ? __SS_API_KEY__ : 'YOUR_API_KEY_HERE';
 if (API_KEY === 'YOUR_API_KEY_HERE') {
     console.warn(
-        '[sample] API_KEY is the placeholder value — edit renderer.js and ' +
-        'paste your real key from https://physiology.presagetech.com/ ' +
-        'before Start. The SDK will fail to authenticate until you do.');
+        '[sample] API_KEY is the placeholder value — put your key in ' +
+        '.smartspectra-key file or SMARTSPECTRA_API_KEY env, then rebuild. ' +
+        'The SDK will fail to authenticate until you do.');
 }
 
 // DOM handles ---------------------------------------------------------------
@@ -442,4 +442,30 @@ applyCardioVisibility();
 // worker threads before the Electron process tears the renderer down.
 window.addEventListener('beforeunload', () => {
     if (sdk) { try { sdk.destroy(); } catch { /* already destroyed */ } }
+});
+
+// === Orbura check-in flow: consent -> scan -> result ===
+const screens = {
+    consent: $('screen-consent'),
+    scan: $('screen-scan'),
+    result: $('screen-result'),
+};
+function showScreen(name) {
+    for (const key of Object.keys(screens)) {
+        screens[key].hidden = key !== name;
+    }
+}
+$('btn-consent').addEventListener('click', () => showScreen('scan'));
+$('btn-again').addEventListener('click', () => showScreen('scan'));
+
+// After the stock stop handler tears down, show the result card.
+els.btnStop.addEventListener('click', () => {
+    setTimeout(() => {
+        const rb = $('result-breathing');
+        const rp = $('result-pulse');
+        rb.textContent = els.readoutBreathing.textContent;
+        rp.textContent = els.readoutPulse.textContent;
+        if (rp.textContent === '—') rp.closest('.result-stat').style.opacity = '0.4';
+        showScreen('result');
+    }, 900);
 });
