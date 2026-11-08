@@ -56,7 +56,8 @@ nothing else by default.
 |---|---|
 | Pending unanswered intervention | "Yesterday's action — did it happen?" + outcome |
 | GLP-1 titration weeks 1–4 | Side-effect check-in + today's dose action |
-| Camera vitals fresh (<24h) | Vitals delta vs baseline + optional re-scan |
+| Camera vitals fresh (<24h) | Vitals delta vs baseline + optional re-scan (feeds `TodayInput.lastVitalsAt`, `vitalsDeltaPct`) |
+| Acute symptoms + elevated vitals | Deterministic escalation rule (pulse ≥100 bpm or BR ≥24 br/min triggers clinic exception) |
 | Streak at risk / worst-day pattern | Protect-the-streak action |
 | `hasData:false` everywhere | Onboarding: first check-in CTA, not empty charts |
 
@@ -113,6 +114,11 @@ Same decision, three densities — patient / clinician / auditor.
   `src/__tests__/today-decision-rules.test.ts` (9 rule-matrix tests).
   Follow-through actions POST to the existing `/api/interventions/respond`.
   Remaining: care-surface mounting (`/care`), football/fan mode plumbing.
+- **GLP-1 Care Companion & SmartSpectra bridge — landed.**
+  - Camera vitals (SmartSpectra) wired directly into `CareCheckInForm` via `/api/vitals/latest` 1-tap sync.
+  - Deterministic safety escalation in `src/domain/care/safety.ts` evaluates vital distress (tachycardia ≥100 bpm or tachypnea ≥24 br/min alongside nausea, vomiting, or dizziness) to generate clinic exceptions.
+  - Vitals persist as wearable observations, feeding `TodayInput.lastVitalsAt` and `vitalsDeltaPct` to drive adaptive `TodayState` decisions.
+  - Camera check-in panel on `/hrv-pull` includes tab `visibilitychange`/`focus` polling.
 - **Phase B — done (preview).** `TodayState` now carries `rule` +
   `provenance` (sanitized rule inputs). `/preview/adaptive` renders five
   fixture scenarios (steady, GLP-1 titration, escalation, follow-through,

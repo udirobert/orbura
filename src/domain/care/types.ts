@@ -41,6 +41,7 @@ export interface CareObservationInput {
   weightKg?: number | null;
   fastingGlucose?: number | null;
   fastingGlucoseUnit?: GlucoseUnit | null;
+  vitals?: { breathingRate?: number | null; pulseBpm?: number | null } | null;
   notes?: string | null;
   medication?: string | null;
   currentDose?: string | null;

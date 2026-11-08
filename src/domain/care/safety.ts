@@ -90,6 +90,25 @@ export function evaluateObservation(
     };
   }
 
+  // 6. Physiological vital distress (tachypnea / tachycardia alongside symptoms)
+  // Severe nausea or vomiting with elevated resting pulse (>100 bpm) or tachypnea (>22 br/min)
+  // indicates acute autonomic distress or dehydration requiring clinical review.
+  const vitals = input.vitals;
+  if (vitals && (symptoms.includes("vomiting") || symptoms.includes("nausea") || symptoms.includes("dizziness"))) {
+    if (vitals.pulseBpm != null && vitals.pulseBpm >= 100) {
+      return {
+        type: "escalate",
+        reason: `Elevated heart rate (${Math.round(vitals.pulseBpm)} bpm) alongside reported ${symptoms[0].replace(/_/g, " ")} — clinic review needed for possible dehydration.`,
+      };
+    }
+    if (vitals.breathingRate != null && vitals.breathingRate >= 24) {
+      return {
+        type: "escalate",
+        reason: `Elevated breathing rate (${Math.round(vitals.breathingRate)} br/min) alongside reported ${symptoms[0].replace(/_/g, " ")} — clinic review needed.`,
+      };
+    }
+  }
+
   // 6. Evidence-based self-care intervention
   for (const symptom of symptoms) {
     const evidence = getEvidenceBasedIntervention(

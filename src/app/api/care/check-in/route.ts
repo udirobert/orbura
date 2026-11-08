@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
     weightKg: body.weightKg ?? null,
     fastingGlucose: body.fastingGlucose ?? null,
     fastingGlucoseUnit: body.fastingGlucoseUnit ?? null,
+    vitals: body.vitals ?? null,
     notes: body.notes ?? null,
     medication: patient.medication,
     currentDose: patient.currentDose,

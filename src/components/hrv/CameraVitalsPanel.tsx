@@ -77,6 +77,22 @@ export function CameraVitalsPanel({
 
   useEffect(() => { void load(); }, [load]);
 
+  // Lightweight polling on tab focus/visibilitychange so desktop companion check-ins
+  // immediately surface without waiting or manual reload.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        load();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleVisibility);
+    };
+  }, [load]);
+
   const generateLink = async () => {
     setGenerating(true);
     try {

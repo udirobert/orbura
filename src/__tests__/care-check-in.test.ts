@@ -179,3 +179,32 @@ describe("processCheckIn", () => {
     expect(deps.explainIntervention).toHaveBeenCalledTimes(1);
   });
 });
+
+  it("escalates when tachycardia is detected alongside nausea or vomiting", async () => {
+    const input: CareObservationInput = {
+      patientId: "patient-1",
+      symptoms: ["nausea"],
+      symptomSeverity: "mild",
+      adherence: "taken_as_prescribed",
+      vitals: { breathingRate: 16, pulseBpm: 108 },
+    };
+    const deps = makeDeps();
+    const result = await processCheckIn(input, deps);
+    expect(result.action.type).toBe("escalate");
+    expect(getEscalateAction(result.action).reason).toContain("Elevated heart rate (108 bpm)");
+    expect(deps.escalations).toHaveLength(1);
+  });
+
+  it("escalates when tachypnea is detected alongside dizziness", async () => {
+    const input: CareObservationInput = {
+      patientId: "patient-1",
+      symptoms: ["dizziness"],
+      symptomSeverity: "mild",
+      adherence: "taken_as_prescribed",
+      vitals: { breathingRate: 26, pulseBpm: 78 },
+    };
+    const deps = makeDeps();
+    const result = await processCheckIn(input, deps);
+    expect(result.action.type).toBe("escalate");
+    expect(getEscalateAction(result.action).reason).toContain("Elevated breathing rate (26 br/min)");
+  });
