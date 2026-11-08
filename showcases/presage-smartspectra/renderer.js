@@ -536,7 +536,10 @@ $('btn-sync').addEventListener('click', async () => {
     const status = $('sync-status');
     const payload = { deviceId: orburaDeviceId(), capturedAt: new Date().toISOString() };
     const linkCode = ($('link-code')?.value || '').trim();
-    if (linkCode) payload.linkToken = linkCode;
+    if (linkCode) {
+        payload.linkToken = linkCode;
+        localStorage.setItem('orbura.linkToken', linkCode);
+    }
     if (lastBreathing != null) payload.breathingRate = Math.round(lastBreathing);
     if (lastPulse != null) payload.pulseBpm = Math.round(lastPulse);
     if (lastHrvRmssd != null) payload.hrvRmssdMs = Math.round(lastHrvRmssd);
@@ -565,9 +568,36 @@ $('btn-sync').addEventListener('click', async () => {
             webLink.href = `${ORBURA_API_URL}/hrv-pull`;
             webLink.hidden = false;
         }
+        renderTodayAction();
     } catch (err) {
         btn.disabled = false;
         status.textContent = `Couldn't reach Orbura (${err.message}). Try again later.`;
         status.className = 'sync-status err';
     }
 });
+
+// === Glanceable Today: replace the static action with the canonical
+// adaptive decision when a link token is available. Read-only fetch —
+// the token can only read /api/today. Falls back to the static copy.
+async function renderTodayAction() {
+    const body = $('result-action-body');
+    if (!body) return;
+    const token = localStorage.getItem('orbura.linkToken');
+    if (!token) return;
+    try {
+        const res = await fetch(`${ORBURA_API_URL}/api/today`, {
+            headers: { 'x-orbura-link-token': token },
+        });
+        if (!res.ok) return;
+        const state = await res.json();
+        const action = state?.primaryAction;
+        if (!action?.label) return;
+        const headline = state.headline?.stateWord ? `${state.headline.stateWord} — ` : '';
+        body.textContent = `${headline}${action.label}${action.detail ? ` (${action.detail})` : ''}`;
+    } catch {
+        // Offline or expired token — static copy stays.
+    }
+}
+
+// Try once on load too, in case a token was stored by an earlier session.
+renderTodayAction();

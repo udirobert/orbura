@@ -131,7 +131,16 @@ Same decision, three densities — patient / clinician / auditor.
   day-of-week pattern). Rendered as bullets under "Why this?" on
   TodayScreen. Care-domain correlations (dose-day vs symptoms,
   vitals deviation vs check-ins) remain future work.
-- Phase D: not started.
+- **Phase D — started.** `/api/today` accepts `x-orbura-link-token` (the
+  Companion's existing short-lived bearer token, read-only) so the
+  Companion can render the canonical decision. `renderer.js` stores the
+  token on sync and replaces the result screen's static "one action" copy
+  with the live `TodayState` headline + action. Token TTL is 30 min —
+  a longer-lived read token or refresh flow is the follow-up. Push/widget
+  channels remain blocked on the notifications stub.
+- **Credential persistence** specced in `docs/zk-credentials.md`
+  (`zk_credentials` table + write/read paths) — unblocks the live auditor
+  density.
 
 ## Build order & verification
 
