@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'orbura',
-      cwd: '/opt/bodydebt',
+      cwd: '/opt/orbura',
       script: '/usr/bin/node',
       args: 'node_modules/next/dist/bin/next start',
       env: {
@@ -14,8 +14,8 @@ module.exports = {
       instances: 1,
       exec_mode: 'fork',
       max_memory_restart: '2G',
-      out_file: '/opt/bodydebt/logs/orbura.out.log',
-      error_file: '/opt/bodydebt/logs/orbura.err.log',
+      out_file: '/opt/orbura/logs/orbura.out.log',
+      error_file: '/opt/orbura/logs/orbura.err.log',
       merge_logs: true,
       time: true,
     },

@@ -25,7 +25,7 @@ set -euo pipefail
 
 SERVER="${SERVER:-nuncio-vultr}"
 SERVER_PORT="${SERVER_PORT:-3050}"
-DEPLOY_PATH="${DEPLOY_PATH:-/opt/bodydebt}"
+DEPLOY_PATH="${DEPLOY_PATH:-/opt/orbura}"
 TRIM_PLATFORM="${TRIM_PLATFORM:-linux-x64}"
 BUN_PATH_REMOTE="${BUN_PATH_REMOTE:-/home/linuxuser/.bun/bin}"
 
