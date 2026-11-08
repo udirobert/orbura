@@ -99,7 +99,24 @@ not Halo2/BN254 proofs. Consequences:
       `{model_id, score_bits, healthy, sha256(features)}`, features private;
       local receipt verifies, score matches ONNX output, ~43s CPU prove
       (dev profile)
-- [ ] Verify seal on Starknet Sepolia via Garaga (Phase 2)
+- [x] Verify seal on Starknet Sepolia via Garaga (Phase 2) — in progress:
+  - `zkvm/starknet/` Cairo wrapper `OrburaCredential` compiles (Scarb 2.21.0):
+    calls `verify_r0_groth16_proof_bn254` on Garaga's RISC Zero
+    Groth16/BN254 verifier (v1.1.0 class hash
+    `0x41d5e111b93acbf1afb531253e0bc64d43f90a8a99290361e851ec0c4968ab1`,
+    declared on Sepolia), asserts non-empty journal, emits
+    `StressCredentialVerified`, tracks count/caller/journal length.
+  - Host emits `{seal, image_id, journal}` + `CALLDATA:<felt252 array>`
+    via `garaga_rs` (git dep pinned to garaga main `d97b4d3`, whose
+    constants match our toolchain: risc0-zkvm 3.0.6, Cairo 2.21.0,
+    snfoundry 0.64.1). Seal = 4-byte verifier-params prefix + raw seal,
+    per Garaga's sample host.
+  - Groth16 proving requires x86_64 + Docker (`risc0-groth16`), so
+    `.github/workflows/zkvm-prove.yml` runs the host on `ubuntu-latest`
+    and uploads `proof.json` + `calldata.json` as artifacts.
+  - Remaining: download artifacts, `sncast declare` + `deploy` wrapper to
+    Starknet Sepolia (needs account + testnet ETH), invoke
+    `verify_stress_proof` with the calldata, confirm event.
 - [ ] Apply to Starknet Seed Grants once PoC verifies on Starknet testnet
 - [ ] Monitor esp.ethereum.foundation for ESP wishlist items (none open as of Nov 2026)
 
