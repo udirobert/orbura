@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Copy, Video, Wind, HeartPulse, Clock } from "lucide-react";
+import { Check, Copy, Download, Video, Wind, HeartPulse, Clock } from "lucide-react";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SOURCE_ICONS } from "@/lib/signal-icons";
 import { useProtocolReveal, useSquishProps } from "@/lib/motion/protocol";
@@ -173,6 +173,16 @@ export function CameraVitalsPanel({
                 Open the Orbura Companion app on your computer, run a check-in, and tap
                 <strong> Save to Orbura</strong>. It takes about a minute end to end.
               </p>
+              <a
+                href="https://github.com/udirobert/orbura/tree/main/showcases/presage-smartspectra"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-semibold"
+                style={{ color: "var(--color-brand-primary)" }}
+              >
+                <Download className="w-3 h-3" />
+                Get the companion — macOS, Windows, Linux
+              </a>
             </div>
           </div>
 

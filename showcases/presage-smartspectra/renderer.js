@@ -560,6 +560,11 @@ $('btn-sync').addEventListener('click', async () => {
         btn.classList.add('synced');
         status.textContent = data.insight || 'Saved to Orbura.';
         status.className = 'sync-status ok';
+        const webLink = $('sync-web-link');
+        if (webLink) {
+            webLink.href = `${ORBURA_API_URL}/hrv-pull`;
+            webLink.hidden = false;
+        }
     } catch (err) {
         btn.disabled = false;
         status.textContent = `Couldn't reach Orbura (${err.message}). Try again later.`;
