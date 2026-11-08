@@ -16,6 +16,7 @@ import {
   getPendingInterventionsForPatient,
 } from "@/lib/db/queries/care";
 import { getLatestZkCredential } from "@/lib/db/queries/zk-credentials";
+import { buildCarePatternLines } from "./care-patterns";
 import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { decideToday, type TodayInput } from "./decision-rules";
 import type { TodayState } from "./types";
@@ -129,12 +130,13 @@ export async function buildTodayState(userId: string): Promise<TodayState> {
     pendingCareAction: null,
     lastCareCheckInAt: null,
   };
+  let carePatternLines: string[] = [];
 
   if (patient) {
     const [pending, escalations, observations] = await Promise.all([
       getPendingInterventionsForPatient(patient.id),
       getOpenEscalationsForPatient(patient.id),
-      getCareObservationsForPatient(patient.id, 1),
+      getCareObservationsForPatient(patient.id, 30),
     ]);
     careInput = {
       careStartedAt: patient.startedAt?.toISOString() ?? null,
@@ -144,6 +146,7 @@ export async function buildTodayState(userId: string): Promise<TodayState> {
         : null,
       lastCareCheckInAt: observations[0]?.checkInAt.toISOString() ?? null,
     };
+    carePatternLines = buildCarePatternLines(observations, now);
   }
 
   const [cameraSignal, wearableSignal] = await Promise.all([
@@ -181,7 +184,7 @@ export async function buildTodayState(userId: string): Promise<TodayState> {
     lastCheckInAt: latestSession?.createdAt.toISOString() ?? null,
     latestDebtScore: latestSession?.debtScore ?? null,
     streakDays: patterns?.streakDays ?? 0,
-    patternLines: buildPatternLines(patterns),
+    patternLines: patient ? carePatternLines : buildPatternLines(patterns),
   };
 
   const state = decideToday(input);
