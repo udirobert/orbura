@@ -72,6 +72,11 @@ or does it require Electron/native camera access? Determines app shell.
       produced (~7–9 BR/min); pulse needs the cardio toggle (key may not be
       provisioned for it). ~3 credits spent total across smoke tests.
 - [x] App build (Orbura check-in): consent → guided scan → result card,
-      Orbura palette, on-device privacy copy. Verified via Playwright smoke.
-- [ ] Fix Electron teardown crash (`napi_throw` on `sdk.destroy()` after stop)
+      full design-language port (fonts, tokens, motion, MiniOrb, system
+      accents, one-safe-action card). Verified via Playwright smoke.
+- [x] Electron teardown fixed: deferred destroy + graceful close handler;
+      verified clean exit after a live session.
+- [x] Vitals → Orbura bridge: `POST /api/vitals/check-in` stores
+      breathing/pulse/HRV as `camera_vitals` wearable observations with
+      baseline deltas; result card has opt-in "Save to Orbura".
 - [ ] Demo video + DEV post
