@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
+import { verifyLinkToken } from "@/lib/vitals/link-token";
 import { createZkCredential } from "@/lib/db/queries/zk-credentials";
 
 export const maxDuration = 10;
@@ -17,7 +18,22 @@ const SOURCES = new Set(["face_scan", "camera_vitals"]);
  */
 export async function POST(request: NextRequest) {
   const auth = await requireAuth(request);
-  if (!auth.ok) return auth.response;
+  let userId: string;
+
+  if (auth.ok) {
+    userId = auth.user.id;
+  } else {
+    // Operator/companion path: the same short-lived link token used for
+    // vitals check-ins attributes the credential to the account.
+    let linkUserId: string | null = null;
+    try {
+      linkUserId = verifyLinkToken(request.headers.get("x-orbura-link-token"));
+    } catch {
+      linkUserId = null;
+    }
+    if (!linkUserId) return auth.response;
+    userId = linkUserId;
+  }
 
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) {
@@ -46,7 +62,7 @@ export async function POST(request: NextRequest) {
   }
 
   const row = await createZkCredential({
-    userId: auth.user.id,
+    userId,
     source: typeof source === "string" && SOURCES.has(source) ? source : "face_scan",
     modelId,
     score: typeof score === "number" ? score : null,

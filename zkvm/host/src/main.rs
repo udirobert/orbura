@@ -63,6 +63,12 @@ fn main() {
         "seal": format!("0x{}", hex::encode(&seal)),
         "image_id": format!("0x{}", hex::encode(&image_id)),
         "journal": format!("0x{}", hex::encode(&journal_bytes)),
+        "journal_decoded": {
+            "model_id": format!("0x{:08x}", journal.model_id),
+            "score": score,
+            "healthy": journal.healthy,
+            "feature_digest": format!("0x{}", hex::encode(journal.feature_digest)),
+        },
     });
     println!("{proof_json}");
 
