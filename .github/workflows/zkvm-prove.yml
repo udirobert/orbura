@@ -23,12 +23,13 @@ jobs:
       - name: Install RISC Zero toolchain
         run: |
           curl -L https://risczero.com/install | bash
-          export PATH="$HOME/.cargo/bin:$PATH"
+          export PATH="$HOME/.risc0/bin:$HOME/.cargo/bin:$PATH"
           rzup
 
       - name: Build guest + host and generate Groth16 proof
         working-directory: zkvm
         run: |
+          export PATH="$HOME/.risc0/bin:$HOME/.cargo/bin:$PATH"
           cargo run --release -p host 2>&1 | tee prove.log
           grep '^{' prove.log | tail -1 > proof.json
           test -s proof.json
