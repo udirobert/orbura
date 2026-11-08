@@ -302,3 +302,4 @@ data/skills/
 zkvm/target/
 zkvm/methods/guest/target/
 zkvm/starknet/target/
+zkvm/starknet/.snfoundry_cache/

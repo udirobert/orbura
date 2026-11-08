@@ -14,9 +14,11 @@ pub mod OrburaCredential {
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use starknet::ContractAddress;
 
-    // Garaga v1.1.0 RiscZero Groth16/BN254 verifier, declared on Starknet Sepolia.
+    // Garaga RiscZero Groth16/BN254 verifier built from garaga main @ d97b4d3
+    // (risc0-zkvm 3.0.6 / control root 0xA54D…), declared on Starknet Sepolia.
+    // The released v1.1.0 class hash targets risc0 v2.2.2 and rejects v3 proofs.
     pub const RISC_ZERO_VERIFIER_CLASS_HASH: felt252 =
-        0x41d5e111b93acbf1afb531253e0bc64d43f90a8a99290361e851ec0c4968ab1;
+        0x1c4078b1a732111b25cbe827b4829d24cfc7664539fc8d511171e9b78910ac3;
 
     #[storage]
     struct Storage {
