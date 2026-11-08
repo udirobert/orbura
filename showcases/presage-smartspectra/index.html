@@ -3,37 +3,63 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Security-Policy"
-          content="default-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; media-src blob:;">
+          content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; worker-src 'self' blob:; media-src blob:;">
     <title>Orbura — Daily Check-in</title>
     <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
     <!-- ============ Phase 1: consent ============ -->
-    <section id="screen-consent" class="screen">
-        <div class="consent-card">
-            <div class="brand-mark">Orbura</div>
-            <h1>Daily check-in</h1>
-            <p class="lede">A 45-second camera check-in that listens to your breathing
-            and pulse — measured entirely on this device.</p>
-
-            <ul class="privacy-list">
-                <li><strong>On-device only.</strong> Frames never leave this Mac. The SDK processes video locally; the only network call is key validation.</li>
-                <li><strong>Nothing is stored.</strong> No images, no video, no landmark data is saved or uploaded.</li>
-                <li><strong>You control it.</strong> Stop anytime. The camera light is your indicator it's live.</li>
-                <li><strong>Wellness, not medicine.</strong> These are informational signals, not a diagnosis.</li>
-            </ul>
-
-            <button id="btn-consent" type="button" class="btn btn-primary btn-lg">Begin check-in</button>
-            <p class="fineprint">Powered by the Presage SmartSpectra SDK.</p>
+    <section id="screen-consent" class="screen screen-center">
+        <div class="orb-stage" aria-hidden="true">
+            <div class="orb-glow"></div>
+            <div class="orb-body"></div>
+            <div class="orb-shimmer"></div>
         </div>
+        <p class="eyebrow reveal">Orbura · daily check-in</p>
+        <h1 class="display reveal">A quiet read on<br>how you&rsquo;re doing.</h1>
+        <p class="lede reveal">Forty-five seconds in front of the camera. Your breathing
+        and pulse, measured on this device — nothing uploaded, nothing stored.</p>
+
+        <ul class="privacy-list reveal">
+            <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span><strong>On-device only.</strong> Frames never leave this Mac. The only network call is key validation.</span>
+            </li>
+            <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+                <span><strong>Nothing is stored.</strong> No images, no video, no landmark data is saved.</span>
+            </li>
+            <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.6 13A9 9 0 1 1 12 3v9z"/><path d="M21 12h-9"/></svg>
+                <span><strong>You control it.</strong> Stop anytime. The camera light means it&rsquo;s live.</span>
+            </li>
+            <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                <span><strong>Wellness, not medicine.</strong> Informational signals — never a diagnosis.</span>
+            </li>
+        </ul>
+
+        <button id="btn-consent" type="button" class="btn-primary btn-shimmer">
+            <span class="btn-label">Begin check-in</span>
+            <span class="btn-sub">45 seconds · camera only</span>
+        </button>
+        <p class="fineprint reveal">Powered by the Presage SmartSpectra SDK</p>
     </section>
 
     <!-- ============ Phase 2: scan ============ -->
     <section id="screen-scan" class="screen" hidden>
-        <header>
-            <div class="brand-mark brand-mark-sm">Orbura</div>
-            <span class="screen-title">Check-in</span>
-            <span id="status-badge" class="status status-uninitialized">Uninitialized</span>
+        <header class="app-header">
+            <div class="header-left">
+                <span class="eyebrow eyebrow-sm">Orbura</span>
+                <span class="header-title">Check-in</span>
+            </div>
+            <div class="header-right">
+                <span id="status-badge" class="status status-uninitialized">Ready</span>
+                <div class="mini-orb" id="mini-orb" aria-hidden="true">
+                    <div class="mini-orb-glow"></div>
+                    <div class="mini-orb-body"></div>
+                </div>
+            </div>
         </header>
 
         <div id="error-banner" class="error-banner" hidden>
@@ -41,51 +67,70 @@
             <span class="error-banner-message" id="error-message"></span>
         </div>
 
-        <main>
-            <section class="left-col">
+        <main class="scan-grid">
+            <section class="scan-primary">
                 <div class="preview">
                     <video id="preview" autoplay playsinline muted></video>
-                    <div id="validation" class="hint">Press <strong>Start</strong>, then sit still and breathe normally.</div>
+                    <!-- "Live · not recording" badge, same grammar as face scan -->
+                    <div class="live-badge">
+                        <span class="live-dot"></span>
+                        <span>Live · not recording</span>
+                    </div>
+                    <!-- Face-position guide oval -->
+                    <svg class="guide-oval" viewBox="0 0 100 133" preserveAspectRatio="none" aria-hidden="true">
+                        <ellipse cx="50" cy="46" rx="24" ry="34"
+                                 fill="none" stroke-width="0.7" stroke-dasharray="2.6 1.9" />
+                    </svg>
+                    <div id="validation" class="hint">Press Start, then sit still and breathe normally.</div>
                 </div>
 
                 <div class="readouts">
                     <div class="readout readout-primary">
                         <div class="readout-label">Breathing</div>
-                        <div class="readout-value"><span id="readout-breathing">—</span> <span class="readout-unit">BR/min</span></div>
+                        <div class="readout-value"><span id="readout-breathing">—</span><span class="readout-unit">BR/min</span></div>
                     </div>
                     <div class="readout">
                         <div class="readout-label">Pulse</div>
-                        <div class="readout-value"><span id="readout-pulse">—</span> <span class="readout-unit">BPM</span></div>
+                        <div class="readout-value"><span id="readout-pulse">—</span><span class="readout-unit">BPM</span></div>
                     </div>
                 </div>
 
                 <details class="advanced">
-                    <summary>Measurement options</summary>
+                    <summary>
+                        <span>Measurement options</span>
+                        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </summary>
                     <div class="metrics-toggles">
                         <div class="toggle toggle-static">
-                            <span class="check check-on"></span>
-                            <span>Breathing <em>(always on)</em></span>
+                            <span class="check-dot"></span>
+                            <span>Breathing <em>always on</em></span>
                         </div>
                         <label class="toggle">
                             <input type="checkbox" id="m-cardio">
-                            <span>Pulse &amp; HRV <em>(cardio bundle)</em></span>
+                            <span class="toggle-box"></span>
+                            <span>Pulse &amp; HRV <em>cardio bundle</em></span>
                         </label>
                         <label class="toggle">
                             <input type="checkbox" id="m-face">
-                            <span>Face metrics <em>(landmarks, expressions)</em></span>
+                            <span class="toggle-box"></span>
+                            <span>Face metrics <em>landmarks, expressions</em></span>
                         </label>
                     </div>
                 </details>
 
                 <div class="controls">
-                    <button id="btn-start" type="button" class="btn btn-primary">Start</button>
-                    <button id="btn-stop"  type="button" class="btn btn-ghost" disabled>Stop</button>
-                    <button id="btn-reset" type="button" class="btn btn-ghost" disabled>Reset</button>
+                    <button id="btn-start" type="button" class="btn-primary">
+                        <span class="btn-label">Start</span>
+                    </button>
+                    <button id="btn-stop" type="button" class="btn-ghost" disabled>Stop</button>
+                    <button id="btn-reset" type="button" class="btn-ghost btn-icon" disabled aria-label="Reset">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    </button>
                 </div>
-                <p class="scan-hint">Best results: face centered, soft even light, minimal motion.</p>
+                <p class="scan-hint">Best results: face centered in the oval, soft even light, minimal motion.</p>
             </section>
 
-            <section class="right-col">
+            <section class="scan-charts">
                 <div class="chart-panel chart-panel-primary">
                     <div class="chart-header">
                         <div class="chart-title">Breathing rate</div>
@@ -129,30 +174,43 @@
     </section>
 
     <!-- ============ Phase 3: result ============ -->
-    <section id="screen-result" class="screen" hidden>
+    <section id="screen-result" class="screen screen-center" hidden>
         <div class="result-card">
-            <div class="brand-mark brand-mark-sm">Orbura</div>
-            <h2>Check-in complete</h2>
-            <p class="lede">Your signals for this session:</p>
+            <p class="eyebrow reveal">Orbura · check-in</p>
+            <h2 class="display reveal">Check-in complete</h2>
+            <p class="lede lede-sm reveal">Your signals for this session:</p>
 
-            <div class="result-grid">
+            <div class="result-grid reveal">
                 <div class="result-stat">
-                    <div class="result-value" id="result-breathing">—</div>
-                    <div class="result-label">breaths / min</div>
+                    <div class="result-signal">
+                        <span class="signal-dot signal-dot-brain"></span>
+                        <span class="result-label">breathing</span>
+                    </div>
+                    <div class="result-value"><span id="result-breathing">—</span><span class="result-unit">BR/min</span></div>
                 </div>
-                <div class="result-stat">
-                    <div class="result-value" id="result-pulse">—</div>
-                    <div class="result-label">beats / min</div>
+                <div class="result-stat" id="result-pulse-stat">
+                    <div class="result-signal">
+                        <span class="signal-dot signal-dot-cardio"></span>
+                        <span class="result-label">pulse</span>
+                    </div>
+                    <div class="result-value"><span id="result-pulse">—</span><span class="result-unit">BPM</span></div>
                 </div>
             </div>
 
-            <div class="result-note">
+            <div class="result-note reveal">
                 <div class="result-note-title">One thing to notice</div>
                 <p id="result-note-body">Breathing rate is one of the fastest-recovering signals your body offers. A calm, steady rhythm after a rough day is often the first sign things are settling.</p>
             </div>
 
-            <p class="fineprint">Nothing was recorded or uploaded. Camera off, data discarded.</p>
-            <button id="btn-again" type="button" class="btn btn-primary btn-lg">Check in again</button>
+            <div class="result-action reveal">
+                <div class="result-action-title">Today&rsquo;s one action</div>
+                <p id="result-action-body">Take ten slow breaths before your next meal — in through the nose, out through the mouth. Your breathing rate tends to follow your pace.</p>
+            </div>
+
+            <p class="fineprint reveal">Nothing was recorded or uploaded. Camera off, data discarded.</p>
+            <button id="btn-again" type="button" class="btn-primary btn-shimmer">
+                <span class="btn-label">Check in again</span>
+            </button>
         </div>
     </section>
 

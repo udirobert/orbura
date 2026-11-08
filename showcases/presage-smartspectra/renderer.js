@@ -282,6 +282,9 @@ function buildSdk() {
         console.log(`[sample] processingStatus -> ${label} (${status})`);
         els.statusBadge.textContent = label;
         els.statusBadge.className = `status status-${label.toLowerCase()}`;
+        const orb = $('mini-orb');
+        if (orb) orb.classList.toggle('forming',
+            status === ProcessingStatus.kStarting || status === ProcessingStatus.kRunning);
         // Authoritative button state per ProcessingStatus (each branch sets
         // all three so state never leaks across transitions).
         if (status === ProcessingStatus.kStarting) {
@@ -316,14 +319,19 @@ function buildSdk() {
     });
 
     sdk.on('validationStatus', (code, timestampUs, hint) => {
-        const name = VALIDATION_NAMES[code] || `Code(${code})`;
+        const rawName = VALIDATION_NAMES[code] || `Code(${code})`;
+        const name = rawName.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
         console.log(`[sample] validationStatus ${name} (${code}) ts=${timestampUs} hint=${hint || '-'}`);
         els.validation.textContent = `${name}${hint ? ' — ' + hint : ''}`;
-        els.validation.className = 'hint ' + (
-            code === ValidationCode.kOk ? 'hint-ok' :
-            code === ValidationCode.kCameraTuning ? 'hint-warn' :
-            'hint-err'
-        );
+        const cls = code === ValidationCode.kOk ? 'hint-ok'
+            : code === ValidationCode.kCameraTuning ? 'hint-warn' : 'hint-err';
+        els.validation.className = 'hint ' + cls;
+        const ovalStroke = document.querySelector('.guide-oval ellipse');
+        if (ovalStroke) {
+            ovalStroke.style.stroke = cls === 'hint-ok' ? 'rgba(74,222,128,0.7)'
+                : cls === 'hint-warn' ? 'rgba(245,158,11,0.7)'
+                : 'rgba(234,88,12,0.55)';
+        }
     });
 
     // The windowed `metrics` event drives both the live numeric readouts
@@ -456,7 +464,10 @@ function showScreen(name) {
     }
 }
 $('btn-consent').addEventListener('click', () => showScreen('scan'));
-$('btn-again').addEventListener('click', () => showScreen('scan'));
+$('btn-again').addEventListener('click', () => {
+    $('result-pulse-stat').classList.remove('unmeasured');
+    showScreen('scan');
+});
 
 // After the stock stop handler tears down, show the result card.
 els.btnStop.addEventListener('click', () => {
@@ -465,7 +476,7 @@ els.btnStop.addEventListener('click', () => {
         const rp = $('result-pulse');
         rb.textContent = els.readoutBreathing.textContent;
         rp.textContent = els.readoutPulse.textContent;
-        if (rp.textContent === '—') rp.closest('.result-stat').style.opacity = '0.4';
+        if (rp.textContent === '—') $('result-pulse-stat').classList.add('unmeasured');
         showScreen('result');
     }, 900);
 });
