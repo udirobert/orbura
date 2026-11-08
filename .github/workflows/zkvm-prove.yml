@@ -1,0 +1,40 @@
+name: zkvm-prove
+
+# Generates the RISC Zero Groth16 proof for the stress-MLP guest and uploads it
+# as an artifact. Groth16 proving requires x86_64 + Docker, so this runs on
+# ubuntu-latest (Docker is preinstalled).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["zkvm/**"]
+
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install RISC Zero toolchain
+        run: |
+          curl -L https://risczero.com/install | bash
+          export PATH="$HOME/.cargo/bin:$PATH"
+          rzup
+
+      - name: Build guest + host and generate Groth16 proof
+        working-directory: zkvm
+        run: |
+          cargo run --release -p host 2>&1 | tee prove.log
+          grep '^{' prove.log | tail -1 > proof.json
+          test -s proof.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zkvm-groth16-proof
+          path: zkvm/proof.json
+          if-no-files-found: error

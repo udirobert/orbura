@@ -6,4 +6,6 @@ edition = "2021"
 [dependencies]
 methods = { path = "../methods" }
 risc0-zkvm = "3.0.6"
+risc0-ethereum-contracts = "3.0.1"
+hex = "0.4"
 serde = { version = "1.0", features = ["derive"] }
