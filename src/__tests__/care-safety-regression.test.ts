@@ -245,6 +245,15 @@ describe("Care Safety & Escalation Regression Suite", () => {
       expect(getEscalate(action).reason).toContain("treatment stopped");
     });
 
+    it("keeps the red-flag reason when disengagement coincides with a safety signal", () => {
+      const action = evaluateObservation(
+        makeInput({ symptoms: ["jaundice"], adherence: "missed_multiple" }),
+        []
+      );
+      expect(action.type).toBe("escalate");
+      expect(getEscalate(action).reason).toContain("safety signal");
+    });
+
     it("escalates when moderate nausea persists for more than 7 days", () => {
       const previous = [
         {

@@ -33,22 +33,9 @@ export function evaluateObservation(
   previousObservations: Pick<CareObservation, "symptoms" | "symptomSeverity" | "checkInAt">[],
   context: { medication?: string; currentDose?: string } = {},
 ): CareAction {
-  // 1. Adherence / disengagement — escalate even if no symptoms reported
-  if (input.adherence === "missed_multiple" || input.adherence === "stopped") {
-    return {
-      type: "escalate",
-      reason: "Multiple missed doses or treatment stopped — clinic follow-up required.",
-    };
-  }
-
   const symptoms = input.symptoms.filter((s): s is TrackableSymptom => s !== "none");
 
-  // 2. No symptoms reported
-  if (symptoms.length === 0) {
-    return { type: "intervention", action: "You're on track. Log again tomorrow." };
-  }
-
-  // 3. Hard safety signals — always escalate
+  // 1. Hard safety signals — always escalate
   for (const redFlag of RED_FLAG_SYMPTOMS) {
     if (symptoms.includes(redFlag)) {
       return {
@@ -58,7 +45,7 @@ export function evaluateObservation(
     }
   }
 
-  // 4. Severe vomiting or abdominal pain — possible pancreatitis / gallbladder
+  // 2. Severe vomiting or abdominal pain — possible pancreatitis / gallbladder
   if (input.symptomSeverity === "severe") {
     for (const severeAcute of SEVERE_ACUTE_SYMPTOMS) {
       if (symptoms.includes(severeAcute)) {
@@ -68,6 +55,21 @@ export function evaluateObservation(
         };
       }
     }
+  }
+
+  // 3. Adherence / disengagement — escalate even if no symptoms reported,
+  // but after acute symptom signals so the escalation reason keeps the
+  // most clinically urgent detail.
+  if (input.adherence === "missed_multiple" || input.adherence === "stopped") {
+    return {
+      type: "escalate",
+      reason: "Multiple missed doses or treatment stopped — clinic follow-up required.",
+    };
+  }
+
+  // 4. No symptoms reported
+  if (symptoms.length === 0) {
+    return { type: "intervention", action: "You're on track. Log again tomorrow." };
   }
 
   // 5. Persistent moderate+ symptom > 7 days
