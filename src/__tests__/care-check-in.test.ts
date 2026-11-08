@@ -47,6 +47,7 @@ function makeDeps() {
       escalations.push(escalation);
       return escalation;
     }),
+    getOpenEscalations: vi.fn(async () => escalations.filter((e) => e.status === "open")),
     notifyEscalation: vi.fn(async () => undefined),
     explainIntervention: vi.fn(async (_input, action) => `Explained: ${(action as CareAction & { type: "intervention" }).action}`),
   };

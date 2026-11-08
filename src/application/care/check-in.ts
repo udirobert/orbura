@@ -35,6 +35,7 @@ export interface CheckInDependencies {
   saveObservation: (obs: CareObservation) => Promise<CareObservation>;
   saveIntervention?: (intervention: CareIntervention) => Promise<CareIntervention>;
   saveEscalation?: (escalation: CareEscalation) => Promise<CareEscalation>;
+  getOpenEscalations?: (patientId: string) => Promise<CareEscalation[]>;
   notifyEscalation?: (
     escalation: CareEscalation,
     observation: CareObservation,
@@ -76,18 +77,42 @@ export async function processCheckIn(
   const result: CheckInResult = { observation, action };
 
   if (action.type === "escalate") {
-    const escalation: CareEscalation = {
-      id: newId(),
-      patientId: observation.patientId,
-      observationId: observation.id,
-      reason: action.reason,
-      status: "open",
-      createdAt: new Date(),
-      resolvedAt: null,
-    };
-    result.escalation = deps.saveEscalation ? await deps.saveEscalation(escalation) : escalation;
-    if (deps.notifyEscalation) {
-      deps.notifyEscalation(result.escalation, observation).catch(() => undefined);
+    // Escalation Deduplication:
+    // If the patient already has an open escalation with the same reason/category,
+    // do not spawn duplicate queue records or re-trigger redundant team notifications.
+    const openEscalations = deps.getOpenEscalations
+      ? await deps.getOpenEscalations(observation.patientId)
+      : [];
+
+    const existingMatch = openEscalations.find((e) => {
+      if (e.status !== "open") return false;
+      // Match exact reason or matching clinical category
+      if (e.reason === action.reason) return true;
+      const rLower = e.reason.toLowerCase();
+      const aLower = action.reason.toLowerCase();
+      if (rLower.includes("heart rate") && aLower.includes("heart rate")) return true;
+      if (rLower.includes("breathing rate") && aLower.includes("breathing rate")) return true;
+      if (rLower.includes("vomiting") && aLower.includes("vomiting")) return true;
+      if (rLower.includes("safety signal") && aLower.includes("safety signal")) return true;
+      return false;
+    });
+
+    if (existingMatch) {
+      result.escalation = existingMatch;
+    } else {
+      const escalation: CareEscalation = {
+        id: newId(),
+        patientId: observation.patientId,
+        observationId: observation.id,
+        reason: action.reason,
+        status: "open",
+        createdAt: new Date(),
+        resolvedAt: null,
+      };
+      result.escalation = deps.saveEscalation ? await deps.saveEscalation(escalation) : escalation;
+      if (deps.notifyEscalation) {
+        deps.notifyEscalation(result.escalation, observation).catch(() => undefined);
+      }
     }
   } else {
     const intervention: CareIntervention = {

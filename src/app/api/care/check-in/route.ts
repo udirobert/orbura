@@ -10,7 +10,7 @@ import { users } from "@/lib/db/schema/users";
 import { db } from "@/lib/db/client";
 import { getActiveCareAcknowledgement, getCarePatientByUserId } from "@/lib/db/queries/care";
 import { upsertWearableObservation } from "@/lib/db/queries/wearable-observations";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { hasActiveAcknowledgement } from "@/lib/care/invitations";
 import type { CareObservation, CareIntervention, CareEscalation, CareObservationInput } from "@/domain/care/types";
 
@@ -145,6 +145,13 @@ export async function POST(request: NextRequest) {
     saveEscalation: async (escalation) => {
       const [row] = await db.insert(careEscalations).values(escalation).returning();
       return row as CareEscalation;
+    },
+    getOpenEscalations: async (patientId) => {
+      const rows = await db
+        .select()
+        .from(careEscalations)
+        .where(and(eq(careEscalations.patientId, patientId), eq(careEscalations.status, "open")));
+      return rows as CareEscalation[];
     },
     notifyEscalation: async (escalation, observation) => {
       const careTeamEmail = process.env.CARE_TEAM_EMAIL;
