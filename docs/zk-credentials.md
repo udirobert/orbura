@@ -47,7 +47,7 @@ pgTable("zk_credentials", {
   healthy: boolean("healthy"),
   inputDigest: varchar("input_digest", { length: 80 }),  // "sha256:…" of feature vector
   prover: varchar("prover", { length: 16 }).notNull(),   // "ezkl" | "risc0"
-  chain: varchar("chain", { length: 16 }).notNull(),     // "skale" | "starknet" | "local"
+  chain: varchar("chain", { length: 16 }).notNull(),     // "skale" | "starknet" | "ink" | "local"
   txHash: varchar("tx_hash", { length: 80 }),            // null until confirmed
   verifiedAt: timestamp("verified_at"),                  // on-chain acceptance time
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -76,8 +76,13 @@ Rules:
    `chain !== "local"`.
 2. **Starknet:** after the wrapper's verify tx confirms, same endpoint with
    `prover: "risc0"`, `chain: "starknet"`, txHash. Journal decode gives
-   score/healthy.
-3. **Local dev:** `chain: "local"`, no txHash — powers Storybook/preview.
+   score/healthy. `zkvm/scripts/record-credential.mjs` automates this.
+3. **Ink (EZKL/Halo2, same prover as SKALE):** after `verifyAndLogCredential`
+   confirms on Ink, `scripts/record-ink-credential.mjs` POSTs
+   `prover: "ezkl"`, `chain: "ink"`, txHash, deriving score/healthy from the
+   proof fixture's rescaled outputs (clamp [0,1], healthy = score < 0.5).
+   Fixture proofs carry no feature digest, so `inputDigest` is null.
+4. **Local dev:** `chain: "local"`, no txHash — powers Storybook/preview.
 
 ## Read paths
 

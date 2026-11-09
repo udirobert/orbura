@@ -31,7 +31,7 @@ describe("POST /api/credentials", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (requireAuth as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, user: { id: "user-1" } });
-    (createZkCredential as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1n });
+    (createZkCredential as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
   });
 
   it("rejects guests", async () => {
@@ -61,6 +61,14 @@ describe("POST /api/credentials", () => {
     expect(res.status).toBe(200);
     expect(createZkCredential).toHaveBeenCalledWith(
       expect.objectContaining({ userId: "user-1", prover: "ezkl", chain: "skale", txHash: "0x123" })
+    );
+  });
+
+  it("stores a confirmed ink credential", async () => {
+    const res = await POST(req({ ...valid, chain: "ink", txHash: "0xabc" }));
+    expect(res.status).toBe(200);
+    expect(createZkCredential).toHaveBeenCalledWith(
+      expect.objectContaining({ chain: "ink", txHash: "0xabc", verifiedAt: expect.any(Date) })
     );
   });
 });

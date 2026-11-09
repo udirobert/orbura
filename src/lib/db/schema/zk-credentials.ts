@@ -19,7 +19,7 @@ export const zkCredentials = pgTable(
     healthy: boolean("healthy"),
     inputDigest: varchar("input_digest", { length: 80 }), // "sha256:…"
     prover: varchar("prover", { length: 16 }).notNull(), // "ezkl" | "risc0"
-    chain: varchar("chain", { length: 16 }).notNull(),   // "skale" | "starknet" | "local"
+    chain: varchar("chain", { length: 16 }).notNull(),   // "skale" | "starknet" | "ink" | "local"
     txHash: varchar("tx_hash", { length: 80 }),
     verifiedAt: timestamp("verified_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),

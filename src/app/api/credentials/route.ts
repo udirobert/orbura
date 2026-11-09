@@ -6,7 +6,7 @@ import { createZkCredential } from "@/lib/db/queries/zk-credentials";
 export const maxDuration = 10;
 
 const PROVERS = new Set(["ezkl", "risc0"]);
-const CHAINS = new Set(["skale", "starknet", "local"]);
+const CHAINS = new Set(["skale", "starknet", "ink", "local"]);
 const SOURCES = new Set(["face_scan", "camera_vitals"]);
 
 /**
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "prover must be ezkl or risc0" }, { status: 400 });
   }
   if (typeof chain !== "string" || !CHAINS.has(chain)) {
-    return NextResponse.json({ error: "chain must be skale, starknet, or local" }, { status: 400 });
+    return NextResponse.json({ error: "chain must be skale, starknet, ink, or local" }, { status: 400 });
   }
   if (chain !== "local" && (typeof txHash !== "string" || !txHash)) {
     return NextResponse.json({ error: "txHash required for on-chain credentials" }, { status: 400 });

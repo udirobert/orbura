@@ -29,5 +29,21 @@ export async function GET(request: NextRequest) {
   }
 
   const credential = await getLatestZkCredential(userId);
-  return NextResponse.json({ credential: credential ?? null });
+  return NextResponse.json({
+    credential: credential
+      ? {
+          id: Number(credential.id),
+          source: credential.source,
+          modelId: credential.modelId,
+          score: credential.score,
+          healthy: credential.healthy,
+          inputDigest: credential.inputDigest,
+          prover: credential.prover,
+          chain: credential.chain,
+          txHash: credential.txHash,
+          verifiedAt: credential.verifiedAt?.toISOString() ?? null,
+          createdAt: credential.createdAt.toISOString(),
+        }
+      : null,
+  });
 }
