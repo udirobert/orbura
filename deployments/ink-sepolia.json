@@ -1,0 +1,15 @@
+{
+  "chain": "ink-sepolia",
+  "chainId": 763373,
+  "rpc": "https://rpc-qnd-sepolia.inkonchain.com",
+  "explorer": "https://explorer-sepolia.inkonchain.com",
+  "deployer": "0xE9d3497AA6BBF27D2Ea2c13B81E57A874f2ec70D",
+  "deployedAt": "2026-11-09T00:15:00Z",
+  "halo2Verifier": "0xc6B7D30b18B8429bC0455D4f544cBAd9e90d428F",
+  "healthCredentialVerifier": "0x103E757604E4e963A48FD3395fa1CE384dAfBD92",
+  "vkDigest": "0x155b6cdf0c584b488663e8a288060ac2dd3e266c26098270622b3089c9412ef7",
+  "vkaChunks": 157,
+  "note": "Second deploy run (first run superseded before fixture submit). Proof tx below verified the EZKL fixture on-chain.",
+  "proofTx": "0xb6fd08450771b637ee834ca3e3e0c34ad08393bc7750a1b705e5895fc347c459",
+  "proofTxGasUsed": "712139"
+}

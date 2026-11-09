@@ -89,9 +89,15 @@ not Halo2/BN254 proofs. Consequences:
 
 ## Action items
 
-- [ ] Decide EVM-L2 fallback target (Ink vs Base vs Unichain) and deploy
-      verifier testnet instance
-- [ ] Apply to chosen L2 grant (rolling — do early, budgets thin at round end)
+- [x] Decide EVM-L2 fallback target (Ink vs Base vs Unichain) and deploy
+      verifier testnet instance — **done: Ink Sepolia** (Nov 9, 2026).
+      `scripts/deploy-ink-sepolia.mjs` deployed the full stack:
+      Halo2VerifierReusable `0xc6B7D30b18B8429bC0455D4f544cBAd9e90d428F`,
+      HealthCredentialVerifier `0x103E757604E4e963A48FD3395fa1CE384dAfBD92`,
+      VKA registered (157 chunks), EZKL fixture proof verified on-chain —
+      tx `0xb6fd08450771b637ee834ca3e3e0c34ad08393bc7750a1b705e5895fc347c459`
+      (712k gas). Addresses in `deployments/ink-sepolia.json`.
+- [ ] Apply to Ink Spark grant ($500–20K USDC, rolling — do early)
 - [x] Research zkVM→Starknet verification paths — **done**: Garaga maintains
       Cairo verifier contracts for RISC Zero (Groth16/BN254) on Starknet
 - [x] Spike RISC Zero guest proving the 7-dim MLP statement (Phase 1) —

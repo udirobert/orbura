@@ -170,7 +170,14 @@ async function main() {
       }];
       const verifier = new ethers.Contract(appAddress, verifyAbi, wallet);
       const instances = fixture.publicInstances.map((v) => BigInt(v));
-      const proofTx = await verifier.verifyAndLogCredential(fixture.proofHex, instances, chunks, { gasLimit: 30_000_000 });
+      // Estimate first — a flat 30M gasLimit equals the block gas limit and
+      // gets rejected as "exceeds block gas limit" on OP-stack chains.
+      const estimate = await verifier.verifyAndLogCredential.estimateGas(
+        fixture.proofHex, instances, chunks,
+      );
+      const proofTx = await verifier.verifyAndLogCredential(fixture.proofHex, instances, chunks, {
+        gasLimit: estimate * 2n,
+      });
       const proofReceipt = await proofTx.wait();
       console.log("Proof verified on-chain! tx:", proofTx.hash, "gas:", proofReceipt.gasUsed.toString());
       result.proofTx = proofTx.hash;
