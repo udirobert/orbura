@@ -49,10 +49,14 @@ export function TimeDrum({
     [y, onSelect, clampIdx, itemH],
   );
 
+  // Re-sync when itemH changes: `roomy` flips compact→default after the
+  // matchMedia effect, and y was initialized against the old item height —
+  // without this the drum stays parked at the compact offset and shows the
+  // wrong (faint) region of the strip until the next drag.
   useEffect(() => {
     y.set(-selectedIdx * itemH);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [itemH]);
 
   // Ratchet tick — light haptic each time the selection line crosses a slot,
   // during drags, taps, and settle animations alike.
@@ -143,8 +147,8 @@ export function TimeDrum({
               key={slot}
               onClick={() => handleTap(i)}
               animate={{
-                opacity: isSelected ? 1 : dist === 1 ? 0.5 : dist === 2 ? 0.2 : 0.08,
-                scale: isSelected ? 1 : dist === 1 ? 0.85 : 0.7,
+                opacity: isSelected ? 1 : dist === 1 ? 0.55 : dist === 2 ? 0.28 : 0.16,
+                scale: isSelected ? 1 : dist === 1 ? 0.88 : dist === 2 ? 0.78 : 0.72,
               }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="w-full flex items-center justify-center font-normal"
