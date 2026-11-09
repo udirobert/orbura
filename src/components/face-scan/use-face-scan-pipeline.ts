@@ -283,6 +283,11 @@ export function useFaceScanPipeline() {
   // handlers — the returned cleanup has nowhere to go, so we stash it
   // here and invoke it from skip/retry/capture/unmount.
   const detectionCleanupRef = useRef<(() => void) | null>(null);
+  // Consecutive send() failures in the detection loop. send() only rejects
+  // on infrastructure errors (WASM/model/delegate init, detect() throwing) —
+  // "no face in frame" resolves normally with empty landmarks. After several
+  // in a row we route to the manual fallback instead of looping forever.
+  const sendErrorCountRef = useRef(0);
   // Swappable MediaPipe results listener. The face mesh has ONE
   // permanent onResults handler (attached in startCamera) that
   // dispatches into this ref. The detection loop and the capture
@@ -325,10 +330,20 @@ export function useFaceScanPipeline() {
               resultsListenerRef.current = null;
               resolve();
             };
-            faceMeshRef.current!.send({ image: v }).catch(() => {
-              resultsListenerRef.current = null;
-              resolve();
-            });
+            faceMeshRef.current!.send({ image: v })
+              .then(() => { sendErrorCountRef.current = 0; })
+              .catch(() => {
+                resultsListenerRef.current = null;
+                sendErrorCountRef.current += 1;
+                if (sendErrorCountRef.current >= 4) {
+                  cancelled = true;
+                  streamRef.current?.getTracks().forEach((t) => t.stop());
+                  streamRef.current = null;
+                  setCameraError("mediapipe_loading");
+                  setPhase("mediapipe_error");
+                }
+                resolve();
+              });
           });
         }
         if (!cancelled) setTimeout(check, 500);
@@ -498,6 +513,7 @@ export function useFaceScanPipeline() {
       setDistanceStatus("pending");
       setCaptureCountdown(null);
       faceLockStartedRef.current = null;
+      sendErrorCountRef.current = 0;
       setGatesRelaxed(false);
       // Detection loop starts in the phase==="camera" effect once <video> mounts.
     } catch (err) {

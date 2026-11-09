@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { AlertTriangle, Eye, Droplets, Sparkles, Activity, ShieldCheck } from "lucide-react";
 import type { FaceAnalysisResult } from "@/lib/types";
@@ -267,6 +268,17 @@ export function FaceScanFallback({ onSubmit, onSkip }: FaceScanFallbackProps) {
             ? "Select an option to continue"
             : "Submit self-assessment"}
         </motion.button>
+
+        <Link
+          href="/hrv-pull"
+          className="w-full text-center text-[13px] py-2.5 font-medium rounded-2xl"
+          style={{
+            color: "var(--color-text-secondary)",
+            border: "1px solid rgba(168,162,158,0.12)",
+          }}
+        >
+          Or try the camera vitals check-in — pulse &amp; breathing, no face needed
+        </Link>
 
         <button
           onClick={onSkip}

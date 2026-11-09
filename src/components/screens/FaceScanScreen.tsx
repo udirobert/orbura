@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Camera, AlertTriangle, ShieldCheck, Loader2, Check, RotateCcw, Trash2 } from "lucide-react";
@@ -421,6 +422,13 @@ export function FaceScanScreen() {
                   Use manual check
                 </motion.button>
               )}
+              <Link
+                href="/hrv-pull"
+                className="w-full text-center text-[13px] py-2.5 font-medium rounded-2xl"
+                style={{ color: "var(--color-text-secondary)", border: "1px solid rgba(168,162,158,0.12)" }}
+              >
+                Or try the camera vitals check-in — pulse &amp; breathing, no face needed
+              </Link>
               <PrimaryButton onClick={handleSkip}>
                 Continue without face scan
               </PrimaryButton>

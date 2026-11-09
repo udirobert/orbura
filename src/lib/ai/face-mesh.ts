@@ -61,20 +61,30 @@ export interface FaceMeshAdapter {
   close(): void;
 }
 
+const LANDMARKER_OPTIONS = {
+  runningMode: "IMAGE" as const,
+  numFaces: 1,
+  minFaceDetectionConfidence: 0.5,
+  minFacePresenceConfidence: 0.5,
+  minTrackingConfidence: 0.5,
+  outputFaceBlendshapes: false,
+};
+
 async function createLandmarker(): Promise<FaceLandmarker> {
   const fileset = await FilesetResolver.forVisionTasks("/mediapipe/tasks");
-  return FaceLandmarker.createFromOptions(fileset, {
-    baseOptions: {
-      modelAssetPath: "/mediapipe/face_landmarker.task",
-      delegate: "GPU",
-    },
-    runningMode: "IMAGE",
-    numFaces: 1,
-    minFaceDetectionConfidence: 0.5,
-    minFacePresenceConfidence: 0.5,
-    minTrackingConfidence: 0.5,
-    outputFaceBlendshapes: false,
-  });
+  const baseOptions = { modelAssetPath: "/mediapipe/face_landmarker.task" };
+  try {
+    return await FaceLandmarker.createFromOptions(fileset, {
+      baseOptions: { ...baseOptions, delegate: "GPU" },
+      ...LANDMARKER_OPTIONS,
+    });
+  } catch {
+    // GPU delegate unsupported/fails on some browsers — CPU is slower but works.
+    return FaceLandmarker.createFromOptions(fileset, {
+      baseOptions: { ...baseOptions, delegate: "CPU" },
+      ...LANDMARKER_OPTIONS,
+    });
+  }
 }
 
 function toLegacyResults(result: FaceLandmarkerResult): FaceMeshResults {
