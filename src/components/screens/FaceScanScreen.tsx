@@ -427,7 +427,7 @@ export function FaceScanScreen() {
                 className="w-full text-center text-[13px] py-2.5 font-medium rounded-2xl"
                 style={{ color: "var(--color-text-secondary)", border: "1px solid rgba(168,162,158,0.12)" }}
               >
-                Or try the camera vitals check-in — pulse &amp; breathing, no face needed
+                Or try camera vitals on desktop — pulse &amp; breathing, no face needed
               </Link>
               <PrimaryButton onClick={handleSkip}>
                 Continue without face scan

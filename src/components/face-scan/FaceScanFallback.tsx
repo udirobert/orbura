@@ -277,7 +277,7 @@ export function FaceScanFallback({ onSubmit, onSkip }: FaceScanFallbackProps) {
             border: "1px solid rgba(168,162,158,0.12)",
           }}
         >
-          Or try the camera vitals check-in — pulse &amp; breathing, no face needed
+          Or try camera vitals on desktop — pulse &amp; breathing, no face needed
         </Link>
 
         <button

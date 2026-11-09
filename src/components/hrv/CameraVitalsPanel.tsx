@@ -141,10 +141,13 @@ export function CameraVitalsPanel({
           className="font-normal leading-snug"
           style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.3rem,5vw,1.6rem)", color: "var(--color-text-primary)" }}
         >
-          Camera check-in
+          Camera vitals
         </h2>
         <p className="text-xs mt-1.5" style={{ color: "var(--color-text-faint)" }}>
           A 45-second vitals read from the Orbura Companion desktop app — breathing, pulse and HRV, measured on-device.
+        </p>
+        <p className="text-[10px] mt-1" style={{ color: "var(--color-text-disabled)" }}>
+          Video stays on your computer — only the numbers sync to Orbura.
         </p>
       </motion.div>
 
@@ -197,7 +200,7 @@ export function CameraVitalsPanel({
                 style={{ color: "var(--color-brand-primary)" }}
               >
                 <Download className="w-3 h-3" />
-                Get the companion — macOS, Windows, Linux
+                Get the companion — developer preview, build from source
               </a>
             </div>
           </div>
